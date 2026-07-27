@@ -108,7 +108,7 @@ function configure_thp()
 	ProductName=`getprop ro.product.product.name`
 	if [ "$ProductName" == "haotian" ] || [ "$ProductName" == "dada" ] || [ "$ProductName" == "miro" ] || [ "$ProductName" == "bixi" ] ; then
 		echo never > /sys/kernel/mm/transparent_hugepage/enabled
-	elif [[ "$ProductName" == *onyx* || "$ProductName" == *luming* ]]; then
+	elif [[ "$ProductName" == *malbec* ]]; then
 		echo never > /sys/kernel/mm/transparent_hugepage/enabled
 	else
 		echo always > /sys/kernel/mm/transparent_hugepage/enabled
@@ -159,7 +159,7 @@ function configure_min_free_kbytes()
 	if [ "$ProductName" == "bixi" ]; then
 		WatermarkScale=43
 		echo $WatermarkScale > /proc/sys/vm/watermark_scale_factor
-	elif [[ "$ProductName" == *onyx* || "$ProductName" == *luming* ]]; then
+	elif [[ "$ProductName" == *malbec* ]]; then
 		WatermarkScale=43
 		echo $WatermarkScale > /proc/sys/vm/watermark_scale_factor
 	fi
@@ -185,7 +185,7 @@ function configure_memory_parameters() {
     	ProductName=`getprop ro.product.product.name`
 	if [ "$ProductName" == "bixi" ]; then
 		echo 150 > /proc/sys/vm/swappiness
-	elif [[ "$ProductName" == *onyx* || "$ProductName" == *luming* ]]; then
+	elif [[ "$ProductName" == *malbec* ]]; then
 		echo 150 > /proc/sys/vm/swappiness
 	else
 		echo 100 > /proc/sys/vm/swappiness

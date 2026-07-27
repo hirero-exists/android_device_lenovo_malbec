@@ -4,4 +4,9 @@
 #
 
 PRODUCT_MAKEFILES := \
-    $(LOCAL_DIR)/lineage_onyx.mk
+    $(LOCAL_DIR)/lineage_malbec.mk
+
+COMMON_LUNCH_CHOICES := \
+    lineage_malbec-user \
+    lineage_malbec-userdebug \
+    lineage_malbec-eng

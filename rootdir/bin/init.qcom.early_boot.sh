@@ -85,7 +85,7 @@ function set_density_by_fb() {
             "bixi")
             setprop vendor.display.lcd_density 520
             ;;
-            "onyx")
+            "malbec")
             setprop vendor.display.lcd_density 520
             ;;
             "luming")
@@ -131,7 +131,7 @@ function set_density_by_fb() {
             "bixi")
             setprop vendor.display.lcd_density 520
             ;;
-            "onyx")
+            "malbec")
             setprop vendor.display.lcd_density 520
             ;;
             "luming")
@@ -483,7 +483,7 @@ case "$device" in
     "luming")
     setprop vendor.display.supports_background_blur 1
     ;;
-    "onyx")
+    "malbec")
     setprop vendor.display.supports_background_blur 1
     ;;
 esac

@@ -1,5 +1,6 @@
 type hal_mediaeventgatherservice_service, hal_service_type, service_manager_type;
 
+hal_client_domain(hal_audio_default, hal_aidl_dms)
 hal_client_domain(hal_audio_default, hal_micharge)
 binder_call(hal_audio_default, hal_micharge_default)
 unix_socket_connect(hal_audio_default, property, hal_sensors_default)
@@ -16,4 +17,7 @@ allow hal_audio_default vendor_persist_audio_file:file { rw_file_perms create };
 allow hal_audio_default vendor_persist_sensors_file:dir { open read search write };
 allow hal_audio_default vendor_persist_sensors_file:file { open read };
 allow hal_audio_default hal_mediaeventgatherservice_service:service_manager find;
+allow hal_audio_default vendor_audio_prop:property_service set;
+
+set_prop(hal_audio_default, vendor_audio_prop)
 allow hal_audio_default hal_micharge_service:service_manager find;
