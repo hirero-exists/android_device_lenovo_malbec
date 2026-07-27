@@ -1,1 +1,1 @@
-require board=sun|onyx
+require board=sun|malbec|TB390FU|TB390FC|XT2671-1|XT2671-2

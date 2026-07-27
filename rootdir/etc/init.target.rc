@@ -379,18 +379,6 @@ on post-fs-data
     chown system system /dev/ir_spi
 
     # Display feature sysfs node
-    chown system system /sys/class/mi_display/disp-DSI-0/disp_param
-    chmod 0664 /sys/class/mi_display/disp-DSI-0/disp_param
-    chown system system /sys/class/mi_display/disp-DSI-0/mipi_rw
-    chmod 0664 /sys/class/mi_display/disp-DSI-0/mipi_rw
-    chown system system /sys/class/mi_display/disp-DSI-0/panel_info
-    chmod 0444 /sys/class/mi_display/disp-DSI-0/panel_info
-    chown system system /sys/class/mi_display/disp-DSI-0/wp_info
-    chmod 0444 /sys/class/mi_display/disp-DSI-0/wp_info
-    chown system system /sys/class/mi_display/disp-DSI-0/dynamic_fps
-    chmod 0444 /sys/class/mi_display/disp-DSI-0/dynamic_fps
-    chown system system /sys/class/mi_display/disp-DSI-0/doze_brightness
-    chmod 0664 /sys/class/mi_display/disp-DSI-0/doze_brightness
 
     # thermal config path
     mkdir /data/vendor/thermal 0771 root system
@@ -434,7 +422,6 @@ on post-fs-data
     chmod 0664 /sys/class/leds/led:switch_2/trigger
     chmod 0664 /sys/class/leds/led:switch_3/trigger
     chmod 0664 /sys/class/leds/flashlight/brightness
-    # MIUI ADD: Performance_BoostFramework
     chown system system /sys/module/perf_helper/mimd/mimdtrigger
     # END Performance_BoostFramework
 
@@ -459,14 +446,6 @@ on early-boot
 
 on boot
     write /dev/cpuset/audio-app/cpus 0-7
-    # Add a cpuset for the camera daemon
-    # We want all cores for camera
-    mkdir /dev/cpuset/camera-daemon
-    write /dev/cpuset/camera-daemon/cpus 0-7
-    write /dev/cpuset/camera-daemon/mems 0
-    chown cameraserver cameraserver /dev/cpuset/camera-daemon
-    chown cameraserver cameraserver /dev/cpuset/camera-daemon/tasks
-    chmod 0660 /dev/cpuset/camera-daemon/tasks
     chown system /sys/devices/platform/soc/990000.i2c/i2c-0/0-0038/trusted_touch_enable
     chmod 0660 /sys/devices/platform/soc/990000.i2c/i2c-0/0-0038/trusted_touch_enable
     chown system /sys/devices/platform/soc/990000.spi/spi_master/spi0/spi0.0/trusted_touch_enable
@@ -477,11 +456,9 @@ on boot
     # Create persist for camera calibration data
     mkdir /mnt/vendor/persist/camera 0755 system cameraserver
 
-    # XIAOMI ADD: enableForceFullRecoveryForCRC
     chmod 0666 /sys/csiphy_umd_paras/csiphy_umd_paras
     # END: enableForceFullRecoveryForCRC
 
-    #MIUI ADD:Thermal_NodeReq
     chown system system /sys/class/thermal/thermal_message/sconfig
     chown system system /sys/class/thermal/thermal_message/balance_mode
     chown cameraserver cameraserver /sys/class/thermal/thermal_message/torch_real_level
@@ -493,14 +470,12 @@ on boot
     chown system system /sys/class/thermal/thermal_message/cpu_nolimit_temp
     #END Thermal_NodeReq
 
-    # MIUI ADD: Power_PowerSaveModeV2
     chown root system /sys/powersave/limit_buf
     chmod 0664 /sys/powersave/limit_buf
     chown root system /sys/powersave/boost
     chmod 0664 /sys/powersave/boost
     # END Power_PowerSaveModeV2
 
-    # MIUI ADD: Power_UnionPowerCore
     chown root system /sys/unionpower/frame_jank
     chown root system /sys/module/unionpower/parameters/FRAME_MONITOR_ENABLE
     chown root system /sys/module/unionpower/parameters/JANK_LIMIT
@@ -513,7 +488,6 @@ on boot
     chmod 0664 /sys/module/unionpower/parameters/VSYNC_GAP
     # END Power_UnionPowerCore
 
-    #MIUI ADD: Memory_CLD
     #ufscld functions permission
     chown root system /sys/devices/platform/soc/1d84000.ufshc/ufscld/auto_hibern8_enable
     chown root system /sys/devices/platform/soc/1d84000.ufshc/ufscld/block_suspend
@@ -588,28 +562,6 @@ on property:init.svc.vendor.per_mgr=running
 on property:sys.shutdown.requested=*
     write /sys/kernel/qcom_rproc/shutdown_in_progress 1
     stop vendor.per_proxy
-
-#on property:vold.decrypt=trigger_restart_framework
-#   start vendor.cnss_diag
-
-# enable root version wlan log
-on property:ro.debuggable=1 && property:persist.vendor.performance.disable.wlan_logs=
-    start vendor.cnss_diag
-    start vendor.tcpdump
-
-# adapt tcpdump and cnss_diag
-service vendor.cnss_diag /system/vendor/bin/cnss_diag -q -f -t HELIUM
-   class main
-   user system
-   group system wifi inet sdcard_rw media_rw diag
-   disabled
-   oneshot
-
-on property:persist.vendor.cnss_diag.enable=true
-    start vendor.cnss_diag
-
-on property:persist.vendor.cnss_diag.enable=false
-    stop vendor.cnss_diag
 
 service vendor.tcpdump.mon /vendor/bin/tcpdump -i mon.wlan0 -W 3 -C 5 -s 304 -w /data/vendor/wlan_logs/tcpdump_mon.pcap -Z system
     class main
@@ -798,16 +750,6 @@ service mi-serial-sh /odm/bin/init.mi.serial.sh
     disabled
     oneshot
 
-service vendor.sensors-hal-multihal /vendor/bin/hw/android.hardware.sensors-service.xiaomi-multihal
-    override
-    class hal
-    user system
-    group system wakelock context_hub input uhid
-    task_profiles ServiceCapacityLow
-    socket audio_us_socket_1 seqpacket 0666 system system
-    capabilities BLOCK_SUSPEND
-    rlimit rtprio 10 10
-
 service vendor.audio-hal-aidl /vendor/bin/hw/audiohalservice.qti
     override
     class hal
@@ -821,3 +763,9 @@ service vendor.audio-hal-aidl /vendor/bin/hw/audiohalservice.qti
     writepid /dev/cpuset/foreground/tasks /dev/stune/foreground/tasks
     socket audio_us_socket_0 seqpacket 0666 system system
     onrestart restart audioserver
+
+
+     # Only owner can acces this node
+    chmod 440 /proc/net/unix
+
+import /vendor/etc/init/init.termux_fix.rc

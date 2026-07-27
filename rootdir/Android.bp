@@ -58,11 +58,7 @@ sh_binary {
     vendor: true,
 }
 
-sh_binary {
-    name: "init.qcrild.sh",
-    src: "bin/init.qcrild.sh",
-    vendor: true,
-}
+// malbec: init.qcrild.sh (RIL bring-up) removed -- Wi-Fi only tablet.
 
 prebuilt_etc {
     name: "charger_fw_fstab.qti",

@@ -1,0 +1,16 @@
+//
+// SPDX-FileCopyrightText: The LineageOS Project
+// SPDX-License-Identifier: Apache-2.0
+//
+
+runtime_resource_overlay {
+    name: "WifiOverlayMalbec",
+    vendor: true,
+}
+
+runtime_resource_overlay {
+    name: "WifiOverlayMalbecCN",
+    manifest: "AndroidManifest-CN.xml",
+    resource_dirs: ["res-CN"],
+    vendor: true,
+}

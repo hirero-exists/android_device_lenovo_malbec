@@ -25,7 +25,7 @@ if [ "$osversion" != "3.0" ]; then
 		echo 4096 > /dev/cpuctl/foreground/cpu.shares
 		echo 512 > /dev/cpuctl/background/cpu.shares
 		;;
-		"onyx")
+		"malbec")
 		echo 4196 > /dev/cpuctl/foreground/cpu.shares
 		echo 512 > /dev/cpuctl/background/cpu.shares
 		;;
