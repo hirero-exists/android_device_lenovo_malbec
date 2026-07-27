@@ -1,3 +1,7 @@
+# ART    
+dalvik.vm.minidebuginfo=false
+dalvik.vm.dex2oat-minidebuginfo=false
+
 # Audio
 ro.audio.ihaladaptervendorextension_enabled=true
 

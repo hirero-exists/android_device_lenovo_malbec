@@ -37,6 +37,9 @@ allow hal_camera_default vendor_bsp_data_log_file:dir { add_name create open rea
 allow hal_camera_default vendor_bsp_data_log_file:file { w_file_perms create getattr read setattr };
 allow hal_camera_default vendor_camera_data_file:sock_file { create getattr open read setattr unlink write };
 allow hal_camera_default vendor_displayfeature_device:chr_file { ioctl open read };
+allow hal_camera_default vendor_sysfs_displayfeature:dir search;
+allow hal_camera_default vendor_sysfs_kgsl:file r_file_perms;
+allow hal_camera_default vendor_sysfs_kgsl:lnk_file { getattr open read };
 allow hal_camera_server hal_aidlbgservice_service:service_manager { add find };
 allow hal_camera_server hal_camera_aon_service:service_manager { add find };
 allow hal_camera_server hal_dynamic_camera_service:service_manager { add find };

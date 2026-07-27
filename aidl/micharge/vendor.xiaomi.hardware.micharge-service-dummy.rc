@@ -1,6 +1,0 @@
-service vendor.xiaomi.hardware.micharge-service-dummy /vendor/bin/hw/vendor.xiaomi.hardware.micharge-service-dummy
-    class hal
-    user system
-    group system
-    interface aidl vendor.xiaomi.hardware.micharge.IMiCharge/default
-    oneshot

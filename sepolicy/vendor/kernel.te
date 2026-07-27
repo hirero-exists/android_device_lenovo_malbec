@@ -1,1 +1,2 @@
+allow kernel block_device:dir search;
 r_dir_file(kernel, vendor_file)
