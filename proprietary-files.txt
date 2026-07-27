@@ -1324,9 +1324,9 @@ vendor/lib64/vendor.qti.hardware.vpp@1.2.so
 vendor/lib64/vendor.qti.hardware.vpp@1.3.so
 
 # Media (Dolby)
+vendor/lib64/libdolbyproxyandroid.so
+system/lib64/libdolbyeffect.so
 etc/dolby_vision.cfg
-#lib64/libdolbyeffect.so
-#lib64/libdolbyproxyandroid.so
 vendor/bin/hw/vendor.dolby.dms.service
 vendor/bin/hw/vendor.dolby.media.c2-default-service-dax
 vendor/etc/dolby/dax-default.xml
@@ -1343,10 +1343,8 @@ vendor/lib64/libdolbyclstc.so
 vendor/lib64/libdolbydecoderprocessor.so
 vendor/lib64/libdolbyeglcore.so
 vendor/lib64/libdolbyottcameracontrol.so
-#vendor/lib64/libdolbyproxyandroid.so
 vendor/lib64/vendor.dolby.dms-V1-ndk.so
 vendor/lib64/vendor.dolby.hardware.dms@2.0.so
-vendor/persist/display/dolby_vision.cfg
 
 # Media configs
 vendor/etc/media_codecs.xml
@@ -3350,4 +3348,3 @@ vendor/lib64/vendor.qti.hardware.spu-V2-ndk.so
 vendor/lib64/vendor.qti.hardware.systemhelper@1.0.so
 vendor/lib64/vendor.qti.hardware.systemhelperaidl-V1-ndk.so
 vendor/lib64/wifi_legacy.so
-vendor/vendor_a
