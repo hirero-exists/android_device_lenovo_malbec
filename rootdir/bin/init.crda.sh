@@ -1,9 +1,6 @@
-#=============================================================================
-# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
-# All rights reserved.
-# Confidential and Proprietary - Qualcomm Technologies, Inc.
-#
-# Copyright (c) 2009-2012, 2014-2019, The Linux Foundation. All rights reserved.
+#! /vendor/bin/sh
+
+# Copyright (c) 2012, The Linux Foundation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -28,24 +25,11 @@
 # WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#=============================================================================
+#
 
-if [ -f /sys/devices/soc0/soc_id ]; then
-	platformid=`cat /sys/devices/soc0/soc_id`
+country=`getprop wlan.crda.country`
+# crda takes input in COUNTRY environment variable
+if [ $country != "" ]
+then
+COUNTRY="$country" /system/bin/crda
 fi
-
-case "$platformid" in
-	"618"|"639"|"705"|"706")
-		#Pass as an argument the max number of clusters supported on the SOC
-		/vendor/bin/sh /vendor/bin/init.kernel.post_boot-sun.sh 2
-		;;
-	"655"|"681"|"694")
-		/vendor/bin/sh /vendor/bin/init.kernel.post_boot-tuna.sh 4
-		;;
-	"686"|"659"|"720"|"721"|"731"|"732")
-		/vendor/bin/sh /vendor/bin/init.kernel.post_boot-kera.sh 3
-		;;
-	*)
-		echo "***WARNING***: Invalid SoC ID\n\t No postboot settings applied!!\n"
-		;;
-esac

@@ -39,14 +39,24 @@ configure_pasr_support()
 	ddr_type=`od -An -tx /proc/device-tree/memory/ddr_device_type`
 	ddr_type5="08"
 
-	if [ -d /sys/kernel/mem-offline ]; then
+	if [ -d  /proc/device-tree/mem-offline ]; then
 		#only LPDDR5 supports PAAR
 		if [ ${ddr_type:4:2} != $ddr_type5 ]; then
 			setprop vendor.pasr.activemode.enabled false
 		fi
 
-		setprop vendor.pasr.enabled true
-		echo "pasr-enabled"
+		if [ -f  /proc/device-tree/mem-offline/status ]; then
+			status=`cat /proc/device-tree/mem-offline/status`
+			if [ "$status" == "disabled" ]; then
+				setprop vendor.pasr.enabled false
+			else
+				setprop vendor.pasr.enabled true
+				echo "pasr-enabled"
+			fi
+		else
+			setprop vendor.pasr.enabled true
+			echo "pasr-enabled"
+		fi
 	else
 		setprop vendor.pasr.enabled false
 	fi
