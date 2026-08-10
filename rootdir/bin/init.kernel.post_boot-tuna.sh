@@ -66,6 +66,12 @@ case "$variant" in
 	"2_3_1_1")
 		/vendor/bin/sh /vendor/bin/init.kernel.post_boot-tuna_2_3_1_1.sh
 		;;
+	"1_2_2_1")
+		/vendor/bin/sh /vendor/bin/init.kernel.post_boot-tuna_1_2_2_1.sh
+		;;
+	"1_3_1_1")
+		/vendor/bin/sh /vendor/bin/init.kernel.post_boot-tuna_1_3_1_1.sh
+		;;
 	*)
 		echo "***WARNING***: Postboot script not present for the variant ${variant}"
 		fallback_setting
