@@ -100,6 +100,8 @@ vendor/etc/acdbdata/tuna_qrd_2308yc/QRD_tuna2_workspaceFileXml.qwsp
 vendor/etc/acdbdata/tuna_qrd_2418hs/QRD_tuna3_acdb_cal.acdb
 vendor/etc/acdbdata/tuna_qrd_2418hs/QRD_tuna3_workspaceFileXml.qwsp
 vendor/etc/acdbdata/tuna_qrd_2418yc/QRD_tuna4_acdb_cal.acdb
+vendor/bin/vendor_modprobe.sh
+vendor/bin/system_dlkm_modprobe.sh
 vendor/etc/acdbdata/tuna_qrd_2418yc/QRD_tuna4_workspaceFileXml.qwsp
 
 # ADSP
