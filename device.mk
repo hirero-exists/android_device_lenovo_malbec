@@ -20,6 +20,7 @@ $(call inherit-product, packages/modules/Virtualization/apex/product_packages.mk
 
 # Qualcomm
 $(call soong_config_set,rfs,mpss_firmware_symlink_target,modem_firmware)
+$(call soong_config_set_bool,recovery,target_recovery_uses_qti_drm,true)
 $(call inherit-product, hardware/qcom-caf/common/common.mk)
 
 AB_OTA_POSTINSTALL_CONFIG += \
