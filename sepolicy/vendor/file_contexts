@@ -51,11 +51,8 @@
 /vendor/lib/rfsa/adsp/libQnnHtpV79Skel\.so u:object_r:same_process_hal_file:s0
 
 # Charge
-/(vendor|system/vendor)/bin/hw/vendor.xiaomi.hardware.micharge-service-dummy u:object_r:hal_micharge_default_exec:s0
 /dev/smart_charge_cdev u:object_r:vendor_sysfs_xm_power:s0
 
-# CitSensor
-/(odm|vendor/odm|vendor|system/vendor)/bin/hw/vendor.xiaomi.sensor.citsensorservice.aidl u:object_r:vendor_hal_citsensorservice_xiaomi_default_exec:s0
 
 # Diag
 /data/vendor/bsplog(/.*)? u:object_r:vendor_bsp_data_log_file:s0
@@ -63,10 +60,6 @@
 
 # Displayfeature
 /(vendor|system/vendor)/bin/displayfeature u:object_r:vendor_displayfeature_exec:s0
-/(vendor|system/vendor)/bin/hw/vendor\.xiaomi\.hardware\.displayfeature_aidl-service u:object_r:vendor_hal_displayfeature_xiaomi_default_exec:s0
-/dev/mi_display/disp_feature u:object_r:vendor_displayfeature_device:s0
-/dev/mi_display/disp_log u:object_r:vendor_displaylog_device:s0
-/sys/devices/virtual/mi_display/disp_feature/disp-DSI-+[0-1](/.*)? u:object_r:vendor_sysfs_displayfeature:s0
 
 # Dolby
 /odm/bin/hw/dvs-aidl-service u:object_r:dvs_aidl_default_exec:s0
@@ -80,10 +73,8 @@
 /data/vendor/goodix(/.*)? u:object_r:fingerprint_vendor_data_file:s0
 /dev/goodix_fp u:object_r:vendor_fingerprint_device:s0
 /dev/mifp_id u:object_r:vendor_fingerprint_device:s0
-/dev/xiaomi-fp u:object_r:vendor_fingerprint_device:s0
 /mnt/vendor/persist/fingerprint(/.*)? u:object_r:fingerprint_vendor_data_file:s0
 /mnt/vendor/persist/goodix(/.*)? u:object_r:fingerprint_vendor_data_file:s0
-/vendor/bin/hw/android\.hardware\.biometrics\.fingerprint-service\.xiaomi u:object_r:hal_fingerprint_default_exec:s0
 
 # FPS info
 /sys/class/drm/card0/card0-sde-crtc-0/measured_fps                         u:object_r:vendor_sysfs_graphics:s0
@@ -92,7 +83,6 @@
 /(odm|vendor|vendor/odm|system/vendor/odm)/bin/hw/android\.hardware\.gnss.*-service-qti u:object_r:vendor_hal_gnss_qti_exec:s0
 
 # HypSys
-/vendor/bin/hw/xiaomi\.system\.hypsys\.common-service-dummy    u:object_r:hal_hypsys_vendor_exec:s0
 
 # IR
 /dev/ir_spi u:object_r:ir_spi_device:s0
@@ -100,13 +90,7 @@
 # Media
 /vendor/bin/hw/android\.hardware\.media\.c2-mi-service u:object_r:mediacodec_exec:s0
 
-# Metis/Migt
-/dev/metis u:object_r:migt_dev:s0
-/dev/migt u:object_r:migt_dev:s0
-/sys/module/metis/parameters(/.*)? u:object_r:sysfs_migt:s0
 
-# MliPay
-/(odm|vendor/odm|system/vendor)/bin/mlipayd u:object_r:hal_mlipay_default_exec:s0
 
 # Partition Mountpoints
 /bt_firmware(/.*)?                                      u:object_r:bt_firmware_file:s0
@@ -117,7 +101,6 @@
 /(vendor|system/vendor)/bin/qrtr-lookup u:object_r:vendor_qrtr_exec:s0
 
 # Sensors
-/vendor/bin/hw/android\.hardware\.sensors-service\.xiaomi-multihal                                                   u:object_r:hal_sensors_default_exec:s0
 
 # Thermal
 /(vendor|system/vendor)/bin/mi_thermald u:object_r:mi_thermald_exec:s0
@@ -131,13 +114,11 @@
 /sys/powersave(/.*)? u:object_r:sysfs_power_save:s0
 
 # Touch
-/(odm|vendor/odm|vendor|system/vendor)/bin/hw/vendor\.xiaomi\.hw\.touchfeature-service u:object_r:hal_touchfeature_xiaomi_default_exec:s0
 /(odm|vendor/odm|vendor|system/vendor)/bin/touch_report u:object_r:touchreport_exec:s0
 /(odm|vendor/odm|vendor|system/vendor)/bin/toucheventcheck u:object_r:tpevent_exec:s0
 /(vendor|odm)/etc/init.panel_info.sh u:object_r:vendor_touch_init_shell_exec:s0
 /data/vendor/touch(/.*)? u:object_r:vendor_data_touchreport_file:s0
 /data/vendor/touch_state(/.*)? u:object_r:vendor_data_touchreport_file:s0
-/dev/xiaomi-touch u:object_r:touchfeature_device:s0
 /sys/devices/virtual/touch/touch_dev/abnormal_event u:object_r:sysfs_touch_hostprocess:s0
 /sys/devices/virtual/touch/touch_dev/clicktouch_raw u:object_r:sysfs_touch_hostprocess:s0
 /sys/devices/virtual/touch/touch_dev/ear_sensor u:object_r:sysfs_tp_virtual_prox:s0

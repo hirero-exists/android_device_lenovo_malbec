@@ -1,3 +1,0 @@
-binder_call(system_server, hal_touchfeature_xiaomi_default)
-
-allow system_server hal_touchfeature_xiaomi_default:process signal;
