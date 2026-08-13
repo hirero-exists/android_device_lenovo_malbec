@@ -51,6 +51,11 @@ sh_binary {
     src: "bin/init.qcom.post_boot.sh",
     vendor: true,
 }
+sh_binary {
+    name: "malbec_ks2_wrapper.sh",
+    src: "bin/malbec_ks2_wrapper.sh",
+    vendor: true,
+}
 
 sh_binary {
     name: "init.qcom.sh",
