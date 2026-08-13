@@ -19,7 +19,6 @@ type minidump_data_file, data_file_type, file_type;
 type vendor_bsp_data_log_file, data_file_type, file_type;
 
 # Display
-type vendor_sysfs_displayfeature, fs_type, sysfs_type;
 
 # Fingerprint
 type sysfs_tp_fodstatus, fs_type, sysfs_type;
@@ -31,8 +30,6 @@ type vendor_sysfs_hardwareinfo, fs_type, sysfs_type;
 type ir_spi_device, dev_type;
 
 # Metis/Migt
-type migt_dev, dev_type, mlstrustedobject;
-type sysfs_migt, fs_type, sysfs_type;
 
 # Memory
 type procfs_memory, fs_type, proc_type;
