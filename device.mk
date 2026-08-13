@@ -37,7 +37,11 @@ AB_OTA_POSTINSTALL_CONFIG += \
 
 PRODUCT_PACKAGES += \
     checkpoint_gc \
+    malbec_ks2_wrapper.sh \
     otapreopt_script
+
+PRODUCT_COPY_FILES += \
+    device/lenovo/malbec/rootdir/etc/keystore2_override.rc:system/etc/init/99_keystore2_override.rc
 
 # API
 BOARD_SHIPPING_API_LEVEL := 202404
