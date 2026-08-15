@@ -198,9 +198,12 @@ PRODUCT_PACKAGES += \
     ueventd.qcom.rc
 
 PRODUCT_PACKAGES += \
+    init.malbec.debug.rc \
     init.qcom.factory.rc \
     init.qcom.rc \
     init.recovery.qcom.rc \
+    init.qti.kernel.rc \
+    init.qti.kernel.target.rc \
     init.target.rc
 
 PRODUCT_PACKAGES += \
@@ -211,7 +214,12 @@ PRODUCT_PACKAGES += \
     init.qcom.class_core.sh \
     init.qcom.early_boot.sh \
     init.qcom.post_boot.sh \
-    init.qcom.sh
+    init.qcom.sensors.sh \
+    init.qcom.sh \
+    init.qti.kernel.sh \
+    init.qti.media.sh \
+    init.qti.write.sh \
+    malbec_bootwatchdog.sh
 
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/rootdir/etc/fstab.qcom:$(TARGET_COPY_OUT_VENDOR_RAMDISK)/first_stage_ramdisk/fstab.qcom

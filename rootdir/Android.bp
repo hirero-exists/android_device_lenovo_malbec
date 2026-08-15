@@ -51,6 +51,12 @@ sh_binary {
     src: "bin/init.qcom.post_boot.sh",
     vendor: true,
 }
+
+sh_binary {
+    name: "init.qcom.sensors.sh",
+    src: "bin/init.qcom.sensors.sh",
+    vendor: true,
+}
 sh_binary {
     name: "malbec_ks2_wrapper.sh",
     src: "bin/malbec_ks2_wrapper.sh",
@@ -60,6 +66,30 @@ sh_binary {
 sh_binary {
     name: "init.qcom.sh",
     src: "bin/init.qcom.sh",
+    vendor: true,
+}
+
+sh_binary {
+    name: "init.qti.kernel.sh",
+    src: "bin/init.qti.kernel.sh",
+    vendor: true,
+}
+
+sh_binary {
+    name: "init.qti.media.sh",
+    src: "bin/init.qti.media.sh",
+    vendor: true,
+}
+
+sh_binary {
+    name: "init.qti.write.sh",
+    src: "bin/init.qti.write.sh",
+    vendor: true,
+}
+
+sh_binary {
+    name: "malbec_bootwatchdog.sh",
+    src: "bin/malbec_bootwatchdog.sh",
     vendor: true,
 }
 
@@ -91,6 +121,13 @@ prebuilt_etc {
 }
 
 prebuilt_etc {
+    name: "init.malbec.debug.rc",
+    src: "etc/init.malbec.debug.rc",
+    sub_dir: "init",
+    vendor: true,
+}
+
+prebuilt_etc {
     name: "init.qcom.rc",
     src: "etc/init.qcom.rc",
     sub_dir: "init/hw",
@@ -102,6 +139,18 @@ prebuilt_etc {
     src: "etc/init.recovery.qcom.rc",
     sub_dir: "init",
     recovery: true,
+}
+
+prebuilt_etc {
+    name: "init.qti.kernel.rc",
+    src: "etc/init.qti.kernel.rc",
+    vendor: true,
+}
+
+prebuilt_etc {
+    name: "init.qti.kernel.target.rc",
+    src: "etc/init.qti.kernel.target.rc",
+    vendor: true,
 }
 
 prebuilt_etc {
