@@ -158,6 +158,9 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     fastbootd
 
+PRODUCT_COPY_FILES += \
+    vendor/lenovo/malbec/proprietary/vendor/bin/hw/vendor.qti.hardware.display.composer-service:vendor/bin/hw/vendor.qti.hardware.display.composer-service
+
 # Graphics
 TARGET_USES_VULKAN = true
 
