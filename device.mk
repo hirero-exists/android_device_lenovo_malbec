@@ -137,11 +137,8 @@ PRODUCT_SET_DEBUGFS_RESTRICTIONS := true
 
 # Display
 PRODUCT_PACKAGES += \
-    android.hardware.graphics.mapper@4.0-impl-qti-display \
     init.qti.display_boot.rc \
     init.qti.display_boot.sh \
-    vendor.qti.hardware.display.allocator-service \
-    vendor.qti.hardware.display.demura-service \
     vendor.qti.hardware.display.snapalloc-impl
 
 PRODUCT_PACKAGES += \
@@ -160,6 +157,10 @@ PRODUCT_PACKAGES += \
 
 PRODUCT_COPY_FILES += \
     vendor/lenovo/malbec/proprietary/vendor/bin/hw/vendor.qti.hardware.display.composer-service:vendor/bin/hw/vendor.qti.hardware.display.composer-service
+
+PRODUCT_COPY_FILES += \
+    vendor/lenovo/malbec/proprietary/vendor/lib64/libtinyxml2.so:vendor/lib64/libtinyxml2.so \
+    vendor/lenovo/malbec/proprietary/vendor/lib64/libeffectsconfig.so:vendor/lib64/libeffectsconfig.so
 
 # Graphics
 TARGET_USES_VULKAN = true
