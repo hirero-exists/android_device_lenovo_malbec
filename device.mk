@@ -139,6 +139,9 @@ PRODUCT_SET_DEBUGFS_RESTRICTIONS := true
 PRODUCT_PACKAGES += \
     init.qti.display_boot.rc \
     init.qti.display_boot.sh \
+    vendor.qti.hardware.display.demura-V1-ndk.vendor \
+    vendor.qti.hardware.display.mapperextensions@1.2.vendor \
+    vendor.qti.hardware.display.mapperextensions@1.3.vendor \
     vendor.qti.hardware.display.snapalloc-impl
 
 PRODUCT_PACKAGES += \
