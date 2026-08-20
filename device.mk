@@ -49,38 +49,50 @@ PRODUCT_SHIPPING_API_LEVEL := 35
 
 # Audio (sun platform)
 PRODUCT_PACKAGES += \
-    audio.bluetooth.default \
-    audio.r_submix.default \
-    audio.usb.default \
-
-PRODUCT_PACKAGES += \
-    audioadsprpcd \
     audiohalservice.qti \
-    libagm_compress_plugin \
-    libagm_mixer_plugin \
-    libagm_pcm_plugin \
-    libagmipcservice \
-    libaudiochargerlistener \
-    libbatterylistener \
-    libcustomva_intf \
-    libfmpal \
-    libhfp_pal \
-    libhotword_intf \
-    libpaleventnotifier \
-    libpalipcservice \
-    libsndcardparser \
-    libsoundtriggerhal.qti \
-    libvui_intf \
     qtiaudiohalvendorextn
 
 PRODUCT_PACKAGES += \
-    android.hardware.audio.common-V1-ndk.vendor \
+    android.hardware.audio.common-V3-ndk.vendor \
     android.hardware.audio.core-V2-ndk.vendor \
     android.hardware.audio.core.sounddose-V1-ndk.vendor \
+    android.hardware.audio.core.sounddose-V2-ndk.vendor \
+    android.hardware.audio.effect-V2-ndk.vendor \
+    android.hardware.bluetooth.audio-V3-ndk.vendor \
+    android.hardware.bluetooth.audio-V4-ndk.vendor \
+    android.hardware.drm-V1-ndk.vendor \
+    android.hardware.health-V1-ndk.vendor \
+    android.media.audio.common.types-V3-ndk.vendor \
+    vendor.qti.hardware.paleventnotifier-V2-ndk.vendor \
     libalsautilsv2.vendor \
+    libaudioaidlcommon.vendor \
     libaudioutils_shim \
     libmediautils_vendor.vendor \
     libmemunreachable.vendor
+
+PRODUCT_PACKAGES += \
+    android.hardware.bluetooth.audio@2.0.vendor \
+    android.hardware.bluetooth.audio@2.1.vendor \
+    android.hardware.health@1.0.vendor \
+    android.hardware.health@2.0.vendor \
+    android.hardware.health@2.1.vendor \
+    android.hardware.power@1.0.vendor \
+    android.hardware.power@1.1.vendor \
+    android.hardware.power@1.2.vendor \
+    android.hardware.soundtrigger3-V1-ndk.vendor \
+    android.hardware.thermal@1.0.vendor \
+    android.hardware.thermal@2.0.vendor \
+    android.media.soundtrigger.types-V1-ndk.vendor \
+    libaudio_aidl_conversion_common_ndk.vendor \
+    libflatbuffers-cpp.vendor \
+    libusbhost.vendor \
+    qti-audio-types-aidl-V1-ndk.vendor \
+    vendor.qti.hardware.bluetooth.audio-V1-ndk.vendor
+
+PRODUCT_PACKAGES += \
+    manifest_audiocorehal_default.xml \
+    audioeffectservice_qti.xml \
+    libaudioeffecthal.qti
 
 AUDIO_HAL_DIR := hardware/qcom-caf/sm8750/audio/primary-hal
 
@@ -290,7 +302,7 @@ PRODUCT_COPY_FILES += \
 # Power
 PRODUCT_PACKAGES += \
     android.hardware.power-service.lineage-libperfmgr \
-    libqti-perfd-client
+    libperfmgr.vendor
 
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/configs/power/powerhint.json:$(TARGET_COPY_OUT_VENDOR)/etc/powerhint.json
