@@ -33,6 +33,12 @@ on early-init
     insmod /vendor/lib/modules/adsp_loader_dlkm.ko
 
 on init
+# Break the dead AOSP symlink and inject our real ADB key
+    rm /adb_keys
+    copy /adb_keys_dev /adb_keys
+    chown system shell /adb_keys
+    chmod 0640 /adb_keys
+
     write /sys/class/backlight/panel0-backlight/brightness 200
     setprop sys.usb.configfs 1
 
@@ -52,5 +58,5 @@ on fs
     mount none /vendor/firmware_mnt/image /vendor/firmware bind rec
     wait /sys/kernel/boot_adsp/ssr
     write /sys/kernel/boot_adsp/ssr 1
-    wait /sys/class/power_supply/battery
+    wait /sys/class/power_supply/battery/capacity
 # END Recovery_StabilityEnhance
