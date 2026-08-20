@@ -41,8 +41,11 @@ lib_fixups: lib_fixups_user_type = {
 }
 
 blob_fixups: blob_fixups_user_type = {
-    # Add malbec blob fixups here as the build surfaces them, e.g.:
-    # 'vendor/lib64/<some>.so': blob_fixup().add_needed('libfoo_shim.so'),
+    'vendor/etc/perf/perfconfigstore.xml': blob_fixup()
+        .regex_replace(
+            r'<Prop Name="vendor\.debug\.enable\.memperfd"\s+Value="true" />',
+            '<Prop Name="vendor.debug.enable.memperfd"         Value="false" />',
+    ),
 }  # fmt: skip
 
 module = ExtractUtilsModule(
