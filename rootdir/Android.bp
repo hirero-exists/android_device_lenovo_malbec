@@ -58,12 +58,6 @@ sh_binary {
     vendor: true,
 }
 sh_binary {
-    name: "malbec_ks2_wrapper.sh",
-    src: "bin/malbec_ks2_wrapper.sh",
-    vendor: true,
-}
-
-sh_binary {
     name: "init.qcom.sh",
     src: "bin/init.qcom.sh",
     vendor: true,
@@ -84,12 +78,6 @@ sh_binary {
 sh_binary {
     name: "init.qti.write.sh",
     src: "bin/init.qti.write.sh",
-    vendor: true,
-}
-
-sh_binary {
-    name: "malbec_bootwatchdog.sh",
-    src: "bin/malbec_bootwatchdog.sh",
     vendor: true,
 }
 
@@ -117,13 +105,6 @@ prebuilt_etc {
     name: "init.qcom.factory.rc",
     src: "etc/init.qcom.factory.rc",
     sub_dir: "init/hw",
-    vendor: true,
-}
-
-prebuilt_etc {
-    name: "init.malbec.debug.rc",
-    src: "etc/init.malbec.debug.rc",
-    sub_dir: "init",
     vendor: true,
 }
 

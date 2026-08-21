@@ -46,6 +46,15 @@ blob_fixups: blob_fixups_user_type = {
             r'<Prop Name="vendor\.debug\.enable\.memperfd"\s+Value="true" />',
             '<Prop Name="vendor.debug.enable.memperfd"         Value="false" />',
     ),
+
+    (
+        'vendor/bin/hw/vendor.qti.hardware.display.composer-service',
+        'vendor/lib64/libsdmclient.so',
+    ): blob_fixup()
+        .replace_needed(
+            'libtinyxml2.so',
+            'libtinyxml2-stock.so',
+    ),
 }  # fmt: skip
 
 module = ExtractUtilsModule(
