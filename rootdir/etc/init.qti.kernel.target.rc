@@ -4,4 +4,4 @@
 # Confidential and Proprietary - Qualcomm Technologies, Inc.
 #=============================================================================
 on post-fs-data
-    setprop vendor.all.modules.ready.debug 1
+    wait_for_prop vendor.all.modules.ready 1

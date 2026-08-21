@@ -40,8 +40,6 @@ PRODUCT_PACKAGES += \
     malbec_ks2_wrapper.sh \
     otapreopt_script
 
-PRODUCT_COPY_FILES += \
-    device/lenovo/malbec/rootdir/etc/keystore2_override.rc:system/etc/init/99_keystore2_override.rc
 
 # API
 BOARD_SHIPPING_API_LEVEL := 202404
@@ -217,7 +215,6 @@ PRODUCT_PACKAGES += \
     ueventd.qcom.rc
 
 PRODUCT_PACKAGES += \
-    init.malbec.debug.rc \
     init.qcom.factory.rc \
     init.qcom.rc \
     init.recovery.qcom.rc \
@@ -237,8 +234,7 @@ PRODUCT_PACKAGES += \
     init.qcom.sh \
     init.qti.kernel.sh \
     init.qti.media.sh \
-    init.qti.write.sh \
-    malbec_bootwatchdog.sh
+    init.qti.write.sh
 
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/rootdir/etc/fstab.qcom:$(TARGET_COPY_OUT_VENDOR_RAMDISK)/first_stage_ramdisk/fstab.qcom
@@ -302,7 +298,8 @@ PRODUCT_COPY_FILES += \
 # Power
 PRODUCT_PACKAGES += \
     android.hardware.power-service.lineage-libperfmgr \
-    libperfmgr.vendor
+    libperfmgr.vendor \
+    malbec-pixel-power-ext
 
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/configs/power/powerhint.json:$(TARGET_COPY_OUT_VENDOR)/etc/powerhint.json

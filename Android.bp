@@ -37,3 +37,10 @@ mkdir {
     dir: "modem_firmware",
     vendor: true,
 }
+
+cc_library_shared {
+    name: "malbec-pixel-power-ext",
+    stem: "pixel-power-ext-V1-ndk",
+    whole_static_libs: ["pixel-power-ext-V1-ndk"],
+    vendor: true,
+}
