@@ -2314,7 +2314,6 @@ vendor/bin/sxrservicetest
 vendor/bin/test_diag
 vendor/bin/thermal-engine-v2
 vendor/bin/tlpd
-vendor/bin/tndiag
 vendor/bin/trusteduilistener
 vendor/bin/ubwcconvert
 vendor/bin/ubwcp_test64
@@ -2414,7 +2413,6 @@ vendor/etc/init/snapdragon_services.rc
 vendor/etc/init/sxrd.rc
 vendor/etc/init/tlpd.rc
 vendor/etc/init/tn_vendor_performance.rc
-vendor/etc/init/tndiag.rc
 vendor/etc/init/trusteduilistener.rc
 vendor/etc/init/vendor.dpmd.rc
 vendor/etc/init/vendor.lenovo.hardware.battery-service.rc
