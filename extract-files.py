@@ -55,6 +55,9 @@ blob_fixups: blob_fixups_user_type = {
             'libtinyxml2.so',
             'libtinyxml2-stock.so',
     ),
+
+    'vendor/lib64/libaudioserviceexampleimpl.so': blob_fixup()
+        .add_needed('libaudioutils_shim.so'),
 }  # fmt: skip
 
 module = ExtractUtilsModule(
