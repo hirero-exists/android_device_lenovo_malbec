@@ -16,21 +16,7 @@ sched_rt_period_ms=`expr $sched_rt_runtime_ms + 100`
 sched_rt_period_us=`expr $sched_rt_period_ms \* 1000`
 echo $sched_rt_period_us > /proc/sys/kernel/sched_rt_period_us
 echo $sched_rt_runtime_us > /proc/sys/kernel/sched_rt_runtime_us
-#Configure cgroup parameters:
-project=`getprop ro.product.device`
-osversion=`getprop ro.mi.os.debug.version.code`
-if [ "$osversion" != "3.0" ]; then
-	case "$project" in
-		"luming")
-		echo 4096 > /dev/cpuctl/foreground/cpu.shares
-		echo 512 > /dev/cpuctl/background/cpu.shares
-		;;
-		"malbec")
-		echo 4196 > /dev/cpuctl/foreground/cpu.shares
-		echo 512 > /dev/cpuctl/background/cpu.shares
-		;;
-	esac
-fi
+
 if [ -d /proc/sys/walt ]; then
 	# configure maximum frequency when CPUs are partially halted
 	echo 1190400 > /proc/sys/walt/sched_max_freq_partial_halt
@@ -137,15 +123,11 @@ if [ -d /proc/sys/walt ]; then
 	echo 0 > /proc/sys/walt/sched_boost
 
 	# configure input boost settings
-	echo 1075200 0 0 0 0 0 0 0 > /proc/sys/walt/input_boost/input_boost_freq
-	echo 40 > /proc/sys/walt/input_boost/input_boost_ms
-
-    # configure power_key boost settings
-	echo 1785600 0 2611200 0 0 2611200 0 2515200 > /proc/sys/walt/input_boost/powerkey_input_boost_freq
-        echo 400 > /proc/sys/walt/input_boost/powerkey_input_boost_ms
-
-	echo 3000 > /sys/module/perf_helper/sched_assi/sched_long_runnable
-
+	# TN Begin modified by keji.sun 20251030 MALBECW-1193(input and scroll boost)
+	echo 1516800 1516800 2073600 2073600 2073600 2073600 2073600 1920000 > /proc/sys/walt/input_boost/input_boost_freq
+	echo 100 > /proc/sys/walt/input_boost/input_boost_ms
+	# TN End modified by keji.sun 20251030 MALBECW-1193(input and scroll boost)
+	
 	echo "walt" > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor
 	echo "walt" > /sys/devices/system/cpu/cpufreq/policy2/scaling_governor
 	echo "walt" > /sys/devices/system/cpu/cpufreq/policy5/scaling_governor
@@ -174,6 +156,12 @@ if [ -d /proc/sys/walt ]; then
 	echo 1190400 > /sys/devices/system/cpu/cpufreq/policy2/walt/hispeed_freq
 	echo 1190400 > /sys/devices/system/cpu/cpufreq/policy5/walt/hispeed_freq
 	echo 1478400 > /sys/devices/system/cpu/cpufreq/policy7/walt/hispeed_freq
+
+	#zone base target load
+	echo 1075200 80 1401600 80 1632000 80 2016000 80 > /sys/devices/system/cpu/cpufreq/policy0/walt/zone_max_util_pct
+	echo 1190400 80 1632000 80 2208000 80 2515200 80 3014400 80 > /sys/devices/system/cpu/cpufreq/policy2/walt/zone_max_util_pct
+	echo 1190400 80 1632000 80 2208000 80 2515200 80 2803200 80 > /sys/devices/system/cpu/cpufreq/policy5/walt/zone_max_util_pct
+	echo 1228800 80 1670400 80 2169600 80 2515200 80 2956800 80 3206400 85 > /sys/devices/system/cpu/cpufreq/policy7/walt/zone_max_util_pct
 
 else
 	echo "schedutil" > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor

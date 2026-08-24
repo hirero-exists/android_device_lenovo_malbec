@@ -29,5 +29,8 @@ attribute hal_mlipay_server;
 attribute hal_mlipay_client;
 
 # Micharge
+attribute hal_micharge;
+attribute hal_micharge_server;
+attribute hal_micharge_client;
 
 # Touchfeature

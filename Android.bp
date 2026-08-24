@@ -6,9 +6,17 @@
 
 soong_namespace {
     imports: [
+        "hardware/google/interfaces",
         "hardware/lineage/interfaces/power-libperfmgr",
-        "hardware/qcom-caf/common/libqti-perfd-client",
     ],
+}
+
+cc_library_shared {
+    name: "pixel-power-ext-V1-ndk-install",
+    stem: "pixel-power-ext-V1-ndk",
+    vendor: true,
+    shared_libs: ["libbinder_ndk"],
+    whole_static_libs: ["pixel-power-ext-V1-ndk"],
 }
 
 install_symlink {
@@ -35,12 +43,5 @@ install_symlink {
 mkdir {
     name: "vendor_modem_firmware_mountpoint",
     dir: "modem_firmware",
-    vendor: true,
-}
-
-cc_library_shared {
-    name: "malbec-pixel-power-ext",
-    stem: "pixel-power-ext-V1-ndk",
-    whole_static_libs: ["pixel-power-ext-V1-ndk"],
     vendor: true,
 }

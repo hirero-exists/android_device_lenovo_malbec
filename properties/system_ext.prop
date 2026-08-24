@@ -4,6 +4,7 @@ dalvik.vm.dex2oat-minidebuginfo=false
 
 # Audio
 ro.audio.ihaladaptervendorextension_enabled=true
+service.sf.prime_shader_cache=false
 
 # Bluetooth
 bluetooth.device.class_of_device=90,2,12
@@ -21,4 +22,3 @@ ro.bluetooth.leaudio_offload.supported=true
 # Radio
 ro.telephony.sim_slots.count=2
 telephony.active_modems.max_count=2
-service.sf.prime_shader_cache=false
