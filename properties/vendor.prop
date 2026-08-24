@@ -72,8 +72,6 @@ persist.vendor.dpm.vndr.idletimer.mode=default
 # DRM
 drm.service.enabled=true
 
-# fingerprint: malbec has no under-display fingerprint (tablet) -- removed
-
 # FUSE
 persist.sys.fuse.passthrough.enable=true
 

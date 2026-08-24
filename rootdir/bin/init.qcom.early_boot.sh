@@ -69,41 +69,9 @@ else
 fi
 
 function set_density_by_fb() {
-    project=`getprop ro.product.device`
     #put default density based on width
     if [ -z $fb_width ]; then
-        case "$project" in
-            "haotian")
-            setprop vendor.display.lcd_density 600
-            ;;
-            "miro")
-            setprop vendor.display.lcd_density 600
-            ;;
-            "dada")
-            setprop vendor.display.lcd_density 520
-            ;;
-            "bixi")
-            setprop vendor.display.lcd_density 520
-            ;;
-            "malbec")
-            setprop vendor.display.lcd_density 520
-            ;;
-            "luming")
-            setprop vendor.display.lcd_density 520
-            ;;
-            "yupei")
-            setprop vendor.display.lcd_density 440
-            ;;
-            "piano")
-            setprop vendor.display.lcd_density 440
-            ;;
-            "annibale")
-            setprop vendor.display.lcd_density 480
-            ;;
-            *)
-            setprop vendor.display.lcd_density 440
-            ;;
-        esac
+        setprop vendor.display.lcd_density 320
     else
         if [ $fb_width -ge 1600 ]; then
            setprop vendor.display.lcd_density 640
@@ -118,35 +86,6 @@ function set_density_by_fb() {
         else
             setprop vendor.display.lcd_density 160
         fi
-        case "$project" in
-            "haotian")
-            setprop vendor.display.lcd_density 600
-            ;;
-            "miro")
-            setprop vendor.display.lcd_density 600
-            ;;
-            "dada")
-            setprop vendor.display.lcd_density 520
-            ;;
-            "bixi")
-            setprop vendor.display.lcd_density 520
-            ;;
-            "malbec")
-            setprop vendor.display.lcd_density 520
-            ;;
-            "luming")
-            setprop vendor.display.lcd_density 520
-            ;;
-            "yupei")
-            setprop vendor.display.lcd_density 440
-            ;;
-            "piano")
-            setprop vendor.display.lcd_density 440
-            ;;
-            "annibale")
-            setprop vendor.display.lcd_density 480
-            ;;
-        esac
     fi
 }
 
@@ -415,7 +354,7 @@ case "$target" in
         ;;
     "parrot")
          case "$soc_hwid" in
-             602|568|654|653|582|581)
+             602|568|654|653|582|581|715)
                  setprop vendor.fastrpc.disable.cdsprpcd.daemon 1
                  ;;
          esac
@@ -476,16 +415,6 @@ case "$target" in
                 ;;
         esac
         ;;
-esac
-
-device=`getprop ro.product.device`
-case "$device" in
-    "luming")
-    setprop vendor.display.supports_background_blur 1
-    ;;
-    "malbec")
-    setprop vendor.display.supports_background_blur 1
-    ;;
 esac
 
 baseband=`getprop ro.baseband`

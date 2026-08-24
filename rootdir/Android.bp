@@ -5,6 +5,12 @@ sh_binary {
 }
 
 sh_binary {
+    name: "init.crda.sh",
+    src: "bin/init.crda.sh",
+    vendor: true,
+}
+
+sh_binary {
     name: "init.kernel.init_boot-memory.sh",
     src: "bin/init.kernel.init_boot-memory.sh",
     vendor: true,
@@ -17,8 +23,38 @@ sh_binary {
 }
 
 sh_binary {
-    name: "init.kernel.post_boot-tuna.sh",
-    src: "bin/init.kernel.post_boot-tuna.sh",
+    name: "init.kernel.post_boot.sh",
+    src: "bin/init.kernel.post_boot.sh",
+    vendor: true,
+}
+
+sh_binary {
+    name: "init.kernel.post_boot-tuna_1_3_1_1.sh",
+    src: "bin/init.kernel.post_boot-tuna_1_3_1_1.sh",
+    vendor: true,
+}
+
+sh_binary {
+    name: "init.kernel.post_boot-tuna_1_3_2_1.sh",
+    src: "bin/init.kernel.post_boot-tuna_1_3_2_1.sh",
+    vendor: true,
+}
+
+sh_binary {
+    name: "init.kernel.post_boot-tuna_2_2_2_1.sh",
+    src: "bin/init.kernel.post_boot-tuna_2_2_2_1.sh",
+    vendor: true,
+}
+
+sh_binary {
+    name: "init.kernel.post_boot-tuna_2_3_1_1.sh",
+    src: "bin/init.kernel.post_boot-tuna_2_3_1_1.sh",
+    vendor: true,
+}
+
+sh_binary {
+    name: "init.kernel.post_boot-tuna_2_3_2_0.sh",
+    src: "bin/init.kernel.post_boot-tuna_2_3_2_0.sh",
     vendor: true,
 }
 
@@ -29,8 +65,38 @@ sh_binary {
 }
 
 sh_binary {
-    name: "init.kernel.post_boot.sh",
-    src: "bin/init.kernel.post_boot.sh",
+    name: "init.kernel.post_boot-tuna.sh",
+    src: "bin/init.kernel.post_boot-tuna.sh",
+    vendor: true,
+}
+
+sh_binary {
+    name: "init.qcom.cabl.high.sh",
+    src: "bin/init.qcom.cabl.high.sh",
+    vendor: true,
+}
+
+sh_binary {
+    name: "init.qcom.cabl.low.sh",
+    src: "bin/init.qcom.cabl.low.sh",
+    vendor: true,
+}
+
+sh_binary {
+    name: "init.qcom.cabl.medium.sh",
+    src: "bin/init.qcom.cabl.medium.sh",
+    vendor: true,
+}
+
+sh_binary {
+    name: "init.qcom.cabl.off.sh",
+    src: "bin/init.qcom.cabl.off.sh",
+    vendor: true,
+}
+
+sh_binary {
+    name: "init.qcom.cabl.sh",
+    src: "bin/init.qcom.cabl.sh",
     vendor: true,
 }
 
@@ -53,13 +119,32 @@ sh_binary {
 }
 
 sh_binary {
+    name: "init.qcom.sdio.sh",
+    src: "bin/init.qcom.sdio.sh",
+    vendor: true,
+}
+
+sh_binary {
     name: "init.qcom.sensors.sh",
     src: "bin/init.qcom.sensors.sh",
     vendor: true,
 }
+
 sh_binary {
     name: "init.qcom.sh",
     src: "bin/init.qcom.sh",
+    vendor: true,
+}
+
+sh_binary {
+    name: "init.qcom.svi.off.sh",
+    src: "bin/init.qcom.svi.off.sh",
+    vendor: true,
+}
+
+sh_binary {
+    name: "init.qcom.svi.sh",
+    src: "bin/init.qcom.svi.sh",
     vendor: true,
 }
 
@@ -76,42 +161,20 @@ sh_binary {
 }
 
 sh_binary {
-    name: "init.qti.write.sh",
-    src: "bin/init.qti.write.sh",
+    name: "init.qti.qcv.sh",
+    src: "bin/init.qti.qcv.sh",
     vendor: true,
 }
 
-// malbec: init.qcrild.sh (RIL bring-up) removed -- Wi-Fi only tablet.
-
-prebuilt_etc {
-    name: "charger_fw_fstab.qti",
-    src: "etc/charger_fw_fstab.qti",
+sh_binary {
+    name: "init.qti.write.sh",
+    src: "bin/init.qti.write.sh",
     vendor: true,
 }
 
 prebuilt_etc {
     name: "fstab.qcom",
     src: "etc/fstab.qcom",
-    vendor: true,
-}
-
-prebuilt_etc {
-    name: "fw_dir.ueventd.qcom.rc",
-    src: "etc/fw_dir.ueventd.qcom.rc",
-    vendor: true,
-}
-
-prebuilt_etc {
-    name: "init.qcom.factory.rc",
-    src: "etc/init.qcom.factory.rc",
-    sub_dir: "init/hw",
-    vendor: true,
-}
-
-prebuilt_etc {
-    name: "init.qcom.rc",
-    src: "etc/init.qcom.rc",
-    sub_dir: "init/hw",
     vendor: true,
 }
 
@@ -123,14 +186,23 @@ prebuilt_etc {
 }
 
 prebuilt_etc {
+    name: "init.qcom.rc",
+    src: "etc/init.qcom.rc",
+    sub_dir: "init/hw",
+    vendor: true,
+}
+
+prebuilt_etc {
     name: "init.qti.kernel.rc",
     src: "etc/init.qti.kernel.rc",
+    sub_dir: "init/hw",
     vendor: true,
 }
 
 prebuilt_etc {
     name: "init.qti.kernel.target.rc",
     src: "etc/init.qti.kernel.target.rc",
+    sub_dir: "init/hw",
     vendor: true,
 }
 
@@ -138,19 +210,5 @@ prebuilt_etc {
     name: "init.target.rc",
     src: "etc/init.target.rc",
     sub_dir: "init/hw",
-    vendor: true,
-}
-
-prebuilt_etc {
-    name: "ueventd-odm.rc",
-    filename: "ueventd.rc",
-    src: "etc/ueventd-odm.rc",
-    device_specific: true,
-}
-
-prebuilt_etc {
-    name: "ueventd.qcom.rc",
-    filename: "ueventd.rc",
-    src: "etc/ueventd.qcom.rc",
     vendor: true,
 }

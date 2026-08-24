@@ -14,6 +14,10 @@ $(call inherit-product, vendor/lineage/config/common_full_tablet_wifionly.mk)
 # Inherit from malbec device
 $(call inherit-product, device/lenovo/malbec/device.mk)
 
+# TEMP** (kernel-headers)
+#$(shell bash device/lenovo/malbec-kernel/setup-kernel-headers.sh $(abspath .))
+$(info $(shell bash device/lenovo/malbec-kernel/setup-kernel-headers.sh $(abspath .)))
+
 PRODUCT_NAME := lineage_malbec
 PRODUCT_DEVICE := malbec
 PRODUCT_MANUFACTURER := Lenovo
@@ -25,8 +29,9 @@ PRODUCT_SYSTEM_DEVICE := malbec
 
 PRODUCT_BUILD_PROP_OVERRIDES += \
     BuildDesc="TB390FU-user 16 BQ2A.250610.001-BP2A.250605.031.A3 18.0.10.061_260316 release-keys" \
-    BuildFingerprint=Lenovo/TB390FU/TB390FU:16/BQ2A.250610.001-BP2A.250605.031.A3/ZUI_18.0.10.061_260316_ROW:user/release-keys
+    BuildFingerprint=Lenovo/TB390FU/TB390FU:16/BQ2A.250610.001-BP2A.250605.031.A3/ZUI_18.0.10.061_260316_ROW:user/release-keys \
     DeviceName=$(PRODUCT_SYSTEM_DEVICE) \
     DeviceProduct=$(PRODUCT_SYSTEM_NAME)
 
 PRODUCT_GMS_CLIENTID_BASE := android-lenovo
+
