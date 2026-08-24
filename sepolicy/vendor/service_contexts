@@ -2,6 +2,7 @@
 
 # Charge
 
+# Citsensor
 
 # Displayfeature
 
@@ -15,3 +16,7 @@ vendor.dolby.dvs.IDvs/default u:object_r:dvs_aidl_service:s0
 # HypSys
 
 # Media
+
+# Mlipay
+
+# Touchfeature

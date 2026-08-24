@@ -57,3 +57,4 @@ type proc_walt, fs_type, proc_type;
 
 # Wlan
 type vendor_mac_vendor_data_file, data_file_type, file_type, mlstrustedobject;
+type vendor_smart_charge_device, dev_type;

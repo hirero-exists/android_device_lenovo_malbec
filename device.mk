@@ -10,18 +10,22 @@ $(call inherit-product, $(SRC_TARGET_DIR)/product/generic_ramdisk.mk)
 $(call inherit-product, $(SRC_TARGET_DIR)/product/emulated_storage.mk)
 
 # Virtual A/B (with compression -- pulled in by the group defaults)
-$(call inherit-product, $(SRC_TARGET_DIR)/product/virtual_ab_ota/launch_with_vendor_ramdisk.mk)
+$(call inherit-product, $(SRC_TARGET_DIR)/product/virtual_ab_ota/compression_with_xor.mk)
 
-# Dalvik vm configs -- tablet, 8 GB. Use a larger heap profile than the phone.
-$(call inherit-product, frameworks/native/build/tablet-10in-xhdpi-2048-dalvik-heap.mk)
+# Dalvik vm configs
+# 6144 is the largest profile AOSP ships and is the right one for this 8 GB device.
+# The "phone" in the name is historical; the profiles are keyed on RAM and density.
+$(call inherit-product, frameworks/native/build/phone-xhdpi-6144-dalvik-heap.mk)
 
 # pKVM
 $(call inherit-product, packages/modules/Virtualization/apex/product_packages.mk)
 
 # Qualcomm
 $(call soong_config_set,rfs,mpss_firmware_symlink_target,modem_firmware)
-$(call soong_config_set_bool,recovery,target_recovery_uses_qti_drm,true)
 $(call inherit-product, hardware/qcom-caf/common/common.mk)
+
+PRODUCT_VENDOR_LINKER_CONFIG_FRAGMENTS += \
+    hardware/qcom-caf/common/linker.config.json
 
 AB_OTA_POSTINSTALL_CONFIG += \
     RUN_POSTINSTALL_system=true \
@@ -37,15 +41,12 @@ AB_OTA_POSTINSTALL_CONFIG += \
 
 PRODUCT_PACKAGES += \
     checkpoint_gc \
-    malbec_ks2_wrapper.sh \
     otapreopt_script
 
-
 # API
-BOARD_SHIPPING_API_LEVEL := 202404
-PRODUCT_SHIPPING_API_LEVEL := 35
+BOARD_SHIPPING_API_LEVEL := 202504
+PRODUCT_SHIPPING_API_LEVEL := 36
 
-# Audio (sun platform)
 PRODUCT_PACKAGES += \
     audiohalservice.qti \
     qtiaudiohalvendorextn
@@ -90,7 +91,8 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     manifest_audiocorehal_default.xml \
     audioeffectservice_qti.xml \
-    libaudioeffecthal.qti
+    libaudioeffecthal.qti \
+    libsoundtriggerhal.qti
 
 AUDIO_HAL_DIR := hardware/qcom-caf/sm8750/audio/primary-hal
 
@@ -133,6 +135,9 @@ PRODUCT_PACKAGES += \
     android.hardware.boot-service.qti \
     android.hardware.boot-service.qti.recovery
 
+# Recovery
+$(call soong_config_set_bool,recovery,target_recovery_uses_qti_drm,true)
+
 # Camera (tablet has front + rear cameras; permissions only)
 PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.camera.flash-autofocus.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.camera.flash-autofocus.xml \
@@ -149,16 +154,16 @@ PRODUCT_SET_DEBUGFS_RESTRICTIONS := true
 PRODUCT_PACKAGES += \
     init.qti.display_boot.rc \
     init.qti.display_boot.sh \
-    vendor.qti.hardware.display.demura-V1-ndk.vendor \
-    vendor.qti.hardware.display.mapperextensions@1.2.vendor \
-    vendor.qti.hardware.display.mapperextensions@1.3.vendor \
     vendor.qti.hardware.display.snapalloc-impl
 
 PRODUCT_PACKAGES += \
     android.hardware.graphics.composer3-V3-ndk.vendor \
     vendor.qti.hardware.display.aiqe-V2-ndk.vendor  \
     vendor.qti.hardware.display.config-V12-ndk.vendor  \
-    vendor.qti.hardware.display.composer3-V1-ndk.vendor 
+    vendor.qti.hardware.display.composer3-V1-ndk.vendor \
+    vendor.qti.hardware.display.demura-V1-ndk.vendor \
+    vendor.qti.hardware.display.mapperextensions@1.2.vendor \
+    vendor.qti.hardware.display.mapperextensions@1.3.vendor
 
 # DRM
 PRODUCT_PACKAGES += \
@@ -167,13 +172,6 @@ PRODUCT_PACKAGES += \
 # Fastbootd
 PRODUCT_PACKAGES += \
     fastbootd
-
-PRODUCT_COPY_FILES += \
-    vendor/lenovo/malbec/proprietary/vendor/bin/hw/vendor.qti.hardware.display.composer-service:vendor/bin/hw/vendor.qti.hardware.display.composer-service
-
-PRODUCT_COPY_FILES += \
-    vendor/lenovo/malbec/proprietary/vendor/lib64/libtinyxml2.so:vendor/lib64/libtinyxml2.so \
-    vendor/lenovo/malbec/proprietary/vendor/lib64/libeffectsconfig.so:vendor/lib64/libeffectsconfig.so
 
 # Graphics
 TARGET_USES_VULKAN = true
@@ -206,38 +204,49 @@ PRODUCT_PACKAGES += \
 
 # Init
 PRODUCT_PACKAGES += \
-    charger_fw_fstab.qti \
-    fstab.qcom
-
-PRODUCT_PACKAGES += \
-    fw_dir.ueventd.qcom.rc \
-    ueventd-odm.rc \
-    ueventd.qcom.rc
-
-PRODUCT_PACKAGES += \
-    init.qcom.factory.rc \
+    fstab.qcom \
     init.qcom.rc \
-    init.recovery.qcom.rc \
     init.qti.kernel.rc \
     init.qti.kernel.target.rc \
     init.target.rc
 
 PRODUCT_PACKAGES += \
+    init.recovery.qcom.rc
+
+PRODUCT_PACKAGES += \
     init.class_main.sh \
+    init.crda.sh \
     init.kernel.init_boot-memory.sh \
     init.kernel.post_boot-memory.sh \
     init.kernel.post_boot.sh \
+    init.kernel.post_boot-tuna_1_3_1_1.sh \
+    init.kernel.post_boot-tuna_1_3_2_1.sh \
+    init.kernel.post_boot-tuna_2_2_2_1.sh \
+    init.kernel.post_boot-tuna_2_3_1_1.sh \
+    init.kernel.post_boot-tuna_2_3_2_0.sh \
+    init.kernel.post_boot-tuna_default_2_3_2_1.sh \
+    init.kernel.post_boot-tuna.sh \
+    init.qcom.cabl.high.sh \
+    init.qcom.cabl.low.sh \
+    init.qcom.cabl.medium.sh \
+    init.qcom.cabl.off.sh \
+    init.qcom.cabl.sh \
     init.qcom.class_core.sh \
     init.qcom.early_boot.sh \
     init.qcom.post_boot.sh \
+    init.qcom.sdio.sh \
     init.qcom.sensors.sh \
     init.qcom.sh \
+    init.qcom.svi.off.sh \
+    init.qcom.svi.sh \
     init.qti.kernel.sh \
     init.qti.media.sh \
+    init.qti.qcv.sh \
     init.qti.write.sh
 
 PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/rootdir/etc/fstab.qcom:$(TARGET_COPY_OUT_VENDOR_RAMDISK)/first_stage_ramdisk/fstab.qcom
+    $(LOCAL_PATH)/rootdir/etc/fstab.qcom:$(TARGET_COPY_OUT_VENDOR_RAMDISK)/first_stage_ramdisk/fstab.qcom \
+    $(LOCAL_PATH)/rootdir/etc/fstab.qcom:$(TARGET_COPY_OUT_VENDOR_RAMDISK)/first_stage_ramdisk/fstab.qcom.dm
 
 PRODUCT_PACKAGES += \
     android.hardware.hardware_keystore_V3.xml
@@ -249,7 +258,7 @@ PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.software.device_id_attestation.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.software.device_id_attestation.xml \
     frameworks/native/data/etc/android.hardware.keystore.app_attest_key.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.keystore.app_attest_key.xml
 
-# Lineage Health (charging control -- verify the sysfs path on malbec)
+# Lineage Health
 PRODUCT_PACKAGES += \
     vendor.lineage.health-service.default
 
@@ -299,7 +308,7 @@ PRODUCT_COPY_FILES += \
 PRODUCT_PACKAGES += \
     android.hardware.power-service.lineage-libperfmgr \
     libperfmgr.vendor \
-    malbec-pixel-power-ext
+    pixel-power-ext-V1-ndk-install
 
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/configs/power/powerhint.json:$(TARGET_COPY_OUT_VENDOR)/etc/powerhint.json
@@ -315,11 +324,15 @@ PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.sensor.stepcounter.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.sensor.stepcounter.xml \
     frameworks/native/data/etc/android.hardware.sensor.stepdetector.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.sensor.stepdetector.xml
 
+# Screen
+TARGET_SCREEN_HEIGHT := 3504
+TARGET_SCREEN_WIDTH := 2190
+
 # Soong namespaces
 PRODUCT_SOONG_NAMESPACES += \
     $(LOCAL_PATH) \
+    hardware/google/pixel \
     hardware/lineage/interfaces/power-libperfmgr \
-    hardware/qcom-caf/common/libqti-perfd-client
 
 # Thermal
 PRODUCT_PACKAGES += \
@@ -386,7 +399,6 @@ PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.wifi.passpoint.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.wifi.passpoint.xml \
     frameworks/native/data/etc/android.hardware.wifi.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.wifi.xml \
     frameworks/native/data/etc/android.hardware.wifi.aware.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.wifi.aware.xml
-
 
 # Vendor
 $(call inherit-product, vendor/lenovo/malbec/malbec-vendor.mk)
