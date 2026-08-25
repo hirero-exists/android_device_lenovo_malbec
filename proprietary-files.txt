@@ -1,6 +1,7 @@
 # Unpinned blobs from TB390FU-user 16 BQ2A.250610.001-BP2A.250605.031.A3 18.0.10.061_260316 release-keys
 
 # ACDB
+vendor/bin/hw/android.hardware.bluetooth@aidl-service-qti
 vendor/etc/acdbdata/IDP_UPD/IDP_UPD_acdb_cal.acdb
 vendor/etc/acdbdata/IDP_UPD/IDP_UPD_workspaceFileXml.qwsp
 vendor/etc/acdbdata/ffv_models/ffv__5.0.2_0.1__eai_4.8_enpu_v5.pmd
@@ -106,6 +107,12 @@ vendor/bin/system_dlkm_modprobe.sh
 # ADSP
 vendor/bin/adsprpcd
 vendor/etc/init/vendor.qti.adsprpc-guestos-service.rc
+vendor/lib64/hw/android.hardware.bluetooth.lmp_event-impl-qti.so
+vendor/lib64/hw/android.hardware.bluetooth.ranging@aidl-impl-qti.so
+vendor/lib64/hw/android.hardware.bluetooth@1.0-impl-qti.so
+vendor/lib64/hw/android.hardware.bluetooth@aidl-impl-qti.so
+vendor/lib64/hw/vendor.qti.hardware.bluetooth.finder-impl-qti.so
+vendor/lib64/hw/vendor.qti.hardware.bluetooth_sar@aidl-impl.so
 vendor/lib64/libadsp_default_listener.so
 vendor/lib64/libadsprpc.so
 # ADSP modules
