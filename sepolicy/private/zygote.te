@@ -1,0 +1,2 @@
+allow zygote ab_update_gki_prop:file { getattr map open };
+allow zygote aac_drc_prop:file { getattr map open };
