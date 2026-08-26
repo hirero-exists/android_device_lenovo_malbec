@@ -113,6 +113,14 @@ blob_fixups: blob_fixups_user_type = {
         r'\1    user system\n',
     ),
 
+    'vendor/etc/ueventd.rc': blob_fixup()
+        .add_line_if_missing(
+            '/sys/class/power_supply/battery charging_enabled 0664 system system',
+        )
+        .add_line_if_missing(
+            '/sys/class/power_supply/battery input_suspend 0664 system system',
+        ),
+
     'vendor/lib64/libaudioserviceexampleimpl.so': blob_fixup()
         .add_needed('libaudioutils_shim.so'),
 
