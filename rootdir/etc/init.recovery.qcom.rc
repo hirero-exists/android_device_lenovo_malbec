@@ -54,7 +54,8 @@ on fs
     write /proc/sys/kernel/firmware_config/force_sysfs_fallback 1
     mkdir /vendor/firmware_mnt
     mkdir /vendor/firmware
-    mount_all /vendor/etc/charger_fstab.qti --early
+    wait /dev/block/bootdevice/by-name/modem
+    mount vfat /dev/block/bootdevice/by-name/modem /vendor/firmware_mnt ro shortname=lower,uid=1000,gid=1000,dmask=227,fmask=337,context=u:object_r:firmware_file:s0
     mount none /vendor/firmware_mnt/image /vendor/firmware bind rec
     wait /sys/kernel/boot_adsp/ssr
     write /sys/kernel/boot_adsp/ssr 1
