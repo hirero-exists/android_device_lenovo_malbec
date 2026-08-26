@@ -1,0 +1,2 @@
+allow vendor_hal_perf_default proc_walt:dir search;
+allow vendor_hal_perf_default proc_walt:file { open write read getattr };
