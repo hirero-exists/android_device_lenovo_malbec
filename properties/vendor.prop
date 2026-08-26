@@ -144,6 +144,7 @@ vendor.display.enable_async_vds_creation=1
 vendor.display.enable_dpps_dynamic_fps=1
 vendor.display.enable_hdr10_gpu_target=1
 vendor.display.enable_optimize_refresh=0
+debug.renderengine.backend=skiavk
 vendor.display.enable_rc_support=1
 vendor.display.use_smooth_motion=1
 vendor.display.vds_allow_hwc=1
@@ -214,4 +215,3 @@ vendor.usb.use_gadget_hal=1
 
 # WiFi
 wifi.aware.interface=wifi-aware0
-debug.renderengine.backend=skiavk
