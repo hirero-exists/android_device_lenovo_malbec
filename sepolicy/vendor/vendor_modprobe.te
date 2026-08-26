@@ -1,4 +1,3 @@
-# vendor_modprobe (watchdog) reads /proc of these vendor services
 allow vendor_modprobe hal_bootctl_default:dir { getattr search };
 allow vendor_modprobe hal_bootctl_default:file { open read };
 allow vendor_modprobe hal_tetheroffload_default:dir { getattr search };
@@ -9,8 +8,6 @@ allow vendor_modprobe vendor_hal_keymint_qti:dir { getattr search };
 allow vendor_modprobe vendor_hal_keymint_qti:file { open read };
 allow vendor_modprobe vendor_hal_qseecom_default:dir { getattr search };
 allow vendor_modprobe vendor_hal_qseecom_default:file { open read };
-
-# read-only access to every property file (single attribute rule)
 allow vendor_modprobe property_type:file { getattr map open };
 allow vendor_modprobe vendor_shell_exec:file { entrypoint };
 allow vendor_modprobe vendor_wifi_version:file { getattr map open };
