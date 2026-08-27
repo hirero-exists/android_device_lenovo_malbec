@@ -24,21 +24,7 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-on early-init
-    insmod /vendor/lib/modules/q6_pdr_dlkm.ko
-    insmod /vendor/lib/modules/q6_notifier_dlkm.ko
-    insmod /vendor/lib/modules/snd_event_dlkm.ko
-    insmod /vendor/lib/modules/gpr_dlkm.ko
-    insmod /vendor/lib/modules/spf_core_dlkm.ko
-    insmod /vendor/lib/modules/adsp_loader_dlkm.ko
-
 on init
-# Break the dead AOSP symlink and inject our real ADB key
-    rm /adb_keys
-    copy /adb_keys_dev /adb_keys
-    chown system shell /adb_keys
-    chmod 0640 /adb_keys
-
     write /sys/class/backlight/panel0-backlight/brightness 200
     setprop sys.usb.configfs 1
 
@@ -54,10 +40,9 @@ on fs
     write /proc/sys/kernel/firmware_config/force_sysfs_fallback 1
     mkdir /vendor/firmware_mnt
     mkdir /vendor/firmware
-    wait /dev/block/bootdevice/by-name/modem
-    mount vfat /dev/block/bootdevice/by-name/modem /vendor/firmware_mnt ro shortname=lower,uid=1000,gid=1000,dmask=227,fmask=337,context=u:object_r:firmware_file:s0
+    wait /dev/block/bootdevice/by-name/modem${ro.boot.slot_suffix}
+    mount vfat /dev/block/bootdevice/by-name/modem${ro.boot.slot_suffix} /vendor/firmware_mnt ro shortname=lower,dmask=222,fmask=222,context=u:object_r:firmware_file:s0
     mount none /vendor/firmware_mnt/image /vendor/firmware bind rec
-    wait /sys/kernel/boot_adsp/ssr
-    write /sys/kernel/boot_adsp/ssr 1
+    write /sys/class/remoteproc/remoteproc1/state start
     wait /sys/class/power_supply/battery/capacity
 # END Recovery_StabilityEnhance
