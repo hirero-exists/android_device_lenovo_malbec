@@ -302,6 +302,7 @@ PRODUCT_PACKAGES += \
 
 # Permissions
 PRODUCT_COPY_FILES += \
+    frameworks/native/data/etc/handheld_core_hardware.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/handheld_core_hardware.xml \
     frameworks/native/data/etc/android.software.ipsec_tunnel_migration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.software.ipsec_tunnel_migration.xml
 
 # Power
@@ -315,6 +316,9 @@ PRODUCT_COPY_FILES += \
 
 # Reduce system server verbosity.
 PRODUCT_SYSTEM_SERVER_DEBUG_INFO := false
+
+PRODUCT_PACKAGES += \
+    android.hardware.sensors-service.multihal
 
 PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.sensor.accelerometer.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.sensor.accelerometer.xml \
