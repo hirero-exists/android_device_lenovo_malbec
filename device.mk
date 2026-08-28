@@ -305,15 +305,6 @@ PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/handheld_core_hardware.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/handheld_core_hardware.xml \
     frameworks/native/data/etc/android.software.ipsec_tunnel_migration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.software.ipsec_tunnel_migration.xml
 
-# Power
-PRODUCT_PACKAGES += \
-    android.hardware.power-service.lineage-libperfmgr \
-    libperfmgr.vendor \
-    pixel-power-ext-V1-ndk-install
-
-PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/configs/power/powerhint.json:$(TARGET_COPY_OUT_VENDOR)/etc/powerhint.json
-
 # Reduce system server verbosity.
 PRODUCT_SYSTEM_SERVER_DEBUG_INFO := false
 
@@ -334,9 +325,7 @@ TARGET_SCREEN_WIDTH := 2190
 
 # Soong namespaces
 PRODUCT_SOONG_NAMESPACES += \
-    $(LOCAL_PATH) \
-    hardware/google/pixel \
-    hardware/lineage/interfaces/power-libperfmgr \
+    $(LOCAL_PATH)
 
 # Thermal
 PRODUCT_PACKAGES += \
@@ -344,7 +333,8 @@ PRODUCT_PACKAGES += \
 
 # Touchscreen (Novatek NT36536E, active pen supported)
 PRODUCT_COPY_FILES += \
-    frameworks/native/data/etc/android.hardware.touchscreen.multitouch.jazzhand.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.touchscreen.multitouch.jazzhand.xml
+    frameworks/native/data/etc/android.hardware.touchscreen.multitouch.jazzhand.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.touchscreen.multitouch.jazzhand.xml \
+    $(LOCAL_PATH)/configs/keylayout/hall_irq.kl:$(TARGET_COPY_OUT_SYSTEM)/usr/keylayout/hall_irq.kl
 
 # Update engine
 PRODUCT_PACKAGES += \
