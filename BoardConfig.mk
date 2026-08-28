@@ -32,7 +32,7 @@ TARGET_ARCH := arm64
 TARGET_ARCH_VARIANT := armv8-2a-dotprod
 TARGET_CPU_ABI := arm64-v8a
 TARGET_CPU_VARIANT := generic
-TARGET_CPU_VARIANT_RUNTIME := cortex-a76
+TARGET_CPU_VARIANT_RUNTIME := oryon
 
 # Audio (sun platform - carried over unchanged)
 AUDIO_FEATURE_ENABLED_DLKM := true
@@ -57,6 +57,7 @@ TARGET_BOARD_PLATFORM_GPU := Adreno-825
 TARGET_USES_VULKAN := true
 
 # Display
+TARGET_BOOTANIMATION := vendor/lenovo/malbec/proprietary/system/media/bootanimation.zip
 TARGET_SCREEN_DENSITY := 360
 
 # Filesystem
@@ -197,7 +198,6 @@ TARGET_RECOVERY_PIXEL_FORMAT := RGBX_8888
 TARGET_USERIMAGES_USE_F2FS := true
 
 # Sepolicy
-include device/lineage/sepolicy/libperfmgr/sepolicy.mk
 include device/qcom/sepolicy_vndr/SEPolicy.mk
 SYSTEM_EXT_PRIVATE_SEPOLICY_DIRS += $(DEVICE_PATH)/sepolicy/private
 BOARD_VENDOR_SEPOLICY_DIRS += $(DEVICE_PATH)/sepolicy/vendor

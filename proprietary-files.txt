@@ -1,5 +1,7 @@
 # Unpinned blobs from TB390FU-user 16 BQ2A.250610.001-BP2A.250605.031.A3 18.0.10.061_260316 release-keys
 
+system/media/bootanimation.zip;EXTRACT_ONLY
+
 # ACDB
 vendor/etc/acdbdata/IDP_UPD/IDP_UPD_acdb_cal.acdb
 vendor/etc/acdbdata/IDP_UPD/IDP_UPD_workspaceFileXml.qwsp
@@ -296,6 +298,7 @@ vendor/bin/hw/android.hardware.bluetooth@aidl-service-qti
 vendor/etc/init/android.hardware.bluetooth@aidl-service-qti.rc
 vendor/lib64/hw/android.hardware.bluetooth@1.0-impl-qti.so
 vendor/lib64/hw/android.hardware.bluetooth@aidl-impl-qti.so
+vendor/lib64/hw/android.hardware.bluetooth.audio_sw.so
 vendor/lib64/hw/android.hardware.bluetooth.lmp_event-impl-qti.so
 vendor/lib64/hw/android.hardware.bluetooth.ranging@aidl-impl-qti.so
 vendor/lib64/hw/vendor.qti.hardware.bluetooth.finder-impl-qti.so
@@ -494,6 +497,7 @@ vendor/lib64/libcamxhwnodecontext.so
 vendor/lib64/libcamxifestriping.so
 vendor/lib64/libcamxncsdatafactory.so
 vendor/lib64/libcamxofehwl.so
+vendor/lib64/libofestriping.so
 vendor/lib64/libcamxqsatalgo.so
 vendor/lib64/libcamxsettingsmanager.so
 vendor/lib64/libcamxstatscore.so
@@ -1193,6 +1197,7 @@ vendor/lib64/vendor.qti.hardware.iop@2.0.so
 # Power
 vendor/bin/hw/android.hardware.power-service
 vendor/etc/init/android.hardware.power-service.rc
+vendor/etc/vintf/manifest/power.xml:vendor/etc/vintf/manifest/power-stock.xml
 vendor/etc/vintf/manifest/vendor.qti.hardware.power.powermodule.xml
 vendor/lib64/vendor.qti.hardware.power.powermodule-V1-ndk.so
 

@@ -5,18 +5,6 @@
 
 
 soong_namespace {
-    imports: [
-        "hardware/google/interfaces",
-        "hardware/lineage/interfaces/power-libperfmgr",
-    ],
-}
-
-cc_library_shared {
-    name: "pixel-power-ext-V1-ndk-install",
-    stem: "pixel-power-ext-V1-ndk",
-    vendor: true,
-    shared_libs: ["libbinder_ndk"],
-    whole_static_libs: ["pixel-power-ext-V1-ndk"],
 }
 
 install_symlink {

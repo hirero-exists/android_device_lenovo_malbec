@@ -8,6 +8,7 @@ vendor_restricted_prop(vendor_aware_available_prop);
 vendor_public_prop(vendor_camera_p3enable_prop)
 vendor_public_prop(vendor_camera_sensor_prop)
 vendor_public_prop(vendor_camera_xdrversion_prop)
+vendor_restricted_prop(vendor_cam_prop)
 
 # Displayfeature
 vendor_public_prop(vendor_displayfeature_prop)
