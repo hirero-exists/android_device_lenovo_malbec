@@ -6,6 +6,7 @@ type vendor_intentaware_service, hal_service_type, protected_service, service_ma
 set_prop(hal_camera, vendor_camera_sensor_prop)
 set_prop(hal_camera_default, vendor_camera_p3enable_prop)
 set_prop(hal_camera_default, vendor_camera_xdrversion_prop)
+set_prop(hal_camera_default, vendor_cam_prop)
 get_prop(hal_camera_default, bpf_progs_loaded_prop)
 
 r_dir_file(hal_camera_default, camera_persist_file)
