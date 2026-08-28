@@ -315,6 +315,7 @@ vendor/lib64/vendor.qti.hardware.bttpi-V3-ndk.so
 
 # Bluetooth (A2DP)
 system_ext/lib64/com.qualcomm.qti.bluetooth_audio@1.0.so
+vendor/lib64/hw/android.hardware.bluetooth.audio-impl-qti.so
 vendor/lib64/hw/vendor.qti.hardware.bluetooth_audio@2.0-impl.so
 vendor/lib64/hw/vendor.qti.hardware.bluetooth_audio@2.1-impl.so
 vendor/lib64/libbluetooth_audio_session_aidl_qti.so
