@@ -57,7 +57,8 @@ TARGET_BOARD_PLATFORM_GPU := Adreno-825
 TARGET_USES_VULKAN := true
 
 # Display
-TARGET_BOOTANIMATION := vendor/lenovo/malbec/proprietary/system/media/bootanimation.zip
+TARGET_SCREEN_HEIGHT := 3504
+TARGET_SCREEN_WIDTH := 2190
 TARGET_SCREEN_DENSITY := 360
 
 # Filesystem

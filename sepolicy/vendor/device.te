@@ -9,4 +9,6 @@ type vendor_displaylog_device, dev_type;
 
 # Fingerprint
 
+type lenovo_keyboard_device, dev_type;
+
 # Touchfeature

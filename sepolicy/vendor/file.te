@@ -26,6 +26,9 @@ type sysfs_tp_fodstatus, fs_type, sysfs_type;
 # Info
 type vendor_sysfs_hardwareinfo, fs_type, sysfs_type;
 
+type sysfs_kb, fs_type, sysfs_type;
+type proc_lenovo_touchscreen, fs_type, proc_type;
+
 # IR
 type ir_spi_device, dev_type;
 

@@ -1,0 +1,15 @@
+type hal_lenovotouchscreen_default, domain;
+type hal_lenovotouchscreen_default_exec, exec_type, file_type, vendor_file_type;
+type hal_lenovotouchscreen_service, hal_service_type, service_manager_type;
+
+binder_use(hal_lenovotouchscreen_default)
+hal_server_domain(hal_lenovotouchscreen_default, hal_lenovotouchscreen)
+init_daemon_domain(hal_lenovotouchscreen_default)
+
+hal_client_domain(dumpstate, hal_lenovotouchscreen)
+hal_client_domain(platform_app, hal_lenovotouchscreen)
+hal_client_domain(system_app, hal_lenovotouchscreen)
+hal_client_domain(system_server, hal_lenovotouchscreen)
+hal_attribute_service(hal_lenovotouchscreen, hal_lenovotouchscreen_service)
+
+allow hal_lenovotouchscreen_default proc_lenovo_touchscreen:file rw_file_perms;
