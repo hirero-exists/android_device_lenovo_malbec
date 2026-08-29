@@ -83,6 +83,10 @@
 # IR
 /dev/ir_spi u:object_r:ir_spi_device:s0
 
+/dev/ttyHS1 u:object_r:lenovo_keyboard_device:s0
+/(vendor|system/vendor)/bin/hw/vendor\.lenovo\.hardware\.keyboard-service u:object_r:hal_lenovokeyboard_default_exec:s0
+/(vendor|system/vendor)/bin/hw/vendor\.lenovo\.hardware\.touchscreen-service u:object_r:hal_lenovotouchscreen_default_exec:s0
+
 # Media
 /vendor/bin/hw/android\.hardware\.media\.c2-mi-service u:object_r:mediacodec_exec:s0
 

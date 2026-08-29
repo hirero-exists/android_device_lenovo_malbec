@@ -23,6 +23,9 @@ attribute hal_aidl_dms_server;
 # Hypsys
 attribute hal_hypsys_vendor_service_client;
 
+hal_attribute(lenovokeyboard)
+hal_attribute(lenovotouchscreen)
+
 # Mlipay
 attribute hal_mlipay;
 attribute hal_mlipay_server;

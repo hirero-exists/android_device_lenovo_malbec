@@ -1,7 +1,5 @@
 # Unpinned blobs from TB390FU-user 16 BQ2A.250610.001-BP2A.250605.031.A3 18.0.10.061_260316 release-keys
 
-system/media/bootanimation.zip;EXTRACT_ONLY
-
 # ACDB
 vendor/etc/acdbdata/IDP_UPD/IDP_UPD_acdb_cal.acdb
 vendor/etc/acdbdata/IDP_UPD/IDP_UPD_workspaceFileXml.qwsp
@@ -2179,7 +2177,7 @@ vendor/etc/vintf/manifest/qspa/qspa-nav.xml
 vendor/etc/vintf/manifest/ImsRtpService-aidl.xml
 vendor/etc/vintf/manifest/bcs-ranging.xml
 vendor/etc/vintf/manifest/bluetooth-finder.xml
-vendor/etc/vintf/manifest/bluetooth_audio.xml
+vendor/etc/vintf/manifest/bluetooth_audio.xml:vendor/etc/vintf/manifest/bluetooth_audio_qti.xml
 vendor/etc/vintf/manifest/bluetooth_hci.xml
 vendor/etc/vintf/manifest/bluetooth_sar.xml
 vendor/etc/vintf/manifest/bt_lmp_event-saidl.xml
