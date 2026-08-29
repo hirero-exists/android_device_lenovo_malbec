@@ -319,10 +319,6 @@ PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.sensor.stepcounter.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.sensor.stepcounter.xml \
     frameworks/native/data/etc/android.hardware.sensor.stepdetector.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.sensor.stepdetector.xml
 
-# Screen
-TARGET_SCREEN_HEIGHT := 3504
-TARGET_SCREEN_WIDTH := 2190
-
 # Soong namespaces
 PRODUCT_SOONG_NAMESPACES += \
     $(LOCAL_PATH)
@@ -334,7 +330,7 @@ PRODUCT_PACKAGES += \
 # Touchscreen (Novatek NT36536E, active pen supported)
 PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.touchscreen.multitouch.jazzhand.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.touchscreen.multitouch.jazzhand.xml \
-    $(LOCAL_PATH)/configs/keylayout/hall_irq.kl:$(TARGET_COPY_OUT_SYSTEM)/usr/keylayout/hall_irq.kl
+    $(LOCAL_PATH)/configs/keylayout/hall_irq.kl:$(TARGET_COPY_OUT_VENDOR)/usr/keylayout/hall_irq.kl
 
 # Update engine
 PRODUCT_PACKAGES += \

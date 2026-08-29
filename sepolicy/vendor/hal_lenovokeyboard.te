@@ -1,0 +1,18 @@
+type hal_lenovokeyboard_default, domain;
+type hal_lenovokeyboard_default_exec, exec_type, file_type, vendor_file_type;
+type hal_lenovokeyboard_service, hal_service_type, service_manager_type;
+
+binder_use(hal_lenovokeyboard_default)
+hal_server_domain(hal_lenovokeyboard_default, hal_lenovokeyboard)
+init_daemon_domain(hal_lenovokeyboard_default)
+
+hal_client_domain(dumpstate, hal_lenovokeyboard)
+hal_client_domain(platform_app, hal_lenovokeyboard)
+hal_client_domain(system_app, hal_lenovokeyboard)
+hal_client_domain(system_server, hal_lenovokeyboard)
+hal_attribute_service(hal_lenovokeyboard, hal_lenovokeyboard_service)
+
+allow hal_lenovokeyboard_default device:dir search;
+allow hal_lenovokeyboard_default lenovo_keyboard_device:chr_file rw_file_perms;
+allow hal_lenovokeyboard_default sysfs_kb:dir r_dir_perms;
+allow hal_lenovokeyboard_default sysfs_kb:file rw_file_perms;
