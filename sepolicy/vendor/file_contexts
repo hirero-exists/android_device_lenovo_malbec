@@ -116,6 +116,7 @@
 /sys/powersave(/.*)? u:object_r:sysfs_power_save:s0
 
 # Touch
+/(vendor|system/vendor)/bin/malbec_foliod u:object_r:malbec_foliod_exec:s0
 /(vendor|odm)/etc/init.panel_info.sh u:object_r:vendor_touch_init_shell_exec:s0
 /sys/devices/virtual/touch/touch_dev/abnormal_event u:object_r:sysfs_touch_hostprocess:s0
 /sys/devices/virtual/touch/touch_dev/clicktouch_raw u:object_r:sysfs_touch_hostprocess:s0

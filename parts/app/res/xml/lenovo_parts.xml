@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <com.android.settingslib.widget.MainSwitchPreference
+        android:defaultValue="true"
+        android:key="folio_cover"
+        android:summary="@string/folio_summary"
+        android:title="@string/folio_title" />
+</PreferenceScreen>
