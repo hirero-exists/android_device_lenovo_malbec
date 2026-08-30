@@ -49,12 +49,9 @@
 
     <!-- Indicate available ColorDisplayManager.COLOR_MODE_xxx. -->
     <integer-array name="config_availableColorModes">
-        <item>258</item> <!-- vivid -->
-        <item>256</item> <!-- saturated -->
-        <item>257</item> <!-- standard -->
-        <item>269</item> <!-- original -->
-        <item>268</item> <!-- p3 -->
-        <item>267</item> <!-- srgb -->
+        <item>0</item>
+        <item>1</item>
+        <item>3</item>
     </integer-array>
 
     <!-- Shutdown if the battery temperature exceeds (this value * 0.1) Celsius. -->
