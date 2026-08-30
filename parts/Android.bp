@@ -1,0 +1,29 @@
+android_app {
+    name: "LenovoParts",
+    manifest: "app/AndroidManifest.xml",
+    srcs: ["app/src/**/*.java"],
+    resource_dirs: ["app/res"],
+    platform_apis: true,
+    certificate: "platform",
+    privileged: true,
+    privapp_allowlist: "app/privapp-permissions-com.lenovo.parts.xml",
+    system_ext_specific: true,
+    optimize: {
+        enabled: true,
+    },
+}
+
+cc_binary {
+    name: "malbec_foliod",
+    srcs: ["folio/malbec_foliod.cpp"],
+    shared_libs: [
+        "libbase",
+        "liblog",
+    ],
+    cflags: [
+        "-Wall",
+        "-Werror",
+    ],
+    init_rc: ["folio/malbec_foliod.rc"],
+    system_ext_specific: true,
+}

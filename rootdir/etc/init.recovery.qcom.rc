@@ -43,6 +43,6 @@ on fs
     wait /dev/block/bootdevice/by-name/modem${ro.boot.slot_suffix}
     mount vfat /dev/block/bootdevice/by-name/modem${ro.boot.slot_suffix} /vendor/firmware_mnt ro shortname=lower,dmask=222,fmask=222,context=u:object_r:firmware_file:s0
     mount none /vendor/firmware_mnt/image /vendor/firmware bind rec
+    wait /sys/class/remoteproc/remoteproc1/state 10
     write /sys/class/remoteproc/remoteproc1/state start
-    wait /sys/class/power_supply/battery/capacity
-# END Recovery_StabilityEnhance
+    wait /sys/class/power_supply/battery/capacity 20

@@ -1,0 +1,9 @@
+service malbec_foliod /system_ext/bin/malbec_foliod
+    class core
+    user root
+    group root input system uhid
+    capabilities SYSLOG
+    disabled
+
+on post-fs-data
+    start malbec_foliod
