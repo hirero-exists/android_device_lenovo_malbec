@@ -23,6 +23,7 @@ genfscon sysfs /devices/platform/soc/soc:lenovo_kb u:object_r:sysfs_kb:s0
 
 genfscon proc /HighReportRate u:object_r:proc_lenovo_touchscreen:s0
 genfscon proc /edge_grid_zone u:object_r:proc_lenovo_touchscreen:s0
+genfscon proc /folio_case_mode u:object_r:proc_lenovo_touchscreen:s0
 genfscon proc /game_edge u:object_r:proc_lenovo_touchscreen:s0
 genfscon proc /game_mode u:object_r:proc_lenovo_touchscreen:s0
 genfscon proc /gesture_mode u:object_r:proc_lenovo_touchscreen:s0

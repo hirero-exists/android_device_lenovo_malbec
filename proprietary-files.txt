@@ -169,6 +169,7 @@ system_ext/lib64/com.qualcomm.qti.ant@1.0.so
 vendor/bin/audioadsprpcd
 vendor/bin/hw/audiohalservice.qti;EXTRACT_ONLY
 vendor/lib64/android.hardware.bluetooth.audio-impl.so;DISABLE_DEPS
+vendor/lib64/btaudio_offload_if.so
 vendor/lib64/hw/libaudiocorehal.default.so;DISABLE_DEPS
 vendor/lib64/hw/libaudiocorehal.qti.so;DISABLE_DEPS
 vendor/lib64/libPeripheralStateUtils.so
@@ -844,15 +845,14 @@ vendor/etc/init/vendor.qti.hardware.display.color-service.rc
 vendor/etc/init/vendor.qti.hardware.display.composer-service.rc
 vendor/etc/init/vendor.qti.hardware.display.demura-service.rc
 vendor/lib64/egl/eglSubDriverAndroid.so
-vendor/lib64/egl/libEGL_adreno.so;MODULE=libEGL_adreno_egl
+vendor/lib64/egl/libEGL_adreno.so;SYMLINK=vendor/lib64/libEGL_adreno.so
 vendor/lib64/egl/libGLESv1_CM_adreno.so
-vendor/lib64/egl/libGLESv2_adreno.so;MODULE=libGLESv2_adreno_egl
+vendor/lib64/egl/libGLESv2_adreno.so;SYMLINK=vendor/lib64/libGLESv2_adreno.so
 vendor/lib64/egl/libVkLayer_ADRENO_qprofiler.so
-vendor/lib64/egl/libq3dtools_adreno.so;MODULE=libq3dtools_adreno_egl
+vendor/lib64/egl/libq3dtools_adreno.so;SYMLINK=vendor/lib64/libq3dtools_adreno.so
 vendor/lib64/egl/libq3dtools_esx.so
 vendor/lib64/hw/android.hardware.graphics.mapper@4.0-impl-qti-display.so;DISABLE_DEPS
 vendor/lib64/hw/vulkan.adreno.so
-vendor/lib64/libEGL_adreno.so
 vendor/lib64/libadreno_utils.so
 vendor/lib64/libdisplaydebug.so;DISABLE_DEPS
 vendor/lib64/libdisplayqos.so
@@ -2193,6 +2193,7 @@ vendor/etc/vintf/manifest/fm_hci.xml
 vendor/etc/vintf/manifest/lenovo.hardware.ai-service.xml
 vendor/etc/vintf/manifest/manifest_afw.xml
 vendor/etc/vintf/manifest/manifest_audio_qti_services.xml
+vendor/etc/vintf/manifest/manifest_btaudiocoreservices_qti.xml
 vendor/etc/vintf/manifest/manifest_identity_credential.xml
 vendor/etc/vintf/manifest/mapper.qti.xml
 vendor/etc/vintf/manifest/mwqem-saidl.xml
@@ -2486,7 +2487,6 @@ vendor/lib64/libDcfHalLogger.so
 vendor/lib64/libDspIOProxy_stub.so
 vendor/lib64/libEvrcSwCodec.so
 vendor/lib64/libFlacSwDec.so
-vendor/lib64/libGLESv2_adreno.so
 vendor/lib64/libGPMTEEC_vendor.so
 vendor/lib64/libGPreqcancel.so
 vendor/lib64/libGPreqcancel_svc.so
@@ -2641,7 +2641,6 @@ vendor/lib64/libprekill.so
 vendor/lib64/libprocomp.so
 vendor/lib64/libpsmoptfeature.so
 vendor/lib64/libptq_uint8.so
-vendor/lib64/libq3dtools_adreno.so
 vendor/lib64/libqape_oem_ext.so
 vendor/lib64/libqasr.so
 vendor/lib64/libqc2audio_base.so
