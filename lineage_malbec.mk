@@ -14,8 +14,7 @@ $(call inherit-product, vendor/lineage/config/common_full_tablet_wifionly.mk)
 # Inherit from malbec device
 $(call inherit-product, device/lenovo/malbec/device.mk)
 
-# TEMP** (kernel-headers)
-#$(shell bash device/lenovo/malbec-kernel/setup-kernel-headers.sh $(abspath .))
+# Kernel-Headers
 $(info $(shell bash device/lenovo/malbec-kernel/setup-kernel-headers.sh $(abspath .)))
 
 PRODUCT_NAME := lineage_malbec

@@ -102,16 +102,16 @@ blob_fixups: blob_fixups_user_type = {
 
     # --- sepolicy fixup ---
     'vendor/etc/init/qms.rc': blob_fixup()
-    .regex_replace(
-        r'(service vendor\.qms /vendor/bin/qms\n)',
-        r'\1     user radio\n',
-    ),
+        .regex_replace(
+            r'(service vendor\.qms /vendor/bin/qms\n)(?:\s+user \S+\n)?',
+            r'\1     user root\n',
+        ),
 
     'vendor/etc/init/vendor.dpmd.rc': blob_fixup()
-    .regex_replace(
-        r'(service vendor\.dpmd /vendor/bin/vendor\.dpmd\n)',
-        r'\1    user system\n',
-    ),
+        .regex_replace(
+            r'(service vendor\.dpmd /vendor/bin/vendor\.dpmd\n)',
+            r'\1    user system\n',
+        ),
 
     'vendor/etc/ueventd.rc': blob_fixup()
         .add_line_if_missing(
