@@ -1221,9 +1221,14 @@ vendor/lib64/vendor.qti.qccvndhal_aidl-V1-ndk.so
 vendor/lib64/vendor.qti.qccvndhal_aidl-halimpl.so
 
 # QESD
+system_ext/app/FrameworksUtilsSysService/FrameworksUtilsSysService.apk
 system_ext/etc/vintf/manifest/vendor.qti.qesdsys.service.xml
+vendor/bin/qms
 vendor/bin/qesdk-manager
+vendor/etc/init/qms.rc
 vendor/etc/init/qesdk-manager.rc
+vendor/etc/seccomp_policy/qms.policy
+vendor/etc/vintf/manifest/qms-saidl.xml
 vendor/lib64/libqesdk_manager.so
 vendor/lib64/libqesdoem_query_sys.so
 vendor/lib64/vendor.qti.qesdhal-impl.so
@@ -1735,7 +1740,10 @@ system_ext/lib64/libmmrtpdecoder.so
 system_ext/lib64/libmmrtpencoder.so
 system_ext/lib64/vendor.qti.hardware.wifidisplaysession@1.0.so
 system_ext/priv-app/WfdService/WfdService.apk
+vendor/bin/wfdhdcphalservice
+vendor/etc/init/android.hardware.drm@1.1-service.wfdhdcp.rc
 vendor/etc/init/com.qualcomm.qti.wifidisplayhal@1.0-service.rc
+vendor/etc/seccomp_policy/wfdhdcphalservice.policy
 vendor/etc/seccomp_policy/wifidisplayhalservice.policy
 vendor/etc/vintf/manifest/vendor.qti.hardware.wifidisplaysession-service.xml
 vendor/etc/wfdconfig.xml
@@ -1743,6 +1751,11 @@ vendor/lib64/libFileMux_proprietary.so
 vendor/lib64/libmmosal_vendor.so
 vendor/lib64/libmmrtpdecoder_vendor.so
 vendor/lib64/libmmrtpencoder_vendor.so
+vendor/lib64/libwfdcommonutils_proprietary.so
+vendor/lib64/libwfddisplayconfig_vendor.so
+vendor/lib64/libwfdhdcpcp.so
+vendor/lib64/libwfdhdcpservice_proprietary.so
+vendor/lib64/libwfdutils_proprietary.so
 vendor/lib64/vendor.qti.hardware.wifidisplaysession_aidl-V1-ndk.so
 
 # Input devices
@@ -2156,7 +2169,6 @@ vendor/etc/seccomp_policy/gnss@2.0-xtwifi-client.policy
 vendor/etc/seccomp_policy/qcrilnr@2.0.policy
 vendor/etc/seccomp_policy/qesdk.policy
 vendor/etc/seccomp_policy/qesdksec.policy
-vendor/etc/seccomp_policy/qms.policy
 vendor/etc/seccomp_policy/qsap_dcfd.policy
 vendor/etc/seccomp_policy/qsap_qapeservice.policy
 vendor/etc/seccomp_policy/qsap_sensors.policy
