@@ -6,8 +6,13 @@ android_app {
     platform_apis: true,
     certificate: "platform",
     privileged: true,
-    privapp_allowlist: "app/privapp-permissions-com.lenovo.parts.xml",
     system_ext_specific: true,
+    static_libs: [
+        "SettingsLibCollapsingToolbarBaseActivity",
+        "SettingsLibMainSwitchPreference",
+        "SettingsLibSettingsTheme",
+        "androidx.preference_preference",
+    ],
     optimize: {
         enabled: true,
     },
@@ -24,6 +29,6 @@ cc_binary {
         "-Wall",
         "-Werror",
     ],
-    init_rc: ["folio/malbec_foliod.rc"],
-    system_ext_specific: true,
+    init_rc: ["init.malbec.rc"],
+    vendor: true,
 }
