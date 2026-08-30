@@ -1,0 +1,12 @@
+type malbec_foliod, domain;
+type malbec_foliod_exec, system_file_type, exec_type, file_type;
+typeattribute malbec_foliod coredomain;
+
+init_daemon_domain(malbec_foliod)
+
+get_prop(malbec_foliod, malbec_folio_prop)
+
+allow malbec_foliod self:capability2 syslog;
+allow malbec_foliod kernel:system syslog_read;
+allow malbec_foliod kmsg_device:chr_file { getattr open read };
+allow malbec_foliod uhid_device:chr_file { getattr ioctl open write };

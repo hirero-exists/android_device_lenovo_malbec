@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">Lenovo Parts</string>
+    <string name="app_summary">Device-specific Lenovo settings</string>
+    <string name="folio_title">Folio cover</string>
+    <string name="folio_summary">Sleep when the cover closes and wake when it opens</string>
+</resources>
