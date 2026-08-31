@@ -205,6 +205,7 @@ PRODUCT_PACKAGES += \
 # Init
 PRODUCT_PACKAGES += \
     fstab.qcom \
+    init.malbec.rc \
     init.qcom.rc \
     init.qti.kernel.rc \
     init.qti.kernel.target.rc \
@@ -329,8 +330,7 @@ PRODUCT_PACKAGES += \
 
 # Touchscreen (Novatek NT36536E, active pen supported)
 PRODUCT_COPY_FILES += \
-    frameworks/native/data/etc/android.hardware.touchscreen.multitouch.jazzhand.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.touchscreen.multitouch.jazzhand.xml \
-    $(LOCAL_PATH)/configs/keylayout/hall_irq.kl:$(TARGET_COPY_OUT_VENDOR)/usr/keylayout/hall_irq.kl
+    frameworks/native/data/etc/android.hardware.touchscreen.multitouch.jazzhand.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.touchscreen.multitouch.jazzhand.xml
 
 # LenovoParts
 PRODUCT_PACKAGES += \
