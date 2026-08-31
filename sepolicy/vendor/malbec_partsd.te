@@ -1,0 +1,12 @@
+type malbec_partsd, domain;
+type malbec_partsd_exec, exec_type, vendor_file_type, file_type;
+
+init_daemon_domain(malbec_partsd)
+
+get_prop(malbec_partsd, malbec_parts_prop)
+
+allow malbec_partsd self:capability2 syslog;
+allow malbec_partsd kernel:system syslog_read;
+allow malbec_partsd kmsg_device:chr_file { getattr open read };
+allow malbec_partsd proc_lenovo_touchscreen:file { open write };
+allow malbec_partsd uhid_device:chr_file { getattr ioctl open write };

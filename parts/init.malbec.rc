@@ -1,4 +1,4 @@
-service malbec_foliod /vendor/bin/malbec_foliod
+service malbec_partsd /vendor/bin/malbec_partsd
     class core
     user root
     group root input system uhid
@@ -6,4 +6,4 @@ service malbec_foliod /vendor/bin/malbec_foliod
     disabled
 
 on post-fs-data
-    start malbec_foliod
+    start malbec_partsd
