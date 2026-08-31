@@ -3,4 +3,15 @@
     <string name="app_summary">Device-specific Lenovo settings</string>
     <string name="folio_title">Folio cover</string>
     <string name="folio_summary">Sleep when the cover closes and wake when it opens</string>
+    <string name="pen_enabled_title">Lenovo Pen</string>
+    <string name="pen_enabled_summary">Enable the active pen digitizer and palm rejection</string>
+    <string name="pen_wakeup_title">Wake with pen</string>
+    <string name="pen_wakeup_summary">Allow a pen touch to wake the screen</string>
+    <string name="pen_primary_action_title">Primary button</string>
+    <string name="pen_secondary_action_title">Secondary button</string>
+    <string name="pen_tertiary_action_title">Tertiary button</string>
+    <string name="pen_tail_action_title">Tail button</string>
+    <string name="dolby_enabled_title">Dolby Atmos</string>
+    <string name="dolby_enabled_summary">Enable Dolby processing for speakers and headphones</string>
+    <string name="dolby_profile_title">Sound profile</string>
 </resources>

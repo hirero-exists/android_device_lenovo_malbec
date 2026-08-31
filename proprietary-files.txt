@@ -1089,6 +1089,8 @@ vendor/lib64/vendor.qti.hardware.vpp@1.2.so
 vendor/lib64/vendor.qti.hardware.vpp@1.3.so
 
 # Media (Dolby)
+system_ext/etc/permissions/com.dolby.daxservice.xml
+system_ext/priv-app/daxService/daxService.apk
 vendor/lib64/libdolbyproxyandroid.so
 system/lib64/libdolbyeffect.so
 vendor/bin/hw/vendor.dolby.dms.service
@@ -1107,6 +1109,8 @@ vendor/lib64/libdolbyeglcore.so
 vendor/lib64/libdolbyottcameracontrol.so
 vendor/lib64/vendor.dolby.dms-V1-ndk.so
 vendor/lib64/vendor.dolby.hardware.dms@2.0.so
+vendor/lib64/soundfx/libswdapaidl.so;DISABLE_DEPS
+vendor/lib64/soundfx/libswgamedapaidl.so;DISABLE_DEPS
 
 # Media configs
 vendor/etc/media_codecs.xml

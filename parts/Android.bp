@@ -18,9 +18,17 @@ android_app {
     },
 }
 
+prebuilt_etc {
+    name: "privapp_permissions_com.lenovo.parts",
+    src: "permissions/privapp-permissions-com.lenovo.parts.xml",
+    filename_from_src: true,
+    sub_dir: "permissions",
+    system_ext_specific: true,
+}
+
 cc_binary {
-    name: "malbec_foliod",
-    srcs: ["folio/malbec_foliod.cpp"],
+    name: "malbec_partsd",
+    srcs: ["backend/malbec_partsd.cpp"],
     init_rc: ["init.malbec.rc"],
     shared_libs: [
         "libbase",

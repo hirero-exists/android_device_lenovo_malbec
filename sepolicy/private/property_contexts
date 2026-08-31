@@ -1,1 +1,4 @@
-persist.sys.folio.enabled u:object_r:malbec_folio_prop:s0 exact bool
+persist.sys.folio.enabled u:object_r:malbec_parts_prop:s0 exact bool
+persist.sys.pen.enabled u:object_r:malbec_parts_prop:s0 exact bool
+persist.sys.pen.wakeup u:object_r:malbec_parts_prop:s0 exact bool
+sys.malbec.folio.closed u:object_r:malbec_parts_prop:s0 exact int

@@ -5,4 +5,60 @@
         android:key="folio_cover"
         android:summary="@string/folio_summary"
         android:title="@string/folio_title" />
+    <com.android.settingslib.widget.MainSwitchPreference
+        android:defaultValue="true"
+        android:key="pen_enabled"
+        android:summary="@string/pen_enabled_summary"
+        android:title="@string/pen_enabled_title" />
+    <androidx.preference.SwitchPreferenceCompat
+        android:defaultValue="false"
+        android:dependency="pen_enabled"
+        android:key="pen_wakeup"
+        android:summary="@string/pen_wakeup_summary"
+        android:title="@string/pen_wakeup_title" />
+    <androidx.preference.ListPreference
+        android:defaultValue="5"
+        android:dependency="pen_enabled"
+        android:entries="@array/pen_action_entries"
+        android:entryValues="@array/pen_action_values"
+        android:key="pen_primary_action"
+        android:summary="%s"
+        android:title="@string/pen_primary_action_title" />
+    <androidx.preference.ListPreference
+        android:defaultValue="10"
+        android:dependency="pen_enabled"
+        android:entries="@array/pen_action_entries"
+        android:entryValues="@array/pen_action_values"
+        android:key="pen_secondary_action"
+        android:summary="%s"
+        android:title="@string/pen_secondary_action_title" />
+    <androidx.preference.ListPreference
+        android:defaultValue="2"
+        android:dependency="pen_enabled"
+        android:entries="@array/pen_action_entries"
+        android:entryValues="@array/pen_action_values"
+        android:key="pen_tertiary_action"
+        android:summary="%s"
+        android:title="@string/pen_tertiary_action_title" />
+    <androidx.preference.ListPreference
+        android:defaultValue="0"
+        android:dependency="pen_enabled"
+        android:entries="@array/pen_action_entries"
+        android:entryValues="@array/pen_action_values"
+        android:key="pen_tail_action"
+        android:summary="%s"
+        android:title="@string/pen_tail_action_title" />
+    <com.android.settingslib.widget.MainSwitchPreference
+        android:defaultValue="true"
+        android:key="dolby_enabled"
+        android:summary="@string/dolby_enabled_summary"
+        android:title="@string/dolby_enabled_title" />
+    <androidx.preference.ListPreference
+        android:defaultValue="0"
+        android:dependency="dolby_enabled"
+        android:entries="@array/dolby_profile_entries"
+        android:entryValues="@array/dolby_profile_values"
+        android:key="dolby_profile"
+        android:summary="%s"
+        android:title="@string/dolby_profile_title" />
 </PreferenceScreen>

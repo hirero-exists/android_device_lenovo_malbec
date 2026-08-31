@@ -334,7 +334,8 @@ PRODUCT_COPY_FILES += \
 # LenovoParts
 PRODUCT_PACKAGES += \
     LenovoParts \
-    malbec_foliod
+    malbec_partsd \
+    privapp_permissions_com.lenovo.parts
 
 # Update engine
 PRODUCT_PACKAGES += \
