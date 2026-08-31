@@ -29,6 +29,5 @@ cc_binary {
         "-Wall",
         "-Werror",
     ],
-    init_rc: ["init.malbec.rc"],
     vendor: true,
 }
