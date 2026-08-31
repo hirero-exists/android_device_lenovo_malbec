@@ -20,6 +20,8 @@ genfscon sysfs /class/drm/card0/card0-sde-crtc-0/measured_fps    u:object_r:vend
 genfscon sysfs /kernel/hardware_info_to_dump/hardw_info u:object_r:vendor_sysfs_hardwareinfo:s0
 
 genfscon sysfs /devices/platform/soc/soc:lenovo_kb u:object_r:sysfs_kb:s0
+genfscon sysfs /devices/platform/soc/3000000.remoteproc-adsp/remoteproc/remoteproc0/state u:object_r:vendor_sysfs_rproc_state:s0
+genfscon sysfs /devices/platform/soc/3000000.remoteproc-adsp/remoteproc/remoteproc1/state u:object_r:vendor_sysfs_rproc_state:s0
 
 genfscon proc /HighReportRate u:object_r:proc_lenovo_touchscreen:s0
 genfscon proc /edge_grid_zone u:object_r:proc_lenovo_touchscreen:s0

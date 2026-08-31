@@ -186,13 +186,6 @@ prebuilt_etc {
 }
 
 prebuilt_etc {
-    name: "init.malbec.rc",
-    src: "etc/init.malbec.rc",
-    sub_dir: "init/hw",
-    vendor: true,
-}
-
-prebuilt_etc {
     name: "init.qcom.rc",
     src: "etc/init.qcom.rc",
     sub_dir: "init/hw",

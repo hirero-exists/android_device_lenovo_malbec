@@ -205,7 +205,6 @@ PRODUCT_PACKAGES += \
 # Init
 PRODUCT_PACKAGES += \
     fstab.qcom \
-    init.malbec.rc \
     init.qcom.rc \
     init.qti.kernel.rc \
     init.qti.kernel.target.rc \
