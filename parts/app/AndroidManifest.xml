@@ -19,7 +19,7 @@
                 android:value="com.android.settings.category.ia.homepage" />
             <meta-data
                 android:name="com.android.settings.group_key"
-                android:value="top_level_account_category" />
+                android:value="top_level_connectivity_category" />
             <meta-data
                 android:name="com.android.settings.keyhint"
                 android:value="top_level_lenovo_parts" />
