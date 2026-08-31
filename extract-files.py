@@ -42,6 +42,22 @@ lib_fixups: lib_fixups_user_type = {
 }
 
 blob_fixups: blob_fixups_user_type = {
+    (
+        'system/usr/keylayout/Vendor_17ef_Product_612b.kl',
+        'system/usr/keylayout/Vendor_17ef_Product_617f.kl',
+        'system/usr/keylayout/Vendor_17ef_Product_61a1.kl',
+        'system/usr/keylayout/Vendor_17ef_Product_622e.kl',
+    ): blob_fixup()
+        .regex_replace(r'PEN_ONE_CLICK', 'STYLUS_BUTTON_PRIMARY')
+        .regex_replace(r'PEN_TWO_CLICK', 'STYLUS_BUTTON_SECONDARY')
+        .regex_replace(r'PEN_THREE_CLICK|PEN_360_THREE_CLICK|PEN_SWING', 'STYLUS_BUTTON_TERTIARY')
+        .regex_replace(r'PEN_LONG_CLICK|PEN_D_LONG_PRESS|PEN_TAIL_PRESSED|PEN_TAIL_RELEASED', 'STYLUS_BUTTON_TAIL')
+        .regex_replace(r'PEN_PRESS_CLICK|PEN_D_CLICK|PEN_SQUEEZE_ONE|PEN_SQUEEZE_PRESSED|PEN_SQUEEZE_ENTER|PEN_SQUEEZE_EXIT', 'STYLUS_BUTTON_PRIMARY')
+        .regex_replace(r'PEN_SQUEEZE_TWO|PEN_UL_SQUEEZE_ENTER|PEN_UL_SQUEEZE_EXIT', 'STYLUS_BUTTON_SECONDARY')
+        .regex_replace(r'PEN_D_SLIDE_DOWN', 'VOLUME_DOWN')
+        .regex_replace(r'PEN_D_SLIDE_UP', 'VOLUME_UP')
+        .regex_replace(r'PEN_BT_DISCONNECT', 'UNKNOWN'),
+
     'vendor/etc/perf/perfconfigstore.xml': blob_fixup()
         .regex_replace(
             r'<Prop Name="vendor\.debug\.enable\.memperfd"\s+Value="true" />',

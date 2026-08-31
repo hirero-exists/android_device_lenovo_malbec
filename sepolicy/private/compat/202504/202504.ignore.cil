@@ -2,4 +2,4 @@
 (typeattribute new_objects)
 (typeattributeset new_objects
   (new_objects
-    malbec_folio_prop))
+    malbec_parts_prop))
