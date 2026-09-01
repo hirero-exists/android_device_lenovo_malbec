@@ -1,5 +1,6 @@
 #include <android-base/logging.h>
 #include <android-base/properties.h>
+#include <dirent.h>
 #include <fcntl.h>
 #include <linux/input.h>
 #include <linux/uinput.h>
@@ -8,6 +9,7 @@
 #include <unistd.h>
 
 #include <cerrno>
+#include <cstdio>
 #include <cstring>
 
 namespace {
@@ -22,6 +24,9 @@ constexpr char kPenWakePath[] = "/proc/pen_wakeup_mode";
 constexpr char kCloseMessage[] = "The keyboard close!";
 constexpr char kStillCloseMessage[] = "The keyboard still close!";
 constexpr char kOpenMessage[] = "The keyboard open!";
+constexpr char kHallInputName[] = "hall_irq";
+constexpr int kHallOpenKey = 750;
+constexpr int kHallCloseKey = 751;
 
 bool ConfigureUinput(int fd) {
     if (ioctl(fd, UI_SET_EVBIT, EV_SW) < 0 || ioctl(fd, UI_SET_SWBIT, SW_LID) < 0) {
@@ -69,6 +74,38 @@ int ParseFolioState(const char* message) {
     return -1;
 }
 
+int OpenHallInput() {
+    DIR* directory = opendir("/dev/input");
+    if (directory == nullptr) {
+        return -1;
+    }
+
+    int result = -1;
+    dirent* entry;
+    while ((entry = readdir(directory)) != nullptr) {
+        if (std::strncmp(entry->d_name, "event", 5) != 0) {
+            continue;
+        }
+
+        char path[64];
+        std::snprintf(path, sizeof(path), "/dev/input/%s", entry->d_name);
+        int fd = open(path, O_RDONLY | O_NONBLOCK | O_CLOEXEC);
+        if (fd < 0) {
+            continue;
+        }
+
+        char name[256] = {};
+        if (ioctl(fd, EVIOCGNAME(sizeof(name)), name) >= 0
+                && std::strcmp(name, kHallInputName) == 0) {
+            result = fd;
+            break;
+        }
+        close(fd);
+    }
+    closedir(directory);
+    return result;
+}
+
 }
 
 int main() {
@@ -80,6 +117,11 @@ int main() {
     if (lseek(kmsg, 0, SEEK_END) < 0) {
         PLOG(ERROR) << "Unable to seek /dev/kmsg";
         return 1;
+    }
+
+    int hall_input = OpenHallInput();
+    if (hall_input < 0) {
+        PLOG(ERROR) << "Unable to open hall input device";
     }
 
     int uinput = open("/dev/uinput", O_WRONLY | O_NONBLOCK | O_CLOEXEC);
@@ -100,17 +142,30 @@ int main() {
 
     char message[8192];
     int kmsg_state = -1;
+    int input_state = -1;
     int emitted_state = 0;
+    int hall_retry = 0;
 
     while (true) {
-        pollfd fd = {kmsg, POLLIN, 0};
-        int result = poll(&fd, 1, 250);
+        if (hall_input < 0 && hall_retry-- <= 0) {
+            hall_input = OpenHallInput();
+            hall_retry = 4;
+            if (hall_input >= 0) {
+                LOG(INFO) << "Opened hall input device";
+            }
+        }
+
+        pollfd fds[2] = {
+                {kmsg, POLLIN, 0},
+                {hall_input, POLLIN, 0},
+        };
+        int result = poll(fds, hall_input >= 0 ? 2 : 1, 250);
         if (result < 0 && errno != EINTR) {
-            PLOG(ERROR) << "Kernel log poll failed";
+            PLOG(ERROR) << "Folio input poll failed";
             return 1;
         }
 
-        if (result > 0 && (fd.revents & POLLIN) != 0) {
+        if (result > 0 && (fds[0].revents & POLLIN) != 0) {
             ssize_t length;
             while ((length = read(kmsg, message, sizeof(message) - 1)) > 0) {
                 message[length] = '\0';
@@ -125,6 +180,28 @@ int main() {
             }
         }
 
+        if (result > 0 && hall_input >= 0 && (fds[1].revents & POLLIN) != 0) {
+            input_event events[16];
+            ssize_t length;
+            while ((length = read(hall_input, events, sizeof(events))) > 0) {
+                size_t count = static_cast<size_t>(length) / sizeof(input_event);
+                for (size_t index = 0; index < count; ++index) {
+                    if (events[index].type != EV_KEY || events[index].value != 1) {
+                        continue;
+                    }
+                    if (events[index].code == kHallCloseKey) {
+                        input_state = 1;
+                    } else if (events[index].code == kHallOpenKey) {
+                        input_state = 0;
+                    }
+                }
+            }
+            if (length < 0 && errno != EAGAIN && errno != EINTR) {
+                PLOG(ERROR) << "Hall input read failed";
+                return 1;
+            }
+        }
+
         bool new_folio_enabled =
                 android::base::GetBoolProperty(kFolioEnabledProperty, true);
         if (new_folio_enabled != folio_enabled
@@ -134,7 +211,8 @@ int main() {
         }
 
         int hall_state = android::base::GetIntProperty(kFolioHallStateProperty, -1);
-        int known_state = hall_state >= 0 ? hall_state : kmsg_state;
+        int known_state = input_state >= 0 ? input_state
+                : (hall_state >= 0 ? hall_state : kmsg_state);
         int target_state = new_folio_enabled && known_state >= 0 ? known_state : 0;
         if (target_state != emitted_state || new_folio_enabled != folio_enabled) {
             if (!EmitLidState(uinput, target_state != 0)) {
