@@ -7,10 +7,11 @@
     <string name="pen_enabled_summary">Enable the active pen digitizer and palm rejection</string>
     <string name="pen_wakeup_title">Wake with pen</string>
     <string name="pen_wakeup_summary">Allow a pen touch to wake the screen</string>
-    <string name="pen_primary_action_title">Primary button</string>
-    <string name="pen_secondary_action_title">Secondary button</string>
-    <string name="pen_tertiary_action_title">Tertiary button</string>
-    <string name="pen_tail_action_title">Tail button</string>
+    <string name="pen_single_action_title">Single press</string>
+    <string name="pen_double_action_title">Double press</string>
+    <string name="pen_triple_action_title">Triple press</string>
+    <string name="pen_long_action_title">Long press</string>
+    <string name="pen_long_click_action_title">Long press + click</string>
     <string name="dolby_enabled_title">Dolby Atmos</string>
     <string name="dolby_enabled_summary">Enable Dolby processing for speakers and headphones</string>
     <string name="dolby_profile_title">Sound profile</string>
