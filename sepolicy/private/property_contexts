@@ -1,7 +1,10 @@
 persist.sys.folio.enabled u:object_r:malbec_parts_prop:s0 exact bool
+persist.sys.gaming.overlay u:object_r:malbec_parts_prop:s0 exact bool
+persist.sys.gaming.soc_power_mode u:object_r:malbec_parts_prop:s0 exact int
 persist.sys.pen.enabled u:object_r:malbec_parts_prop:s0 exact bool
 persist.sys.pen.wakeup u:object_r:malbec_parts_prop:s0 exact bool
 persist.sys.pen.toolbar u:object_r:malbec_parts_prop:s0 exact bool
+persist.sys.touch.edge_grid_zone u:object_r:malbec_parts_prop:s0 exact string
 persist.sys.touch.game_edge u:object_r:malbec_parts_prop:s0 exact bool
 persist.sys.touch.high_report_rate u:object_r:malbec_parts_prop:s0 exact bool
 sys.malbec.bypass.active u:object_r:malbec_parts_prop:s0 exact bool
@@ -9,6 +12,18 @@ sys.malbec.bypass.heartbeat u:object_r:malbec_parts_prop:s0 exact int
 sys.malbec.bypass.requested u:object_r:malbec_parts_prop:s0 exact bool
 sys.malbec.bypass.state u:object_r:malbec_parts_prop:s0 exact int
 sys.malbec.folio.closed u:object_r:malbec_parts_prop:s0 exact int
+sys.malbec.perf.cpu_freq_mhz u:object_r:malbec_parts_prop:s0 exact int
+sys.malbec.perf.cpu_power_mw u:object_r:malbec_parts_prop:s0 exact int
+sys.malbec.perf.cpu_temp_c u:object_r:malbec_parts_prop:s0 exact int
+sys.malbec.perf.cpu_usage u:object_r:malbec_parts_prop:s0 exact int
+sys.malbec.perf.gpu_freq_mhz u:object_r:malbec_parts_prop:s0 exact int
+sys.malbec.perf.gpu_power_mw u:object_r:malbec_parts_prop:s0 exact int
+sys.malbec.perf.gpu_temp_c u:object_r:malbec_parts_prop:s0 exact int
+sys.malbec.perf.gpu_usage u:object_r:malbec_parts_prop:s0 exact int
+sys.malbec.perf.overlay_active u:object_r:malbec_parts_prop:s0 exact bool
+sys.malbec.perf.power_mw u:object_r:malbec_parts_prop:s0 exact int
+sys.malbec.perf.soc_power_mw u:object_r:malbec_parts_prop:s0 exact int
+
 sys.malbec.power.battery_capacity u:object_r:malbec_parts_prop:s0 exact int
 sys.malbec.power.battery_current_ua u:object_r:malbec_parts_prop:s0 exact int
 sys.malbec.power.battery_input_suspend u:object_r:malbec_parts_prop:s0 exact bool
@@ -21,5 +36,6 @@ sys.malbec.power.usb_online u:object_r:malbec_parts_prop:s0 exact bool
 sys.malbec.power.usb_type u:object_r:malbec_parts_prop:s0 exact string
 sys.malbec.power.usb_voltage_max_uv u:object_r:malbec_parts_prop:s0 exact int
 sys.malbec.power.usb_voltage_uv u:object_r:malbec_parts_prop:s0 exact int
+sys.malbec.touch.edge_grid_zone_applied u:object_r:malbec_parts_prop:s0 exact bool
 sys.malbec.touch.game_edge_applied u:object_r:malbec_parts_prop:s0 exact bool
 sys.malbec.touch.high_report_rate_applied u:object_r:malbec_parts_prop:s0 exact bool

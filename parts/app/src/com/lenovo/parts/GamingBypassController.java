@@ -1,17 +1,12 @@
 /*
  * Copyright (C) 2026 hirero-exists <hirerokazuoa@gmail.com>
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Compatible with GNU General Public License, Version 2.0 (GPLv2) or later
+ * pursuant to Section 3.3 of the Mozilla Public License, v. 2.0.
  */
 
 package com.lenovo.parts;
@@ -299,7 +294,14 @@ final class GamingBypassController {
     }
 
     private void updateHudNotification(boolean active) {
+        if (GamingOverlayService.isOverlayActive()) {
+            mNotificationManager.cancel(NOTIFICATION_ID);
+            return;
+        }
+
         long usbVoltageUv = SystemProperties.getLong(USB_VOLTAGE_PROPERTY, 0);
+
+
         long usbCurrentUa = SystemProperties.getLong(USB_CURRENT_PROPERTY, 0);
         long usbVoltageMaxUv = SystemProperties.getLong(USB_VOLTAGE_MAX_PROPERTY, 0);
         long usbCurrentMaxUa = SystemProperties.getLong(USB_CURRENT_MAX_PROPERTY, 0);

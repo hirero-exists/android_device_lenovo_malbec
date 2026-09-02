@@ -39,4 +39,18 @@
         <item>120</item>
         <item>0</item>
     </string-array>
+    <string-array name="soc_power_entries">
+        <item>Disabled</item>
+        <item>CPU power only</item>
+        <item>GPU power only</item>
+        <item>Both (CPU and GPU)</item>
+        <item>Combined SoC power</item>
+    </string-array>
+    <string-array name="soc_power_values">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+    </string-array>
 </resources>

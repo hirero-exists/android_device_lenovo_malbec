@@ -1,17 +1,12 @@
 /*
  * Copyright (C) 2026 hirero-exists <hirerokazuoa@gmail.com>
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Compatible with GNU General Public License, Version 2.0 (GPLv2) or later
+ * pursuant to Section 3.3 of the Mozilla Public License, v. 2.0.
  */
 
 package com.lenovo.parts;
@@ -41,7 +36,10 @@ public final class LenovoPartsFragment extends SettingsBasePreferenceFragment
     private static final String KEY_REFRESH_RATE = "refresh_rate";
     private static final String KEY_HIGH_REPORT_RATE = "high_report_rate";
     private static final String KEY_GAME_EDGE = "game_edge";
+    private static final String KEY_GAME_EDGE_CALIBRATE = "game_edge_calibrate";
     private static final String KEY_GAMING_BYPASS = "gaming_bypass";
+    private static final String KEY_GAMING_OVERLAY = "gaming_overlay";
+    private static final String KEY_GAMING_OVERLAY_SETTINGS = "gaming_overlay_settings";
     private static final String KEY_DOLBY_ENABLED = "dolby_enabled";
     private static final String KEY_DOLBY_PROFILE = "dolby_profile";
     private static final String KEY_DOLBY_SHOW_ICON = "dolby_show_icon";
@@ -61,13 +59,17 @@ public final class LenovoPartsFragment extends SettingsBasePreferenceFragment
         setupPreference(KEY_REFRESH_RATE);
         setupPreference(KEY_HIGH_REPORT_RATE);
         setupPreference(KEY_GAME_EDGE);
+        setupPreference(KEY_GAME_EDGE_CALIBRATE);
         setupPreference(KEY_GAMING_BYPASS);
+        setupPreference(KEY_GAMING_OVERLAY);
+        setupPreference(KEY_GAMING_OVERLAY_SETTINGS);
         setupPreference(KEY_DOLBY_ENABLED);
         setupPreference(KEY_DOLBY_PROFILE);
         setupPreference(KEY_DOLBY_SHOW_ICON);
 
         refreshPreferences();
     }
+
 
     @Override
     public void onResume() {
@@ -155,6 +157,23 @@ public final class LenovoPartsFragment extends SettingsBasePreferenceFragment
             dolbyIcon.setEnabled(dolbyEnabled);
             dolbyIcon.setChecked(DolbyMode.isIconEnabled(context.getContentResolver()));
         }
+
+        TwoStatePreference overlayPref = findPreference(KEY_GAMING_OVERLAY);
+        if (overlayPref != null) {
+            overlayPref.setChecked(android.os.SystemProperties.getBoolean("persist.sys.gaming.overlay", false));
+        }
+    }
+
+    @Override
+    public boolean onPreferenceTreeClick(Preference preference) {
+        if (KEY_GAME_EDGE_CALIBRATE.equals(preference.getKey())) {
+            startActivity(new Intent(getContext(), EdgeCalibrationActivity.class));
+            return true;
+        } else if (KEY_GAMING_OVERLAY_SETTINGS.equals(preference.getKey())) {
+            startActivity(new Intent(getContext(), GamingOverlaySettingsActivity.class));
+            return true;
+        }
+        return super.onPreferenceTreeClick(preference);
     }
 
     private void refreshPenAction(String preferenceKey, String setting, int defaultAction) {
@@ -175,6 +194,7 @@ public final class LenovoPartsFragment extends SettingsBasePreferenceFragment
         if (context == null) {
             return false;
         }
+
 
         String key = preference.getKey();
         if (KEY_FOLIO_COVER.equals(key)) {
@@ -263,7 +283,17 @@ public final class LenovoPartsFragment extends SettingsBasePreferenceFragment
             }
             mHandler.postDelayed(this::refreshPreferences, 1000);
             return success;
+        } else if (KEY_GAMING_OVERLAY.equals(key)) {
+            boolean enabled = (Boolean) newValue;
+            android.os.SystemProperties.set("persist.sys.gaming.overlay", enabled ? "1" : "0");
+            if (enabled) {
+                GamingOverlayService.startOverlay(context);
+            } else {
+                GamingOverlayService.stopOverlay(context);
+            }
+            return true;
         } else if (KEY_DOLBY_ENABLED.equals(key)) {
+
             boolean enabled = (Boolean) newValue;
             boolean success = DolbyMode.setEnabled(context.getContentResolver(), enabled);
             if (success) {

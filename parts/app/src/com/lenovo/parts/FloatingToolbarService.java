@@ -1,17 +1,12 @@
 /*
  * Copyright (C) 2026 hirero-exists <hirerokazuoa@gmail.com>
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Compatible with GNU General Public License, Version 2.0 (GPLv2) or later
+ * pursuant to Section 3.3 of the Mozilla Public License, v. 2.0.
  */
 
 package com.lenovo.parts;
@@ -33,8 +28,11 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PixelFormat;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.drawable.GradientDrawable;
+
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
@@ -347,18 +345,22 @@ public final class FloatingToolbarService extends Service {
 
         mMenuView = new LinearLayout(this);
         mMenuView.setOrientation(LinearLayout.VERTICAL);
-        int pad = dpToPx(10);
+        int pad = dpToPx(12);
         mMenuView.setPadding(pad, pad, pad, pad);
 
         GradientDrawable bg = new GradientDrawable();
-        bg.setCornerRadius(dpToPx(18));
-        bg.setColor(Color.argb(235, 22, 22, 22));
-        bg.setStroke(dpToPx(1), Color.argb(70, 255, 255, 255));
+        bg.setCornerRadius(dpToPx(22));
+        bg.setColor(0xE618181C);
+        bg.setStroke(dpToPx(1), 0x33FFFFFF);
         mMenuView.setBackground(bg);
 
         addMenuItem(getString(R.string.quick_note_title), () -> {
             closeMenu();
-            openQuickNoteCanvas();
+            openQuickNoteCanvas(false);
+        });
+        addMenuItem(getString(R.string.quick_note_mode_annotation), () -> {
+            closeMenu();
+            openQuickNoteCanvas(true);
         });
         addMenuItem(getString(R.string.toolbar_screenshot), () -> {
             PenShortcuts.executeAction(this, PenShortcuts.ACTION_SCREENSHOT);
@@ -384,6 +386,7 @@ public final class FloatingToolbarService extends Service {
             PenMode.setToolbarEnabled(false);
             stopSelf();
         });
+
 
         mMenuView.setOnTouchListener((v, event) -> {
             if (event.getAction() == MotionEvent.ACTION_OUTSIDE) {
@@ -474,7 +477,7 @@ public final class FloatingToolbarService extends Service {
         }
     }
 
-    private void openQuickNoteCanvas() {
+    private void openQuickNoteCanvas(boolean isAnnotation) {
         if (mQuickNoteOverlay != null && mQuickNoteOverlay.isAttachedToWindow()) {
             return;
         }
@@ -488,7 +491,7 @@ public final class FloatingToolbarService extends Service {
                 PixelFormat.TRANSLUCENT);
 
         mQuickNoteOverlay = new FrameLayout(this);
-        mQuickNoteOverlay.setBackgroundColor(Color.argb(170, 10, 10, 10));
+        mQuickNoteOverlay.setBackgroundColor(isAnnotation ? 0x00000000 : 0xF018181C);
 
         DrawingCanvasView canvasView = new DrawingCanvasView(this);
         mQuickNoteOverlay.addView(canvasView, new FrameLayout.LayoutParams(
@@ -497,26 +500,72 @@ public final class FloatingToolbarService extends Service {
         LinearLayout topBar = new LinearLayout(this);
         topBar.setOrientation(LinearLayout.HORIZONTAL);
         topBar.setGravity(Gravity.CENTER_VERTICAL);
-        topBar.setBackgroundColor(Color.argb(200, 30, 30, 30));
-        int pad = dpToPx(10);
-        topBar.setPadding(pad, pad, pad, pad);
+        GradientDrawable barBg = new GradientDrawable();
+        barBg.setColor(0xE6202024);
+        barBg.setCornerRadius(dpToPx(20));
+        topBar.setBackground(barBg);
+        int padH = dpToPx(14);
+        int padV = dpToPx(8);
+        topBar.setPadding(padH, padV, padH, padV);
 
         TextView title = new TextView(this);
-        title.setText(R.string.quick_note_title);
+        title.setText(isAnnotation ? R.string.quick_note_mode_annotation : R.string.quick_note_title);
         title.setTextColor(Color.WHITE);
-        title.setTextSize(16);
+        title.setTextSize(14f);
         title.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
         topBar.addView(title);
 
+        Button modeBtn = new Button(this);
+        modeBtn.setText(isAnnotation ? R.string.quick_note_mode_normal : R.string.quick_note_mode_annotation);
+        modeBtn.setTextSize(11f);
+        modeBtn.setTextColor(Color.WHITE);
+        modeBtn.setBackgroundColor(Color.TRANSPARENT);
+        modeBtn.setOnClickListener(v -> {
+            boolean nextAnnotation = mQuickNoteOverlay.getBackground() == null ||
+                    ((android.graphics.drawable.ColorDrawable) mQuickNoteOverlay.getBackground()).getColor() != 0;
+            mQuickNoteOverlay.setBackgroundColor(nextAnnotation ? 0x00000000 : 0xF018181C);
+            title.setText(nextAnnotation ? R.string.quick_note_mode_annotation : R.string.quick_note_title);
+            modeBtn.setText(nextAnnotation ? R.string.quick_note_mode_normal : R.string.quick_note_mode_annotation);
+        });
+        topBar.addView(modeBtn);
+
+        Button penBtn = new Button(this);
+        penBtn.setText(R.string.quick_note_pen);
+        penBtn.setTextSize(11f);
+        penBtn.setTextColor(0xFFFFD54F);
+        penBtn.setBackgroundColor(Color.TRANSPARENT);
+        penBtn.setOnClickListener(v -> canvasView.setTool(DrawingCanvasView.TOOL_PEN));
+        topBar.addView(penBtn);
+
+        Button highlightBtn = new Button(this);
+        highlightBtn.setText(R.string.quick_note_highlighter);
+        highlightBtn.setTextSize(11f);
+        highlightBtn.setTextColor(0xFF00E5FF);
+        highlightBtn.setBackgroundColor(Color.TRANSPARENT);
+        highlightBtn.setOnClickListener(v -> canvasView.setTool(DrawingCanvasView.TOOL_HIGHLIGHTER));
+        topBar.addView(highlightBtn);
+
+        Button eraserBtn = new Button(this);
+        eraserBtn.setText(R.string.quick_note_eraser);
+        eraserBtn.setTextSize(11f);
+        eraserBtn.setTextColor(Color.WHITE);
+        eraserBtn.setBackgroundColor(Color.TRANSPARENT);
+        eraserBtn.setOnClickListener(v -> canvasView.setTool(DrawingCanvasView.TOOL_ERASER));
+        topBar.addView(eraserBtn);
+
         Button clearBtn = new Button(this);
         clearBtn.setText(R.string.quick_note_clear);
+        clearBtn.setTextSize(11f);
         clearBtn.setTextColor(Color.WHITE);
+        clearBtn.setBackgroundColor(Color.TRANSPARENT);
         clearBtn.setOnClickListener(v -> canvasView.clear());
         topBar.addView(clearBtn);
 
         Button saveBtn = new Button(this);
         saveBtn.setText(R.string.quick_note_save);
-        saveBtn.setTextColor(Color.WHITE);
+        saveBtn.setTextSize(11f);
+        saveBtn.setTextColor(0xFF81C784);
+        saveBtn.setBackgroundColor(Color.TRANSPARENT);
         saveBtn.setOnClickListener(v -> {
             if (saveCanvasBitmap(canvasView.getBitmap())) {
                 closeQuickNoteCanvas();
@@ -525,13 +574,18 @@ public final class FloatingToolbarService extends Service {
         topBar.addView(saveBtn);
 
         Button closeBtn = new Button(this);
-        closeBtn.setText(R.string.quick_note_close);
+        closeBtn.setText("✕");
+        closeBtn.setTextSize(14f);
         closeBtn.setTextColor(Color.WHITE);
+        closeBtn.setBackgroundColor(Color.TRANSPARENT);
         closeBtn.setOnClickListener(v -> closeQuickNoteCanvas());
         topBar.addView(closeBtn);
 
-        mQuickNoteOverlay.addView(topBar, new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.TOP));
+        FrameLayout.LayoutParams barLp = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);
+        barLp.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
+        barLp.topMargin = dpToPx(16);
+        mQuickNoteOverlay.addView(topBar, barLp);
 
         mWindowManager.addView(mQuickNoteOverlay, overlayParams);
     }
@@ -588,6 +642,10 @@ public final class FloatingToolbarService extends Service {
     }
 
     private static class DrawingCanvasView extends View {
+        static final int TOOL_PEN = 0;
+        static final int TOOL_HIGHLIGHTER = 1;
+        static final int TOOL_ERASER = 2;
+
         private final Paint mPaint = new Paint();
         private final Path mPath = new Path();
         private Bitmap mBitmap;
@@ -603,6 +661,23 @@ public final class FloatingToolbarService extends Service {
             mPaint.setStrokeCap(Paint.Cap.ROUND);
             mPaint.setStrokeWidth(6f);
         }
+
+        void setTool(int tool) {
+            if (tool == TOOL_PEN) {
+                mPaint.setColor(Color.parseColor("#FFF59D"));
+                mPaint.setStrokeWidth(6f);
+                mPaint.setXfermode(null);
+            } else if (tool == TOOL_HIGHLIGHTER) {
+                mPaint.setColor(Color.parseColor("#6600E5FF"));
+                mPaint.setStrokeWidth(24f);
+                mPaint.setXfermode(null);
+            } else if (tool == TOOL_ERASER) {
+                mPaint.setColor(Color.TRANSPARENT);
+                mPaint.setStrokeWidth(36f);
+                mPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+            }
+        }
+
 
         @Override
         protected void onSizeChanged(int w, int h, int oldw, int oldh) {
