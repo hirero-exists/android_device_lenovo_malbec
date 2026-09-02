@@ -15,8 +15,8 @@ import android.os.SystemProperties;
 
 final class PenMode {
     private static final String ENABLED_PROPERTY = "persist.sys.pen.enabled";
-    private static final String WAKEUP_PROPERTY = "persist.sys.pen.wakeup";
     private static final String TOOLBAR_PROPERTY = "persist.sys.pen.toolbar";
+    private static final String POINTER_PROPERTY = "persist.sys.pen.pointer";
 
     private PenMode() {
     }
@@ -34,19 +34,6 @@ final class PenMode {
         }
     }
 
-    static boolean isWakeupEnabled() {
-        return SystemProperties.getBoolean(WAKEUP_PROPERTY, false);
-    }
-
-    static boolean setWakeupEnabled(boolean enabled) {
-        try {
-            SystemProperties.set(WAKEUP_PROPERTY, enabled ? "1" : "0");
-            return true;
-        } catch (RuntimeException e) {
-            return false;
-        }
-    }
-
     static boolean isToolbarEnabled() {
         return SystemProperties.getBoolean(TOOLBAR_PROPERTY, false);
     }
@@ -54,6 +41,19 @@ final class PenMode {
     static boolean setToolbarEnabled(boolean enabled) {
         try {
             SystemProperties.set(TOOLBAR_PROPERTY, enabled ? "1" : "0");
+            return true;
+        } catch (RuntimeException e) {
+            return false;
+        }
+    }
+
+    static boolean isPointerEnabled() {
+        return SystemProperties.getBoolean(POINTER_PROPERTY, false);
+    }
+
+    static boolean setPointerEnabled(boolean enabled) {
+        try {
+            SystemProperties.set(POINTER_PROPERTY, enabled ? "1" : "0");
             return true;
         } catch (RuntimeException e) {
             return false;

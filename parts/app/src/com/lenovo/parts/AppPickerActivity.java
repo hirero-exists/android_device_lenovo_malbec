@@ -13,12 +13,12 @@ package com.lenovo.parts;
 
 import android.app.Activity;
 import android.app.ActivityOptions;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.Color;
 import android.graphics.Rect;
+import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.text.Editable;
@@ -27,7 +27,6 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.GridView;
 import android.widget.ImageView;
@@ -45,6 +44,10 @@ public final class AppPickerActivity extends Activity {
     private final List<ResolveInfo> mFilteredApps = new ArrayList<>();
     private AppGridAdapter mAdapter;
     private PackageManager mPackageManager;
+
+    private int mColorSurface = 0xFF14151A;
+    private int mColorText = 0xFFFFFFFF;
+    private int mColorAccent = 0xFF7C4DFF;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,44 +75,51 @@ public final class AppPickerActivity extends Activity {
             return;
         }
 
+        resolveThemeColors();
+
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(0xF0121214);
-        root.setPadding(dpToPx(24), dpToPx(32), dpToPx(24), dpToPx(16));
+        GradientDrawable rootBg = new GradientDrawable();
+        rootBg.setColor(applyAlpha(mColorSurface, 245));
+        rootBg.setCornerRadius(dpToPx(24));
+        rootBg.setStroke(dpToPx(1), applyAlpha(mColorAccent, 80));
+        root.setBackground(rootBg);
+        root.setPadding(dpToPx(20), dpToPx(18), dpToPx(20), dpToPx(14));
 
         LinearLayout header = new LinearLayout(this);
         header.setOrientation(LinearLayout.HORIZONTAL);
         header.setGravity(Gravity.CENTER_VERTICAL);
-        header.setPadding(0, 0, 0, dpToPx(16));
+        header.setPadding(dpToPx(4), 0, dpToPx(4), dpToPx(12));
 
         TextView title = new TextView(this);
         title.setText(R.string.app_picker_title);
-        title.setTextColor(Color.WHITE);
-        title.setTextSize(22f);
-        title.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
+        title.setTextColor(mColorAccent);
+        title.setTextSize(18f);
+        title.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
+        title.setLayoutParams(new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
         header.addView(title);
 
-        Button closeHeaderBtn = new Button(this);
+        TextView closeHeaderBtn = new TextView(this);
         closeHeaderBtn.setText("✕");
-        closeHeaderBtn.setTextSize(16f);
-        closeHeaderBtn.setTextColor(Color.WHITE);
-        closeHeaderBtn.setBackgroundColor(Color.TRANSPARENT);
+        closeHeaderBtn.setTextSize(15f);
+        closeHeaderBtn.setTextColor(0xFFCCCCCC);
+        closeHeaderBtn.setPadding(dpToPx(10), dpToPx(4), dpToPx(10), dpToPx(4));
         closeHeaderBtn.setOnClickListener(v -> finish());
         header.addView(closeHeaderBtn);
         root.addView(header);
 
         EditText searchBar = new EditText(this);
         searchBar.setHint(R.string.app_drawer_search_hint);
-        searchBar.setHintTextColor(0xFF888888);
-        searchBar.setTextColor(Color.WHITE);
+        searchBar.setHintTextColor(applyAlpha(mColorText, 100));
+        searchBar.setTextColor(mColorText);
         searchBar.setTextSize(14f);
         searchBar.setSingleLine(true);
         GradientDrawable searchBg = new GradientDrawable();
-        searchBg.setColor(0xFF222226);
-        searchBg.setCornerRadius(dpToPx(24));
-        searchBg.setStroke(dpToPx(1), 0x33FFFFFF);
+        searchBg.setColor(applyAlpha(mColorText, 25));
+        searchBg.setCornerRadius(dpToPx(20));
         searchBar.setBackground(searchBg);
-        searchBar.setPadding(dpToPx(18), dpToPx(10), dpToPx(18), dpToPx(10));
+        searchBar.setPadding(dpToPx(16), dpToPx(10), dpToPx(16), dpToPx(10));
         searchBar.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -126,63 +136,41 @@ public final class AppPickerActivity extends Activity {
 
         GridView grid = new GridView(this);
         grid.setNumColumns(4);
-        grid.setVerticalSpacing(dpToPx(16));
-        grid.setHorizontalSpacing(dpToPx(16));
-        grid.setPadding(0, dpToPx(20), 0, dpToPx(16));
+        grid.setVerticalSpacing(dpToPx(14));
+        grid.setHorizontalSpacing(dpToPx(14));
+        grid.setPadding(0, dpToPx(16), 0, dpToPx(8));
         grid.setClipToPadding(false);
         mAdapter = new AppGridAdapter();
         grid.setAdapter(mAdapter);
         grid.setOnItemClickListener((parent, view, position, id) -> {
             if (position >= 0 && position < mFilteredApps.size()) {
-                launchInWindow(mFilteredApps.get(position));
+                ResolveInfo selected = mFilteredApps.get(position);
+                launchInWindow(selected);
             }
         });
         LinearLayout.LayoutParams gridLp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1.0f);
         root.addView(grid, gridLp);
 
-        LinearLayout controlsRow = new LinearLayout(this);
-        controlsRow.setOrientation(LinearLayout.HORIZONTAL);
-        controlsRow.setGravity(Gravity.CENTER);
-        controlsRow.setPadding(0, dpToPx(12), 0, dpToPx(8));
-
-        Button fullBtn = createControlButton(getString(R.string.window_control_fullscreen), 0xFF1976D2, () -> {
-            if (!mFilteredApps.isEmpty()) {
-                launchFullscreen(mFilteredApps.get(0));
-            }
-        });
-        controlsRow.addView(fullBtn);
-
-        Button splitBtn = createControlButton(getString(R.string.window_control_split), 0xFF7B1FA2, () -> {
-            if (!mFilteredApps.isEmpty()) {
-                launchSplit(mFilteredApps.get(0));
-            }
-        });
-        controlsRow.addView(splitBtn);
-
-        Button closeBtn = createControlButton(getString(R.string.window_control_close), 0xFFD32F2F, this::finish);
-        controlsRow.addView(closeBtn);
-
-        root.addView(controlsRow);
-
         setContentView(root);
     }
 
-    private Button createControlButton(String label, int color, Runnable action) {
-        Button btn = new Button(this);
-        btn.setText(label);
-        btn.setTextSize(12f);
-        btn.setTextColor(Color.WHITE);
-        GradientDrawable bg = new GradientDrawable();
-        bg.setColor(color);
-        bg.setCornerRadius(dpToPx(16));
-        btn.setBackground(bg);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                dpToPx(120), dpToPx(40));
-        lp.setMargins(dpToPx(8), 0, dpToPx(8), 0);
-        btn.setLayoutParams(lp);
-        btn.setOnClickListener(v -> action.run());
-        return btn;
+    private void resolveThemeColors() {
+        try {
+            mColorAccent = getColor(android.R.color.system_accent1_500);
+        } catch (Exception e) {
+            mColorAccent = 0xFF7C4DFF;
+        }
+        try {
+            mColorSurface = getColor(android.R.color.system_neutral1_900);
+        } catch (Exception e) {
+            mColorSurface = 0xFF14151A;
+        }
+        mColorText = 0xFFFFFFFF;
+    }
+
+    private int applyAlpha(int color, int alpha) {
+        return (color & 0x00FFFFFF) | (alpha << 24);
     }
 
     private void filterApps(String query) {
@@ -202,44 +190,30 @@ public final class AppPickerActivity extends Activity {
     }
 
     private void launchInWindow(ResolveInfo info) {
+        if (info.activityInfo == null) return;
+        Rect bounds = defaultWindowBounds();
         ActivityOptions options = ActivityOptions.makeBasic();
         options.setLaunchWindowingMode(5);
-        int w = getResources().getDisplayMetrics().widthPixels;
-        int h = getResources().getDisplayMetrics().heightPixels;
-        int winW = Math.round(w * 0.7f);
-        int winH = Math.round(h * 0.7f);
-        int left = (w - winW) / 2;
-        int top = (h - winH) / 2;
-        options.setLaunchBounds(new Rect(left, top, left + winW, top + winH));
+        options.setLaunchBounds(bounds);
 
         Intent intent = new Intent(Intent.ACTION_MAIN);
         intent.addCategory(Intent.CATEGORY_LAUNCHER);
         intent.setClassName(info.activityInfo.packageName, info.activityInfo.name);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
         startActivity(intent, options.toBundle());
+
+        FreeformFrameService.showFrame(this, bounds, info.activityInfo.packageName);
         finish();
     }
 
-    private void launchFullscreen(ResolveInfo info) {
-        ActivityOptions options = ActivityOptions.makeBasic();
-        options.setLaunchWindowingMode(1);
-        Intent intent = new Intent(Intent.ACTION_MAIN);
-        intent.addCategory(Intent.CATEGORY_LAUNCHER);
-        intent.setClassName(info.activityInfo.packageName, info.activityInfo.name);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        startActivity(intent, options.toBundle());
-        finish();
-    }
-
-    private void launchSplit(ResolveInfo info) {
-        ActivityOptions options = ActivityOptions.makeBasic();
-        options.setLaunchWindowingMode(3);
-        Intent intent = new Intent(Intent.ACTION_MAIN);
-        intent.addCategory(Intent.CATEGORY_LAUNCHER);
-        intent.setClassName(info.activityInfo.packageName, info.activityInfo.name);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        startActivity(intent, options.toBundle());
-        finish();
+    private Rect defaultWindowBounds() {
+        int w = getResources().getDisplayMetrics().widthPixels;
+        int h = getResources().getDisplayMetrics().heightPixels;
+        int winW = Math.round(w * 0.72f);
+        int winH = Math.round(h * 0.72f);
+        int left = (w - winW) / 2;
+        int top = (h - winH) / 3;
+        return new Rect(left, top, left + winW, top + winH);
     }
 
     private int dpToPx(int dp) {
@@ -272,16 +246,17 @@ public final class AppPickerActivity extends Activity {
                 itemLayout = new LinearLayout(AppPickerActivity.this);
                 itemLayout.setOrientation(LinearLayout.VERTICAL);
                 itemLayout.setGravity(Gravity.CENTER_HORIZONTAL);
-                itemLayout.setPadding(dpToPx(8), dpToPx(8), dpToPx(8), dpToPx(8));
+                itemLayout.setPadding(dpToPx(6), dpToPx(6), dpToPx(6), dpToPx(6));
 
                 iconView = new ImageView(AppPickerActivity.this);
-                LinearLayout.LayoutParams iconLp = new LinearLayout.LayoutParams(dpToPx(56), dpToPx(56));
+                LinearLayout.LayoutParams iconLp = new LinearLayout.LayoutParams(
+                        dpToPx(52), dpToPx(52));
                 iconView.setLayoutParams(iconLp);
                 itemLayout.addView(iconView);
 
                 labelView = new TextView(AppPickerActivity.this);
-                labelView.setTextColor(Color.WHITE);
-                labelView.setTextSize(12f);
+                labelView.setTextColor(applyAlpha(mColorText, 220));
+                labelView.setTextSize(11.5f);
                 labelView.setGravity(Gravity.CENTER_HORIZONTAL);
                 labelView.setSingleLine(true);
                 labelView.setPadding(0, dpToPx(6), 0, 0);

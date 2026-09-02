@@ -107,6 +107,7 @@ final class PenGattService {
 
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+            Log.i(TAG, "onServicesDiscovered status=" + status);
             if (status != BluetoothGatt.GATT_SUCCESS) {
                 Log.e(TAG, "Service discovery failed: " + status);
                 return;
@@ -171,12 +172,6 @@ final class PenGattService {
         public void onCharacteristicChanged(BluetoothGatt gatt,
                 BluetoothGattCharacteristic characteristic, byte[] value) {
             handleReportData(value);
-        }
-
-        @Override
-        public void onCharacteristicChanged(BluetoothGatt gatt,
-                BluetoothGattCharacteristic characteristic) {
-            handleReportData(characteristic.getValue());
         }
     };
 
@@ -326,10 +321,22 @@ final class PenGattService {
         } else if (data.length == 1) {
             mask = data[0] & 0xff;
         }
-        final int gestureMask = mask;
-        if (gestureMask != 0) {
-            Log.i(TAG, "Pen gesture mask: 0x" + Integer.toHexString(gestureMask));
-            mHandler.post(() -> PenShortcuts.executeGesture(mContext, gestureMask));
+        if (mask != 0) {
+            int action = PenShortcuts.ACTION_NONE;
+            if ((mask & 0x01) != 0) {
+                action = PenShortcuts.getAction(mContext, PenShortcuts.SINGLE_SETTING,
+                        PenShortcuts.ACTION_HOME);
+            } else if ((mask & 0x02) != 0 || (mask & 0x04) != 0) {
+                action = PenShortcuts.getAction(mContext, PenShortcuts.DOUBLE_SETTING,
+                        PenShortcuts.ACTION_SCREENSHOT);
+            } else if ((mask & 0x08) != 0 || (mask & 0x10) != 0) {
+                action = PenShortcuts.getAction(mContext, PenShortcuts.LONG_SETTING,
+                        PenShortcuts.ACTION_NONE);
+            }
+            if (action != PenShortcuts.ACTION_NONE) {
+                int targetAction = action;
+                mHandler.post(() -> PenShortcuts.executeAction(mContext, targetAction));
+            }
         }
     }
 

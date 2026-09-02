@@ -34,6 +34,10 @@
             android:title="@string/gaming_overlay_show_fps" />
         <androidx.preference.SwitchPreferenceCompat
             android:defaultValue="true"
+            android:key="gaming_overlay_show_ram"
+            android:title="@string/gaming_overlay_show_ram" />
+        <androidx.preference.SwitchPreferenceCompat
+            android:defaultValue="true"
             android:key="gaming_overlay_show_total_power"
             android:title="@string/gaming_overlay_show_total_power" />
         <androidx.preference.ListPreference
@@ -47,14 +51,5 @@
             android:defaultValue="true"
             android:key="gaming_overlay_show_battery"
             android:title="@string/gaming_overlay_show_battery" />
-    </PreferenceCategory>
-
-    <PreferenceCategory
-        android:key="category_overlay_layout"
-        android:title="@string/gaming_overlay_compact_default">
-        <androidx.preference.SwitchPreferenceCompat
-            android:defaultValue="true"
-            android:key="gaming_overlay_compact_default"
-            android:title="@string/gaming_overlay_compact_default" />
     </PreferenceCategory>
 </PreferenceScreen>
