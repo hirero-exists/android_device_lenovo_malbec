@@ -23,17 +23,17 @@
         <androidx.preference.SwitchPreferenceCompat
             android:defaultValue="false"
             android:dependency="pen_enabled"
-            android:key="pen_wakeup"
-            android:persistent="false"
-            android:summary="@string/pen_wakeup_summary"
-            android:title="@string/pen_wakeup_title" />
-        <androidx.preference.SwitchPreferenceCompat
-            android:defaultValue="false"
-            android:dependency="pen_enabled"
             android:key="pen_toolbar"
             android:persistent="false"
             android:summary="@string/pen_toolbar_summary"
             android:title="@string/pen_toolbar_title" />
+        <androidx.preference.SwitchPreferenceCompat
+            android:defaultValue="false"
+            android:dependency="pen_enabled"
+            android:key="pen_pointer"
+            android:persistent="false"
+            android:summary="@string/pen_pointer_toggle_summary"
+            android:title="@string/pen_pointer_toggle_title" />
         <androidx.preference.ListPreference
             android:defaultValue="4"
             android:dependency="pen_enabled"
@@ -91,11 +91,6 @@
             android:persistent="false"
             android:summary="@string/game_edge_summary"
             android:title="@string/game_edge_title" />
-        <androidx.preference.Preference
-            android:dependency="game_edge"
-            android:key="game_edge_calibrate"
-            android:summary="@string/game_edge_calibrate_summary"
-            android:title="@string/game_edge_calibrate_title" />
         <androidx.preference.SwitchPreferenceCompat
             android:defaultValue="false"
             android:key="gaming_bypass"

@@ -12,9 +12,11 @@
 package com.lenovo.parts;
 
 import android.content.Context;
+import android.hardware.input.AppLaunchData;
 import android.hardware.input.InputGestureData;
 import android.hardware.input.InputManager;
 import android.hardware.input.KeyGestureEvent;
+import android.media.AudioManager;
 import android.os.SystemClock;
 import android.provider.Settings;
 import android.util.Log;
@@ -51,81 +53,13 @@ final class PenShortcuts {
         return success;
     }
 
-    static void apply(Context context) {
-        InputManager inputManager = context.getSystemService(InputManager.class);
-        if (inputManager == null) {
-            return;
-        }
-
-        applyKeyTrigger(inputManager, KeyEvent.KEYCODE_BUTTON_1,
-                getAction(context, SINGLE_SETTING, ACTION_HOME));
-        applyKeyTrigger(inputManager, KeyEvent.KEYCODE_BUTTON_2,
-                getAction(context, DOUBLE_SETTING, ACTION_SCREENSHOT));
-        applyKeyTrigger(inputManager, KeyEvent.KEYCODE_BUTTON_3,
-                getAction(context, LONG_SETTING, ACTION_NONE));
-        applyKeyTrigger(inputManager, KeyEvent.KEYCODE_STYLUS_BUTTON_PRIMARY,
-                getAction(context, SINGLE_SETTING, ACTION_HOME));
-        applyKeyTrigger(inputManager, KeyEvent.KEYCODE_STYLUS_BUTTON_SECONDARY,
-                getAction(context, DOUBLE_SETTING, ACTION_SCREENSHOT));
-        applyKeyTrigger(inputManager, KeyEvent.KEYCODE_STYLUS_BUTTON_TAIL,
-                getAction(context, LONG_SETTING, ACTION_NONE));
-    }
-
-    private static void applyKeyTrigger(InputManager inputManager, int keyCode, int action) {
-        InputGestureData.Trigger trigger = InputGestureData.createKeyTrigger(keyCode, 0);
-        InputGestureData existing = inputManager.getInputGesture(trigger);
-        if (existing != null) {
-            inputManager.removeCustomInputGesture(existing);
-        }
-
-        int frameworkAction = mapToFrameworkGestureType(action);
-        if (frameworkAction == KeyGestureEvent.KEY_GESTURE_TYPE_UNSPECIFIED) {
-            return;
-        }
-
-        InputGestureData gesture = new InputGestureData.Builder()
-                .setTrigger(trigger)
-                .setKeyGestureType(frameworkAction)
-                .setAllowCaptureByFocusedWindow(false)
-                .build();
-        int result = inputManager.addCustomInputGesture(gesture);
-        if (result != InputManager.CUSTOM_INPUT_GESTURE_RESULT_SUCCESS) {
-            Log.e(TAG, "Unable to map stylus key " + keyCode + ", result " + result);
-        }
-    }
-
-    private static int mapToFrameworkGestureType(int action) {
-        switch (action) {
-            case ACTION_TOOLBAR:
-                return KeyGestureEvent.KEY_GESTURE_TYPE_OPEN_NOTES;
-            case ACTION_SCREENSHOT:
-                return KeyGestureEvent.KEY_GESTURE_TYPE_TAKE_SCREENSHOT;
-            case ACTION_RECENTS:
-                return KeyGestureEvent.KEY_GESTURE_TYPE_RECENT_APPS;
-            case ACTION_HOME:
-                return KeyGestureEvent.KEY_GESTURE_TYPE_HOME;
-            case ACTION_PLAY_PAUSE:
-                return KeyGestureEvent.KEY_GESTURE_TYPE_MEDIA_KEY;
-            default:
-                return KeyGestureEvent.KEY_GESTURE_TYPE_UNSPECIFIED;
-        }
-    }
-
-
-    static void executeGesture(Context context, int gestureMask) {
-        if ((gestureMask & 0x01) != 0) {
-            executeAction(context, getAction(context, SINGLE_SETTING, ACTION_HOME));
-        } else if ((gestureMask & 0x02) != 0) {
-            executeAction(context, getAction(context, DOUBLE_SETTING, ACTION_SCREENSHOT));
-        } else if ((gestureMask & 0x08) != 0) {
-            executeAction(context, getAction(context, LONG_SETTING, ACTION_NONE));
-        }
-    }
-
     static void executeAction(Context context, int action) {
         switch (action) {
             case ACTION_TOOLBAR:
                 FloatingToolbarService.showToolbar(context);
+                break;
+            case ACTION_PLAY_PAUSE:
+                dispatchMediaPlayPause(context);
                 break;
             case ACTION_SCREENSHOT:
                 injectKey(context, KeyEvent.KEYCODE_SYSRQ);
@@ -136,15 +70,27 @@ final class PenShortcuts {
             case ACTION_HOME:
                 injectKey(context, KeyEvent.KEYCODE_HOME);
                 break;
-            case ACTION_PLAY_PAUSE:
-                injectKey(context, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE);
-                break;
             default:
                 break;
         }
     }
 
-    private static void injectKey(Context context, int keyCode) {
+    static void dispatchMediaPlayPause(Context context) {
+        AudioManager audioManager = context.getSystemService(AudioManager.class);
+        if (audioManager != null) {
+            long now = SystemClock.uptimeMillis();
+            KeyEvent down = new KeyEvent(now, now, KeyEvent.ACTION_DOWN,
+                    KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, 0);
+            audioManager.dispatchMediaKeyEvent(down);
+            KeyEvent up = new KeyEvent(now, now, KeyEvent.ACTION_UP,
+                    KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, 0);
+            audioManager.dispatchMediaKeyEvent(up);
+        } else {
+            injectKey(context, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE);
+        }
+    }
+
+    static void injectKey(Context context, int keyCode) {
         InputManager inputManager = context.getSystemService(InputManager.class);
         if (inputManager == null) {
             return;
@@ -152,15 +98,76 @@ final class PenShortcuts {
         long now = SystemClock.uptimeMillis();
         int flags = KeyEvent.FLAG_FROM_SYSTEM | KeyEvent.FLAG_VIRTUAL_HARD_KEY;
         KeyEvent down = new KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0, 0,
-                KeyCharacterMap.VIRTUAL_KEYBOARD, 0, flags, InputDevice.SOURCE_KEYBOARD);
+                KeyCharacterMap.VIRTUAL_KEYBOARD, 0, flags,
+                InputDevice.SOURCE_KEYBOARD);
         KeyEvent up = KeyEvent.changeAction(down, KeyEvent.ACTION_UP);
-        boolean downInjected = inputManager.injectInputEvent(
-                down, InputManager.INJECT_INPUT_EVENT_MODE_WAIT_FOR_RESULT);
-        boolean upInjected = inputManager.injectInputEvent(
-                up, InputManager.INJECT_INPUT_EVENT_MODE_WAIT_FOR_RESULT);
-        if (!downInjected || !upInjected) {
-            Log.e(TAG, "Unable to inject key " + keyCode + ", down="
-                    + downInjected + ", up=" + upInjected);
+        inputManager.injectInputEvent(down,
+                InputManager.INJECT_INPUT_EVENT_MODE_ASYNC);
+        inputManager.injectInputEvent(up,
+                InputManager.INJECT_INPUT_EVENT_MODE_ASYNC);
+    }
+
+    static void apply(Context context) {
+        InputManager inputManager = context.getSystemService(InputManager.class);
+        if (inputManager == null) {
+            return;
+        }
+
+        applyKeyTrigger(context, inputManager, KeyEvent.KEYCODE_BUTTON_1,
+                getAction(context, SINGLE_SETTING, ACTION_HOME));
+        applyKeyTrigger(context, inputManager, KeyEvent.KEYCODE_BUTTON_2,
+                getAction(context, DOUBLE_SETTING, ACTION_SCREENSHOT));
+        applyKeyTrigger(context, inputManager, KeyEvent.KEYCODE_BUTTON_3,
+                getAction(context, LONG_SETTING, ACTION_NONE));
+        applyKeyTrigger(context, inputManager, KeyEvent.KEYCODE_STYLUS_BUTTON_PRIMARY,
+                getAction(context, SINGLE_SETTING, ACTION_HOME));
+        applyKeyTrigger(context, inputManager, KeyEvent.KEYCODE_STYLUS_BUTTON_SECONDARY,
+                getAction(context, DOUBLE_SETTING, ACTION_SCREENSHOT));
+        applyKeyTrigger(context, inputManager, KeyEvent.KEYCODE_STYLUS_BUTTON_TAIL,
+                getAction(context, LONG_SETTING, ACTION_NONE));
+    }
+
+    private static void applyKeyTrigger(Context context, InputManager inputManager,
+            int keyCode, int action) {
+        InputGestureData.Trigger trigger = InputGestureData.createKeyTrigger(keyCode, 0);
+        InputGestureData existing = inputManager.getInputGesture(trigger);
+        if (existing != null) {
+            inputManager.removeCustomInputGesture(existing);
+        }
+
+        InputGestureData.Builder builder = new InputGestureData.Builder()
+                .setTrigger(trigger)
+                .setAllowCaptureByFocusedWindow(false);
+        switch (action) {
+            case ACTION_TOOLBAR:
+                builder.setKeyGestureType(KeyGestureEvent.KEY_GESTURE_TYPE_LAUNCH_APPLICATION)
+                        .setAppLaunchData(AppLaunchData.createLaunchDataForComponent(
+                                context.getPackageName(),
+                                ToolbarTrampolineActivity.class.getName()));
+                break;
+            case ACTION_PLAY_PAUSE:
+                builder.setKeyGestureType(KeyGestureEvent.KEY_GESTURE_TYPE_LAUNCH_APPLICATION)
+                        .setAppLaunchData(AppLaunchData.createLaunchDataForComponent(
+                                context.getPackageName(),
+                                MediaTrampolineActivity.class.getName()));
+                break;
+            case ACTION_SCREENSHOT:
+                builder.setKeyGestureType(KeyGestureEvent.KEY_GESTURE_TYPE_TAKE_SCREENSHOT);
+                break;
+            case ACTION_RECENTS:
+                builder.setKeyGestureType(KeyGestureEvent.KEY_GESTURE_TYPE_RECENT_APPS);
+                break;
+            case ACTION_HOME:
+                builder.setKeyGestureType(KeyGestureEvent.KEY_GESTURE_TYPE_HOME);
+                break;
+            default:
+                return;
+        }
+
+        InputGestureData gesture = builder.build();
+        int result = inputManager.addCustomInputGesture(gesture);
+        if (result != InputManager.CUSTOM_INPUT_GESTURE_RESULT_SUCCESS) {
+            Log.e(TAG, "Unable to map stylus key " + keyCode + ", result " + result);
         }
     }
 }

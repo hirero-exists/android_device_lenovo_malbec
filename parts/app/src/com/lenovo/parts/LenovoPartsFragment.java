@@ -28,15 +28,14 @@ public final class LenovoPartsFragment extends SettingsBasePreferenceFragment
         implements Preference.OnPreferenceChangeListener {
     private static final String KEY_FOLIO_COVER = "folio_cover";
     private static final String KEY_PEN_ENABLED = "pen_enabled";
-    private static final String KEY_PEN_WAKEUP = "pen_wakeup";
     private static final String KEY_PEN_TOOLBAR = "pen_toolbar";
+    private static final String KEY_PEN_POINTER = "pen_pointer";
     private static final String KEY_PEN_SINGLE_ACTION = "pen_single_action";
     private static final String KEY_PEN_DOUBLE_ACTION = "pen_double_action";
     private static final String KEY_PEN_LONG_ACTION = "pen_long_action";
     private static final String KEY_REFRESH_RATE = "refresh_rate";
     private static final String KEY_HIGH_REPORT_RATE = "high_report_rate";
     private static final String KEY_GAME_EDGE = "game_edge";
-    private static final String KEY_GAME_EDGE_CALIBRATE = "game_edge_calibrate";
     private static final String KEY_GAMING_BYPASS = "gaming_bypass";
     private static final String KEY_GAMING_OVERLAY = "gaming_overlay";
     private static final String KEY_GAMING_OVERLAY_SETTINGS = "gaming_overlay_settings";
@@ -51,15 +50,14 @@ public final class LenovoPartsFragment extends SettingsBasePreferenceFragment
 
         setupPreference(KEY_FOLIO_COVER);
         setupPreference(KEY_PEN_ENABLED);
-        setupPreference(KEY_PEN_WAKEUP);
         setupPreference(KEY_PEN_TOOLBAR);
+        setupPreference(KEY_PEN_POINTER);
         setupPreference(KEY_PEN_SINGLE_ACTION);
         setupPreference(KEY_PEN_DOUBLE_ACTION);
         setupPreference(KEY_PEN_LONG_ACTION);
         setupPreference(KEY_REFRESH_RATE);
         setupPreference(KEY_HIGH_REPORT_RATE);
         setupPreference(KEY_GAME_EDGE);
-        setupPreference(KEY_GAME_EDGE_CALIBRATE);
         setupPreference(KEY_GAMING_BYPASS);
         setupPreference(KEY_GAMING_OVERLAY);
         setupPreference(KEY_GAMING_OVERLAY_SETTINGS);
@@ -102,16 +100,16 @@ public final class LenovoPartsFragment extends SettingsBasePreferenceFragment
             pen.setChecked(penEnabled);
         }
 
-        TwoStatePreference penWakeup = findPreference(KEY_PEN_WAKEUP);
-        if (penWakeup != null) {
-            penWakeup.setEnabled(penEnabled);
-            penWakeup.setChecked(PenMode.isWakeupEnabled());
-        }
-
         TwoStatePreference penToolbar = findPreference(KEY_PEN_TOOLBAR);
         if (penToolbar != null) {
             penToolbar.setEnabled(penEnabled);
             penToolbar.setChecked(PenMode.isToolbarEnabled());
+        }
+
+        TwoStatePreference penPointer = findPreference(KEY_PEN_POINTER);
+        if (penPointer != null) {
+            penPointer.setEnabled(penEnabled);
+            penPointer.setChecked(PenMode.isPointerEnabled());
         }
 
         refreshPenAction(KEY_PEN_SINGLE_ACTION, PenShortcuts.SINGLE_SETTING, PenShortcuts.ACTION_HOME);
@@ -137,6 +135,11 @@ public final class LenovoPartsFragment extends SettingsBasePreferenceFragment
         TwoStatePreference bypass = findPreference(KEY_GAMING_BYPASS);
         if (bypass != null) {
             bypass.setChecked(GamingBypassController.getInstance(context).isBypassEnabled());
+        }
+
+        TwoStatePreference overlay = findPreference(KEY_GAMING_OVERLAY);
+        if (overlay != null) {
+            overlay.setChecked(GamingOverlayService.isOverlayActive());
         }
 
         boolean dolbyEnabled = DolbyMode.isEnabled(context.getContentResolver());
@@ -166,10 +169,7 @@ public final class LenovoPartsFragment extends SettingsBasePreferenceFragment
 
     @Override
     public boolean onPreferenceTreeClick(Preference preference) {
-        if (KEY_GAME_EDGE_CALIBRATE.equals(preference.getKey())) {
-            startActivity(new Intent(getContext(), EdgeCalibrationActivity.class));
-            return true;
-        } else if (KEY_GAMING_OVERLAY_SETTINGS.equals(preference.getKey())) {
+        if (KEY_GAMING_OVERLAY_SETTINGS.equals(preference.getKey())) {
             startActivity(new Intent(getContext(), GamingOverlaySettingsActivity.class));
             return true;
         }
@@ -203,10 +203,6 @@ public final class LenovoPartsFragment extends SettingsBasePreferenceFragment
             boolean enabled = (Boolean) newValue;
             if (PenMode.setEnabled(enabled)) {
                 PenGattService.onPenEnabledChanged();
-                Preference penWakeup = findPreference(KEY_PEN_WAKEUP);
-                if (penWakeup != null) {
-                    penWakeup.setEnabled(enabled);
-                }
                 Preference penToolbar = findPreference(KEY_PEN_TOOLBAR);
                 if (penToolbar != null) {
                     penToolbar.setEnabled(enabled);
@@ -231,8 +227,6 @@ public final class LenovoPartsFragment extends SettingsBasePreferenceFragment
                 return true;
             }
             return false;
-        } else if (KEY_PEN_WAKEUP.equals(key)) {
-            return PenMode.setWakeupEnabled((Boolean) newValue);
         } else if (KEY_PEN_TOOLBAR.equals(key)) {
             boolean enabled = (Boolean) newValue;
             if (PenMode.setToolbarEnabled(enabled)) {
@@ -241,6 +235,13 @@ public final class LenovoPartsFragment extends SettingsBasePreferenceFragment
                 } else {
                     context.stopService(new Intent(context, FloatingToolbarService.class));
                 }
+                return true;
+            }
+            return false;
+        } else if (KEY_PEN_POINTER.equals(key)) {
+            boolean enabled = (Boolean) newValue;
+            if (PenMode.setPointerEnabled(enabled)) {
+                PenPointerAccessibilityService.apply(context, enabled);
                 return true;
             }
             return false;
