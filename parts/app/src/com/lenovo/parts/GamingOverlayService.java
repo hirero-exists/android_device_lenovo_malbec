@@ -11,6 +11,7 @@
 
 package com.lenovo.parts;
 
+import android.app.ActivityManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -18,27 +19,35 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
+import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.os.SystemProperties;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.preference.PreferenceManager;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.util.Locale;
 
 public final class GamingOverlayService extends Service {
     private static final String CHANNEL_ID = "gaming_overlay_channel";
     private static final int NOTIFICATION_ID = 2001;
+    private static final long GB = 1024L * 1024L * 1024L;
 
     private static final String PROP_OVERLAY_ACTIVE = "sys.malbec.perf.overlay_active";
+    private static final String PROP_PERSIST_OVERLAY = "persist.sys.gaming.overlay";
     private static final String PROP_CPU_USAGE = "sys.malbec.perf.cpu_usage";
     private static final String PROP_CPU_FREQ = "sys.malbec.perf.cpu_freq_mhz";
     private static final String PROP_CPU_TEMP = "sys.malbec.perf.cpu_temp_c";
@@ -52,25 +61,45 @@ public final class GamingOverlayService extends Service {
     private static final String PROP_BATTERY_CAP = "sys.malbec.power.battery_capacity";
     private static final String PROP_BYPASS_ACTIVE = "sys.malbec.bypass.active";
 
+    private static final String PREF_SHOW_FPS = "gaming_overlay_show_fps";
+    private static final String PREF_SHOW_RAM = "gaming_overlay_show_ram";
+
     private static volatile boolean sIsActive = false;
 
     private WindowManager mWindowManager;
     private WindowManager.LayoutParams mParams;
     private LinearLayout mRootView;
-    private TextView mCompactText;
-    private LinearLayout mExpandedContainer;
-    private TextView mExpandedStatsText;
-    private Button mBypassToggleBtn;
-    private boolean mExpanded = false;
+    private TextView mCpuText;
+    private TextView mGpuText;
+    private TextView mFpsRamText;
+    private TextView mPowerText;
+
+    private int mColorSurface = 0xFF14151A;
+    private int mColorAccent = 0xFF7C4DFF;
+    private int mColorText = 0xFFFFFFFF;
 
     private final Handler mHandler = new Handler(Looper.getMainLooper());
+    private HandlerThread mFpsThread;
+    private Handler mFpsHandler;
     private SharedPreferences mPrefs;
+
+    private volatile int mFps = -1;
+    private long mLastTotalFrames = -1;
+    private long mLastFpsTimestamp = 0;
 
     private final Runnable mUpdateRunnable = new Runnable() {
         @Override
         public void run() {
             updateMetrics();
             mHandler.postDelayed(this, 500);
+        }
+    };
+
+    private final Runnable mFpsRunnable = new Runnable() {
+        @Override
+        public void run() {
+            pollFps();
+            mFpsHandler.postDelayed(this, 1000);
         }
     };
 
@@ -104,7 +133,14 @@ public final class GamingOverlayService extends Service {
                 .build();
         startForeground(NOTIFICATION_ID, notification);
 
+        resolveThemeColors();
         buildOverlayView();
+
+        enableTimestats(true);
+        mFpsThread = new HandlerThread("GamingOverlayFps");
+        mFpsThread.start();
+        mFpsHandler = new Handler(mFpsThread.getLooper());
+        mFpsHandler.post(mFpsRunnable);
         mHandler.post(mUpdateRunnable);
     }
 
@@ -120,81 +156,110 @@ public final class GamingOverlayService extends Service {
         }
     }
 
+    private void resolveThemeColors() {
+        mColorSurface = themedColor(android.R.attr.colorBackgroundFloating, 0xFF14151A);
+        mColorAccent = themedColor(android.R.attr.colorAccent, 0xFFA8C7FA);
+        TypedArray ta = obtainStyledAttributes(new int[]{android.R.attr.textColorPrimary});
+        try {
+            mColorText = ta.getColor(0, 0xFFFFFFFF);
+        } finally {
+            ta.recycle();
+        }
+    }
+
+    private int themedColor(int attr, int fallback) {
+        TypedArray ta = obtainStyledAttributes(new int[]{attr});
+        try {
+            return ta.getColor(0, fallback);
+        } finally {
+            ta.recycle();
+        }
+    }
+
     private void buildOverlayView() {
         mParams = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                        | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
                 PixelFormat.TRANSLUCENT);
 
         mParams.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
         mParams.x = 0;
-        mParams.y = dpToPx(8);
+        mParams.y = dpToPx(12);
 
         mRootView = new LinearLayout(this);
         mRootView.setOrientation(LinearLayout.VERTICAL);
-        mRootView.setGravity(Gravity.CENTER);
+        mRootView.setPadding(dpToPx(14), dpToPx(10), dpToPx(14), dpToPx(10));
 
         GradientDrawable bg = new GradientDrawable();
-        bg.setColor(0xE6141416);
-        bg.setCornerRadius(dpToPx(20));
-        bg.setStroke(dpToPx(1), 0x33FFFFFF);
+        bg.setColor(0xDD14151A);
+        bg.setCornerRadius(dpToPx(18));
+        bg.setStroke(dpToPx(1), applyAlpha(mColorAccent, 90));
         mRootView.setBackground(bg);
-        mRootView.setPadding(dpToPx(16), dpToPx(6), dpToPx(16), dpToPx(6));
+        mRootView.setElevation(dpToPx(8));
 
-        mCompactText = new TextView(this);
-        mCompactText.setTextColor(Color.WHITE);
-        mCompactText.setTextSize(12f);
-        mCompactText.setGravity(Gravity.CENTER);
-        mRootView.addView(mCompactText);
+        LinearLayout header = new LinearLayout(this);
+        header.setOrientation(LinearLayout.HORIZONTAL);
+        header.setGravity(Gravity.CENTER_VERTICAL);
+        header.setPadding(0, 0, 0, dpToPx(6));
 
-        mExpandedContainer = new LinearLayout(this);
-        mExpandedContainer.setOrientation(LinearLayout.VERTICAL);
-        mExpandedContainer.setVisibility(View.GONE);
-        mExpandedContainer.setPadding(0, dpToPx(8), 0, dpToPx(4));
+        View dot = new View(this);
+        GradientDrawable dotBg = new GradientDrawable();
+        dotBg.setShape(GradientDrawable.OVAL);
+        dotBg.setColor(0xFF6DD58C);
+        dot.setBackground(dotBg);
+        LinearLayout.LayoutParams dotLp = new LinearLayout.LayoutParams(dpToPx(7), dpToPx(7));
+        dotLp.setMargins(0, 0, dpToPx(6), 0);
+        header.addView(dot, dotLp);
 
-        mExpandedStatsText = new TextView(this);
-        mExpandedStatsText.setTextColor(0xFFCCCCCC);
-        mExpandedStatsText.setTextSize(11f);
-        mExpandedContainer.addView(mExpandedStatsText);
+        TextView title = new TextView(this);
+        title.setText(R.string.gaming_overlay_title);
+        title.setTextColor(mColorAccent);
+        title.setTextSize(11f);
+        title.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
+        title.setLetterSpacing(0.04f);
+        LinearLayout.LayoutParams titleLp = new LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f);
+        header.addView(title, titleLp);
 
-        LinearLayout btnRow = new LinearLayout(this);
-        btnRow.setOrientation(LinearLayout.HORIZONTAL);
-        btnRow.setGravity(Gravity.CENTER);
-        btnRow.setPadding(0, dpToPx(8), 0, 0);
-
-        mBypassToggleBtn = new Button(this);
-        mBypassToggleBtn.setTextSize(11f);
-        mBypassToggleBtn.setTextColor(Color.WHITE);
-        mBypassToggleBtn.setBackgroundColor(0xFF2E7D32);
-        mBypassToggleBtn.setOnClickListener(v -> {
-            boolean active = SystemProperties.getBoolean(PROP_BYPASS_ACTIVE, false);
-            GamingBypassController.getInstance(this).setBypassEnabled(!active);
+        TextView closeBtn = new TextView(this);
+        closeBtn.setText("✕");
+        closeBtn.setTextColor(0xFFCCCCCC);
+        closeBtn.setTextSize(13f);
+        closeBtn.setGravity(Gravity.CENTER);
+        closeBtn.setPadding(dpToPx(8), dpToPx(2), dpToPx(8), dpToPx(2));
+        GradientDrawable closeBg = new GradientDrawable();
+        closeBg.setColor(0x33FFFFFF);
+        closeBg.setCornerRadius(dpToPx(12));
+        closeBtn.setBackground(closeBg);
+        closeBtn.setOnClickListener(v -> {
+            try {
+                SystemProperties.set(PROP_PERSIST_OVERLAY, "0");
+            } catch (Exception ignored) {
+            }
+            stopOverlay(GamingOverlayService.this);
         });
+        header.addView(closeBtn);
+        mRootView.addView(header);
 
-        btnRow.addView(mBypassToggleBtn);
+        LinearLayout statsBox = new LinearLayout(this);
+        statsBox.setOrientation(LinearLayout.VERTICAL);
 
-        Button settingsBtn = new Button(this);
-        settingsBtn.setText(R.string.gaming_overlay_settings_title);
-        settingsBtn.setTextSize(11f);
-        settingsBtn.setTextColor(Color.WHITE);
-        settingsBtn.setBackgroundColor(0xFF37474F);
-        settingsBtn.setOnClickListener(v -> {
-            Intent intent = new Intent(this, GamingOverlaySettingsActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(intent);
-        });
-        btnRow.addView(settingsBtn);
+        mCpuText = createMetricRow();
+        statsBox.addView(mCpuText);
 
-        mExpandedContainer.addView(btnRow);
-        mRootView.addView(mExpandedContainer);
+        mGpuText = createMetricRow();
+        statsBox.addView(mGpuText);
 
-        mRootView.setOnClickListener(v -> {
-            mExpanded = !mExpanded;
-            mExpandedContainer.setVisibility(mExpanded ? View.VISIBLE : View.GONE);
-            mWindowManager.updateViewLayout(mRootView, mParams);
-        });
+        mFpsRamText = createMetricRow();
+        statsBox.addView(mFpsRamText);
+
+        mPowerText = createMetricRow();
+        statsBox.addView(mPowerText);
+
+        mRootView.addView(statsBox);
 
         mRootView.setOnTouchListener(new View.OnTouchListener() {
             private int initialX;
@@ -234,6 +299,15 @@ public final class GamingOverlayService extends Service {
         mWindowManager.addView(mRootView, mParams);
     }
 
+    private TextView createMetricRow() {
+        TextView tv = new TextView(this);
+        tv.setTextColor(0xFFE3E2E6);
+        tv.setTextSize(11f);
+        tv.setTypeface(Typeface.MONOSPACE);
+        tv.setPadding(0, dpToPx(2), 0, dpToPx(2));
+        return tv;
+    }
+
     private void updateMetrics() {
         int cpuUsage = SystemProperties.getInt(PROP_CPU_USAGE, 0);
         int cpuFreq = SystemProperties.getInt(PROP_CPU_FREQ, 0);
@@ -256,58 +330,123 @@ public final class GamingOverlayService extends Service {
         boolean showGpuUsage = mPrefs.getBoolean("gaming_overlay_show_gpu_usage", true);
         boolean showGpuFreq = mPrefs.getBoolean("gaming_overlay_show_gpu_freq", false);
         boolean showGpuTemp = mPrefs.getBoolean("gaming_overlay_show_gpu_temp", true);
+        boolean showFps = mPrefs.getBoolean(PREF_SHOW_FPS, true);
+        boolean showRam = mPrefs.getBoolean(PREF_SHOW_RAM, true);
         boolean showTotalPower = mPrefs.getBoolean("gaming_overlay_show_total_power", true);
         boolean showBattery = mPrefs.getBoolean("gaming_overlay_show_battery", true);
-        String socModeStr = mPrefs.getString("gaming_overlay_soc_power_mode", "3");
-        int socMode = 3;
-        try {
-            socMode = Integer.parseInt(socModeStr);
-        } catch (Exception ignored) {}
 
-        StringBuilder compact = new StringBuilder();
+        float[] ram = showRam ? readRamGiB() : null;
 
-        if (showCpuUsage) compact.append("CPU ").append(cpuUsage).append("% ");
-        if (showCpuFreq) compact.append(cpuFreq).append("MHz ");
-        if (showCpuTemp) compact.append(cpuTemp).append("°C ");
-        if (compact.length() > 0) compact.append("| ");
+        StringBuilder cpuSb = new StringBuilder("CPU ");
+        if (showCpuUsage) cpuSb.append(cpuUsage).append("% ");
+        if (showCpuFreq) cpuSb.append("@ ").append(cpuFreq).append("MHz ");
+        if (showCpuTemp) cpuSb.append("• ").append(cpuTemp).append("°C ");
+        cpuSb.append("• ").append(String.format(Locale.US, "%.1fW", cpuPower / 1000.0));
+        mCpuText.setText(cpuSb.toString());
 
-        if (showGpuUsage) compact.append("GPU ").append(gpuUsage).append("% ");
-        if (showGpuFreq) compact.append(gpuFreq).append("MHz ");
-        if (showGpuTemp) compact.append(gpuTemp).append("°C ");
-        if (compact.length() > 0 && compact.charAt(compact.length() - 2) != '|') compact.append("| ");
+        StringBuilder gpuSb = new StringBuilder("GPU ");
+        if (showGpuUsage) gpuSb.append(gpuUsage).append("% ");
+        if (showGpuFreq) gpuSb.append("@ ").append(gpuFreq).append("MHz ");
+        if (showGpuTemp) gpuSb.append("• ").append(gpuTemp).append("°C ");
+        gpuSb.append("• ").append(String.format(Locale.US, "%.1fW", gpuPower / 1000.0));
+        mGpuText.setText(gpuSb.toString());
 
-        if (socMode == 1) {
-            compact.append(String.format("CPU: %.1fW | ", cpuPower / 1000.0));
-        } else if (socMode == 2) {
-            compact.append(String.format("GPU: %.1fW | ", gpuPower / 1000.0));
-        } else if (socMode == 3) {
-            compact.append(String.format("CPU: %.1fW GPU: %.1fW | ", cpuPower / 1000.0, gpuPower / 1000.0));
-        } else if (socMode == 4) {
-            compact.append(String.format("SoC: %.1fW | ", socPower / 1000.0));
+        StringBuilder fpsRamSb = new StringBuilder();
+        if (showFps) {
+            fpsRamSb.append("FPS: ").append(mFps < 0 ? "--" : mFps);
+        }
+        if (showRam && ram != null) {
+            if (fpsRamSb.length() > 0) fpsRamSb.append("  •  ");
+            fpsRamSb.append(String.format(Locale.US, "RAM: %.1f/%.1fGB", ram[0], ram[1]));
+        }
+        if (fpsRamSb.length() > 0) {
+            mFpsRamText.setVisibility(View.VISIBLE);
+            mFpsRamText.setText(fpsRamSb.toString());
+        } else {
+            mFpsRamText.setVisibility(View.GONE);
         }
 
+        StringBuilder pwrSb = new StringBuilder();
+        pwrSb.append(String.format(Locale.US, "SoC: %.1fW", socPower / 1000.0));
         if (showTotalPower) {
-            String label = bypass ? "Bypass" : "Pwr";
-            compact.append(String.format("%s: %.1fW ", label, totalPower / 1000.0));
+            pwrSb.append(String.format(Locale.US, "  •  %s: %.1fW",
+                    bypass ? "Bypass" : "Draw", totalPower / 1000.0));
         }
-
         if (showBattery) {
-            compact.append("• ").append(battery).append("%");
+            pwrSb.append("  •  Bat: ").append(battery).append("%");
         }
+        mPowerText.setText(pwrSb.toString());
+    }
 
-        mCompactText.setText(compact.toString().trim());
-
-        if (mExpanded) {
-            StringBuilder exp = new StringBuilder();
-            exp.append("CPU: ").append(cpuUsage).append("% @ ").append(cpuFreq).append("MHz (").append(cpuTemp).append("°C) ~ ").append(String.format("%.2fW\n", cpuPower / 1000.0));
-            exp.append("GPU: ").append(gpuUsage).append("% @ ").append(gpuFreq).append("MHz (").append(gpuTemp).append("°C) ~ ").append(String.format("%.2fW\n", gpuPower / 1000.0));
-            exp.append("SoC Combined: ").append(String.format("%.2fW\n", socPower / 1000.0));
-            exp.append("Total System Draw: ").append(String.format("%.2fW (%s)\n", totalPower / 1000.0, bypass ? "Bypass active" : "Battery"));
-            exp.append("Battery: ").append(battery).append("%");
-            mExpandedStatsText.setText(exp.toString());
-            mBypassToggleBtn.setText(bypass ? "Disable Bypass" : "Enable Bypass");
-            mBypassToggleBtn.setBackgroundColor(bypass ? 0xFFC62828 : 0xFF2E7D32);
+    private float[] readRamGiB() {
+        ActivityManager am = getSystemService(ActivityManager.class);
+        if (am == null) {
+            return null;
         }
+        ActivityManager.MemoryInfo info = new ActivityManager.MemoryInfo();
+        am.getMemoryInfo(info);
+        if (info.totalMem <= 0) {
+            return null;
+        }
+        return new float[]{
+                (info.totalMem - info.availMem) / (float) GB,
+                info.totalMem / (float) GB
+        };
+    }
+
+    private void enableTimestats(boolean enable) {
+        try {
+            Process process = Runtime.getRuntime().exec(new String[]{
+                    "dumpsys", "SurfaceFlinger",
+                    "--timestats", enable ? "-enable" : "-disable"});
+            process.waitFor();
+            process.destroy();
+        } catch (Exception ignored) {
+        }
+    }
+
+    private void pollFps() {
+        try {
+            if (!mPrefs.getBoolean(PREF_SHOW_FPS, true)) {
+                mFps = -1;
+                mLastTotalFrames = -1;
+                return;
+            }
+            Process process = Runtime.getRuntime().exec(new String[]{
+                    "dumpsys", "SurfaceFlinger", "--timestats", "-dump"});
+            BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(process.getInputStream()));
+            long totalFrames = -1;
+            String line;
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+                if (line.startsWith("totalFrames = ")) {
+                    totalFrames = Long.parseLong(line.substring("totalFrames = ".length()).trim());
+                    break;
+                }
+            }
+            reader.close();
+            process.waitFor();
+            process.destroy();
+            if (totalFrames < 0) {
+                return;
+            }
+            long now = SystemClock.elapsedRealtime();
+            if (mLastTotalFrames >= 0) {
+                double seconds = (now - mLastFpsTimestamp) / 1000.0;
+                if (seconds >= 0.5) {
+                    mFps = (int) Math.max(0,
+                            Math.round((totalFrames - mLastTotalFrames) / seconds));
+                }
+            }
+            mLastTotalFrames = totalFrames;
+            mLastFpsTimestamp = now;
+        } catch (Exception ignored) {
+        }
+    }
+
+    private int applyAlpha(int color, int alpha) {
+        return (color & 0x00FFFFFF) | (alpha << 24);
     }
 
     private int dpToPx(int dp) {
@@ -320,6 +459,14 @@ public final class GamingOverlayService extends Service {
         sIsActive = false;
         SystemProperties.set(PROP_OVERLAY_ACTIVE, "0");
         mHandler.removeCallbacks(mUpdateRunnable);
+        if (mFpsHandler != null) {
+            mFpsHandler.removeCallbacks(mFpsRunnable);
+        }
+        enableTimestats(false);
+        if (mFpsThread != null) {
+            mFpsThread.quitSafely();
+            mFpsThread = null;
+        }
         if (mRootView != null && mRootView.isAttachedToWindow()) {
             mWindowManager.removeView(mRootView);
         }

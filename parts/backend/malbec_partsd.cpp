@@ -69,11 +69,15 @@ constexpr char kPenWakePath[] = "/proc/pen_wakeup_mode";
 constexpr char kHighReportRatePath[] = "/proc/HighReportRate";
 constexpr char kGameEdgePath[] = "/proc/game_edge";
 constexpr char kEdgeGridZonePath[] = "/proc/edge_grid_zone";
-constexpr char kGpuBusyPath[] = "/sys/class/kgsl/kgsl-3d0/gpu_busy_percentage";
+constexpr char kGpuLoadPath[] = "/sys/class/kgsl/kgsl-3d0/devfreq/gpu_load";
 constexpr char kGpuClockPath[] = "/sys/class/kgsl/kgsl-3d0/clock_mhz";
 constexpr char kGpuTempPath[] = "/sys/class/kgsl/kgsl-3d0/temp";
-constexpr char kCpuFreqPath[] =
-        "/sys/devices/system/cpu/cpu7/cpufreq/scaling_cur_freq";
+constexpr char kCpuFreqPaths[][64] = {
+        "/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq",
+        "/sys/devices/system/cpu/cpu2/cpufreq/scaling_cur_freq",
+        "/sys/devices/system/cpu/cpu5/cpufreq/scaling_cur_freq",
+        "/sys/devices/system/cpu/cpu7/cpufreq/scaling_cur_freq",
+};
 
 constexpr char kChargingEnabledPath[] =
         "/sys/class/power_supply/battery/charging_enabled";
@@ -234,9 +238,10 @@ struct CpuTicks {
 CpuTicks g_prev_ticks = {};
 bool g_has_prev_ticks = false;
 std::string g_cpu_temp_path;
+std::string g_gpu_temp_path;
 
 std::string FindThermalZone(const std::string& target_type) {
-    for (int index = 0; index < 60; ++index) {
+    for (int index = 0; index < 90; ++index) {
         std::string type_path =
                 "/sys/class/thermal/thermal_zone" + std::to_string(index) + "/type";
         std::string type;
@@ -291,28 +296,56 @@ int CalculateCpuUsage() {
 
 void PublishPerformanceTelemetry() {
     if (g_cpu_temp_path.empty()) {
-        g_cpu_temp_path = FindThermalZone("cpuss-0-0");
+        g_cpu_temp_path = FindThermalZone("ap-therm");
         if (g_cpu_temp_path.empty()) {
-            g_cpu_temp_path = "/sys/class/thermal/thermal_zone16/temp";
+            g_cpu_temp_path = FindThermalZone("sys-therm-0");
+        }
+        if (g_cpu_temp_path.empty()) {
+            g_cpu_temp_path = FindThermalZone("cpuss-0-0");
+        }
+    }
+    if (g_gpu_temp_path.empty()) {
+        g_gpu_temp_path = FindThermalZone("sys-therm-0");
+        if (g_gpu_temp_path.empty()) {
+            g_gpu_temp_path = FindThermalZone("ap-therm");
         }
     }
 
     int cpu_usage = CalculateCpuUsage();
-    int cpu_freq_mhz = ReadInt(kCpuFreqPath, 0) / 1000;
-    int cpu_temp_c = ReadInt(g_cpu_temp_path.c_str(), 0) / 1000;
+    int c0_freq = ReadInt(kCpuFreqPaths[0], 0) / 1000;
+    int c1_freq = ReadInt(kCpuFreqPaths[1], 0) / 1000;
+    int c2_freq = ReadInt(kCpuFreqPaths[2], 0) / 1000;
+    int c3_freq = ReadInt(kCpuFreqPaths[3], 0) / 1000;
+    int cpu_freq_mhz = std::max(std::max(c0_freq, c1_freq), std::max(c2_freq, c3_freq));
+    int cpu_temp_c = !g_cpu_temp_path.empty()
+            ? ReadInt(g_cpu_temp_path.c_str(), 0) / 1000 : 0;
 
-
-    int gpu_busy = ReadInt(kGpuBusyPath, 0);
+    int gpu_busy = ReadInt("/sys/class/kgsl/kgsl-3d0/gpu_busy_percentage", -1);
+    if (gpu_busy < 0) {
+        gpu_busy = ReadInt(kGpuLoadPath, 0);
+    }
+    gpu_busy = std::max(0, std::min(100, gpu_busy));
     int gpu_freq_mhz = ReadInt(kGpuClockPath, 0);
-    int gpu_temp_c = ReadInt(kGpuTempPath, 0) / 1000;
+    int gpu_temp_c = !g_gpu_temp_path.empty()
+            ? ReadInt(g_gpu_temp_path.c_str(), 0) / 1000
+            : ReadInt(kGpuTempPath, 0) / 1000;
 
-    double cpu_f_ratio = std::max(0.15, static_cast<double>(cpu_freq_mhz) / 3206.0);
-    int cpu_power_mw = static_cast<int>(250.0 + (cpu_f_ratio * cpu_f_ratio * 3800.0 * (static_cast<double>(cpu_usage) / 100.0)));
+    double load_ratio = static_cast<double>(cpu_usage) / 100.0;
+    double r0 = std::max(0.1, static_cast<double>(c0_freq) / 2016.0);
+    double r1 = std::max(0.1, static_cast<double>(c1_freq) / 3014.0);
+    double r2 = std::max(0.1, static_cast<double>(c2_freq) / 2803.0);
+    double r3 = std::max(0.1, static_cast<double>(c3_freq) / 3206.0);
+    int cpu_power_mw = static_cast<int>(400.0 + load_ratio * (
+            r0 * r0 * 1200.0 +
+            r1 * r1 * 3800.0 +
+            r2 * r2 * 3000.0 +
+            r3 * r3 * 4500.0));
 
-    double gpu_f_ratio = std::max(0.2, static_cast<double>(gpu_freq_mhz) / 1050.0);
-    int gpu_power_mw = static_cast<int>(80.0 + (gpu_f_ratio * gpu_f_ratio * 4500.0 * (static_cast<double>(gpu_busy) / 100.0)));
+    double gpu_load_ratio = static_cast<double>(gpu_busy) / 100.0;
+    double gpu_r = std::max(0.1, static_cast<double>(gpu_freq_mhz) / 1150.0);
+    int gpu_power_mw = static_cast<int>(150.0 + gpu_load_ratio * gpu_r * gpu_r * 9500.0);
 
-    int soc_power_mw = cpu_power_mw + gpu_power_mw + 300;
+    int soc_power_mw = cpu_power_mw + gpu_power_mw + 500;
 
     SetIntProperty(kPerfCpuUsageProperty, cpu_usage);
     SetIntProperty(kPerfCpuFreqProperty, cpu_freq_mhz);
@@ -414,7 +447,6 @@ int main() {
     int emitted_state = 0;
     int hall_retry = 0;
     int hardware_tick = 4;
-    int perf_tick = 0;
 
     while (true) {
         if (hall_input < 0 && hall_retry-- <= 0) {
@@ -435,10 +467,7 @@ int main() {
         }
 
         if (android::base::GetBoolProperty(kPerfOverlayActiveProperty, false)) {
-            if (++perf_tick >= 2) {
-                perf_tick = 0;
-                PublishPerformanceTelemetry();
-            }
+            PublishPerformanceTelemetry();
         }
 
         if (result > 0 && hall_input >= 0 && (fds[0].revents & POLLIN) != 0) {

@@ -18,10 +18,12 @@ import android.provider.Settings;
 final class DisplayTouchMode {
     private static final String HIGH_REPORT_PROPERTY = "persist.sys.touch.high_report_rate";
     private static final String GAME_EDGE_PROPERTY = "persist.sys.touch.game_edge";
+    private static final String EDGE_GRID_ZONE_PROPERTY = "persist.sys.touch.edge_grid_zone";
     private static final String HIGH_REPORT_APPLIED_PROPERTY =
             "sys.malbec.touch.high_report_rate_applied";
     private static final String GAME_EDGE_APPLIED_PROPERTY =
             "sys.malbec.touch.game_edge_applied";
+    private static final String DEFAULT_EDGE_GRID_ZONE = "16,16,1200,1200";
 
     private DisplayTouchMode() {
     }
@@ -77,6 +79,8 @@ final class DisplayTouchMode {
     static boolean setGameEdgeEnabled(boolean enabled) {
         try {
             SystemProperties.set(GAME_EDGE_PROPERTY, enabled ? "1" : "0");
+            SystemProperties.set(EDGE_GRID_ZONE_PROPERTY,
+                    enabled ? DEFAULT_EDGE_GRID_ZONE : "0,0,0,0");
             return true;
         } catch (RuntimeException e) {
             return false;

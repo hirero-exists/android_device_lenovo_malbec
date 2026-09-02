@@ -12,11 +12,11 @@
 package com.lenovo.parts;
 
 import android.animation.ValueAnimator;
+import android.app.ActivityOptions;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
-import android.content.ContentValues;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -26,37 +26,46 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Path;
 import android.graphics.PixelFormat;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
+import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
-
+import android.hardware.input.InputManager;
+import android.media.AudioManager;
+import android.media.MediaScannerConnection;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
-import android.provider.MediaStore;
+import android.os.SystemClock;
 import android.provider.Settings;
+import android.util.Log;
 import android.view.Gravity;
+import android.view.InputDevice;
+import android.view.KeyCharacterMap;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.animation.DecelerateInterpolator;
-import android.widget.Button;
+import android.view.animation.OvershootInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.OutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
 public final class FloatingToolbarService extends Service {
+    private static final String TAG = "FloatingToolbarService";
     private static final String CHANNEL_ID = "pen_toolbar_channel";
     private static final int NOTIFICATION_ID = 1003;
     private static final int BUBBLE_SIZE_DP = 48;
@@ -66,29 +75,38 @@ public final class FloatingToolbarService extends Service {
     private static final String POSITION_ANCHOR_SETTING = "malbec_toolbar_anchor";
     private static final String POSITION_X_SETTING = "malbec_toolbar_x";
     private static final String POSITION_Y_SETTING = "malbec_toolbar_y";
-    private static final int ANCHOR_LEFT = -1;
-    private static final int ANCHOR_FLOAT = 0;
-    private static final int ANCHOR_RIGHT = 1;
+
+    private static final int ANCHOR_FREE = 0;
+    private static final int ANCHOR_LEFT = 1;
+    private static final int ANCHOR_RIGHT = 2;
 
     private static FloatingToolbarService sInstance;
 
     private WindowManager mWindowManager;
+    private WindowManager.LayoutParams mBubbleParams;
+    private WindowManager.LayoutParams mMenuParams;
     private FrameLayout mBubbleView;
     private LinearLayout mMenuView;
     private FrameLayout mQuickNoteOverlay;
-    private WindowManager.LayoutParams mBubbleParams;
-    private WindowManager.LayoutParams mMenuParams;
-    private final Handler mHandler = new Handler(Looper.getMainLooper());
     private boolean mMenuOpen = false;
-    private int mAnchor = ANCHOR_LEFT;
-    private float mNormalizedX = 0.0f;
-    private float mNormalizedY = 0.35f;
 
+    private TextView mPenBtn;
+    private TextView mHighlighterBtn;
+    private TextView mEraserBtn;
+
+    private int mColorSurface = 0xFF1C1B1F;
+    private int mColorAccent = 0xFF7C4DFF;
+    private int mColorText = 0xFFFFFFFF;
+
+    private final Handler mHandler = new Handler(Looper.getMainLooper());
     private final Runnable mFadeRunnable = new Runnable() {
         @Override
         public void run() {
             if (mBubbleView != null && !mMenuOpen) {
-                mBubbleView.animate().alpha(0.35f).setDuration(300).start();
+                mBubbleView.animate()
+                        .alpha(0.35f)
+                        .setDuration(300)
+                        .start();
             }
         }
     };
@@ -96,25 +114,25 @@ public final class FloatingToolbarService extends Service {
     private final BroadcastReceiver mScreenReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            if (Intent.ACTION_SCREEN_OFF.equals(action)) {
+            if (Intent.ACTION_SCREEN_OFF.equals(intent.getAction())) {
                 hideViews();
-            } else if (Intent.ACTION_USER_PRESENT.equals(action) || Intent.ACTION_SCREEN_ON.equals(action)) {
-                if (PenMode.isEnabled() && PenMode.isToolbarEnabled()) {
-                    showViews();
-                }
+            } else if (Intent.ACTION_USER_PRESENT.equals(intent.getAction())) {
+                showViews();
             }
         }
     };
 
-    static void showToolbar(Context context) {
+    public static void showToolbar(Context context) {
+        Intent intent = new Intent(context, FloatingToolbarService.class);
+        intent.setAction(ACTION_SHOW_TOOLBAR);
+        context.startForegroundService(intent);
+    }
+
+    public static void toggleMenu(Context context) {
         if (sInstance != null) {
-            sInstance.showViews();
-            sInstance.toggleMenu();
+            sInstance.mHandler.post(() -> sInstance.toggleMenu());
         } else {
-            Intent intent = new Intent(context, FloatingToolbarService.class);
-            intent.setAction(ACTION_SHOW_TOOLBAR);
-            context.startForegroundService(intent);
+            showToolbar(context);
         }
     }
 
@@ -123,44 +141,55 @@ public final class FloatingToolbarService extends Service {
         super.onCreate();
         sInstance = this;
         mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
-        loadPosition();
+        resolveThemeColors();
 
+        createNotificationChannel();
+        Notification notification = new Notification.Builder(this, CHANNEL_ID)
+                .setContentTitle(getString(R.string.pen_toolbar_title))
+                .setSmallIcon(R.drawable.ic_lenovo_parts)
+                .setOngoing(true)
+                .build();
+        startForeground(NOTIFICATION_ID, notification);
+
+        createBubbleView();
+        createMenuView();
+
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Intent.ACTION_SCREEN_OFF);
+        filter.addAction(Intent.ACTION_USER_PRESENT);
+        registerReceiver(mScreenReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+
+        resetIdleTimer();
+    }
+
+    private void createNotificationChannel() {
         NotificationChannel channel = new NotificationChannel(
                 CHANNEL_ID,
                 getString(R.string.pen_toolbar_title),
-                NotificationManager.IMPORTANCE_MIN);
+                NotificationManager.IMPORTANCE_LOW);
         channel.setShowBadge(false);
-        channel.enableLights(false);
-        channel.enableVibration(false);
-        channel.setSound(null, null);
-
         NotificationManager nm = getSystemService(NotificationManager.class);
         if (nm != null) {
             nm.createNotificationChannel(channel);
         }
+    }
 
-        Notification notification = new Notification.Builder(this, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_lenovo_parts)
-                .setContentTitle(getString(R.string.pen_toolbar_title))
-                .setOngoing(true)
-                .build();
+    private void resolveThemeColors() {
+        try {
+            mColorAccent = getColor(android.R.color.system_accent1_500);
+        } catch (Exception e) {
+            mColorAccent = 0xFF7C4DFF;
+        }
+        try {
+            mColorSurface = getColor(android.R.color.system_neutral1_900);
+        } catch (Exception e) {
+            mColorSurface = 0xFF1C1B1F;
+        }
+        mColorText = 0xFFFFFFFF;
+    }
 
-        startForeground(NOTIFICATION_ID, notification);
-
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(Intent.ACTION_SCREEN_OFF);
-        filter.addAction(Intent.ACTION_SCREEN_ON);
-        filter.addAction(Intent.ACTION_USER_PRESENT);
-        registerReceiver(mScreenReceiver, filter, Context.RECEIVER_EXPORTED);
-
-        createBubbleView();
-        createMenuView();
-        mBubbleView.setScaleX(0.72f);
-        mBubbleView.setScaleY(0.72f);
-        mBubbleView.setAlpha(1.0f);
-        mBubbleView.animate().scaleX(1.0f).scaleY(1.0f)
-                .setDuration(220).setInterpolator(new DecelerateInterpolator()).start();
-        resetIdleTimer();
+    private int applyAlpha(int color, int alpha) {
+        return (color & 0x00FFFFFF) | (alpha << 24);
     }
 
     private int dpToPx(int dp) {
@@ -181,17 +210,29 @@ public final class FloatingToolbarService extends Service {
         mBubbleView = new FrameLayout(this);
         GradientDrawable bg = new GradientDrawable();
         bg.setShape(GradientDrawable.OVAL);
-        bg.setColor(Color.argb(112, 20, 20, 20));
-        bg.setStroke(dpToPx(1), Color.argb(64, 255, 255, 255));
+        bg.setColor(applyAlpha(mColorSurface, 210));
+        bg.setStroke(dpToPx(2), applyAlpha(mColorAccent, 240));
         mBubbleView.setBackground(bg);
+        mBubbleView.setElevation(dpToPx(8));
 
         ImageView icon = new ImageView(this);
         icon.setImageResource(R.drawable.ic_lenovo_parts_bubble);
-        icon.setAlpha(0.72f);
+        icon.setColorFilter(mColorAccent);
         int padding = dpToPx(11);
         icon.setPadding(padding, padding, padding, padding);
         mBubbleView.addView(icon, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
+        mBubbleView.setScaleX(0.2f);
+        mBubbleView.setScaleY(0.2f);
+        mBubbleView.setAlpha(0f);
+        mBubbleView.animate()
+                .scaleX(1.0f)
+                .scaleY(1.0f)
+                .alpha(1.0f)
+                .setDuration(260)
+                .setInterpolator(new OvershootInterpolator(1.2f))
+                .start();
 
         mBubbleView.setOnTouchListener(new View.OnTouchListener() {
             private int initialX, initialY;
@@ -208,6 +249,7 @@ public final class FloatingToolbarService extends Service {
                         initialTouchX = event.getRawX();
                         initialTouchY = event.getRawY();
                         isClick = true;
+                        mBubbleView.animate().scaleX(1.08f).scaleY(1.08f).setDuration(100).start();
                         return true;
                     case MotionEvent.ACTION_MOVE:
                         int dx = (int) (event.getRawX() - initialTouchX);
@@ -218,6 +260,7 @@ public final class FloatingToolbarService extends Service {
                         updateBubblePosition(initialX + dx, initialY + dy);
                         return true;
                     case MotionEvent.ACTION_UP:
+                        mBubbleView.animate().scaleX(1.0f).scaleY(1.0f).setDuration(120).start();
                         if (isClick) {
                             toggleMenu();
                         } else {
@@ -254,88 +297,39 @@ public final class FloatingToolbarService extends Service {
         int currentX = mBubbleParams.x;
 
         int targetX = currentX;
+        int anchor = ANCHOR_FREE;
         if (currentX + size / 2 < screenWidth * 0.25f) {
-            mAnchor = ANCHOR_LEFT;
             targetX = 0;
+            anchor = ANCHOR_LEFT;
         } else if (currentX + size / 2 > screenWidth * 0.75f) {
-            mAnchor = ANCHOR_RIGHT;
             targetX = screenWidth - size;
-        } else {
-            mAnchor = ANCHOR_FLOAT;
+            anchor = ANCHOR_RIGHT;
         }
 
-        mNormalizedX = screenWidth > size
-                ? (float) targetX / (float) (screenWidth - size) : 0.0f;
-        mNormalizedY = screenHeight > size
-                ? (float) mBubbleParams.y / (float) (screenHeight - size) : 0.0f;
-        savePosition();
-
-        if (targetX != currentX) {
-            ValueAnimator animator = ValueAnimator.ofInt(currentX, targetX);
-            animator.setDuration(220);
-            animator.setInterpolator(new DecelerateInterpolator());
-            animator.addUpdateListener(animation -> {
-                mBubbleParams.x = (int) animation.getAnimatedValue();
-                if (mBubbleView.isAttachedToWindow()) {
-                    mWindowManager.updateViewLayout(mBubbleView, mBubbleParams);
-                }
-            });
-            animator.start();
-        }
+        saveBubblePosition(anchor, targetX, mBubbleParams.y);
+        animateBubbleTo(targetX, mBubbleParams.y);
     }
 
-    @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        mHandler.postDelayed(() -> {
-            if (mBubbleView != null && mBubbleView.isAttachedToWindow()) {
-                restoreBubblePosition();
+    private void animateBubbleTo(int targetX, int targetY) {
+        int startX = mBubbleParams.x;
+        int startY = mBubbleParams.y;
+        ValueAnimator anim = ValueAnimator.ofFloat(0f, 1f);
+        anim.setDuration(220);
+        anim.setInterpolator(new DecelerateInterpolator());
+        anim.addUpdateListener(animation -> {
+            float f = (float) animation.getAnimatedValue();
+            mBubbleParams.x = Math.round(startX + (targetX - startX) * f);
+            mBubbleParams.y = Math.round(startY + (targetY - startY) * f);
+            if (mBubbleView.isAttachedToWindow()) {
                 mWindowManager.updateViewLayout(mBubbleView, mBubbleParams);
             }
-            if (mMenuOpen) {
-                closeMenu();
-            }
-        }, 150);
-    }
-
-    private Rect getDisplayBounds() {
-        return mWindowManager.getCurrentWindowMetrics().getBounds();
-    }
-
-    private void loadPosition() {
-        mAnchor = Settings.Secure.getInt(getContentResolver(),
-                POSITION_ANCHOR_SETTING, ANCHOR_LEFT);
-        mNormalizedX = Settings.Secure.getFloat(getContentResolver(),
-                POSITION_X_SETTING, 0.0f);
-        mNormalizedY = Settings.Secure.getFloat(getContentResolver(),
-                POSITION_Y_SETTING, 0.35f);
-    }
-
-    private void savePosition() {
-        Settings.Secure.putInt(getContentResolver(), POSITION_ANCHOR_SETTING, mAnchor);
-        Settings.Secure.putFloat(getContentResolver(), POSITION_X_SETTING, mNormalizedX);
-        Settings.Secure.putFloat(getContentResolver(), POSITION_Y_SETTING, mNormalizedY);
-    }
-
-    private void restoreBubblePosition() {
-        Rect bounds = getDisplayBounds();
-        int availableX = Math.max(0, bounds.width() - mBubbleParams.width);
-        int availableY = Math.max(0, bounds.height() - mBubbleParams.height);
-        if (mAnchor == ANCHOR_LEFT) {
-            mBubbleParams.x = 0;
-        } else if (mAnchor == ANCHOR_RIGHT) {
-            mBubbleParams.x = availableX;
-        } else {
-            mBubbleParams.x = Math.round(Math.max(0.0f, Math.min(1.0f, mNormalizedX))
-                    * availableX);
-        }
-        mBubbleParams.y = Math.round(Math.max(0.0f, Math.min(1.0f, mNormalizedY))
-                * availableY);
+        });
+        anim.start();
     }
 
     private void createMenuView() {
         mMenuParams = new WindowManager.LayoutParams(
-                dpToPx(220),
+                dpToPx(230),
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
@@ -345,35 +339,35 @@ public final class FloatingToolbarService extends Service {
 
         mMenuView = new LinearLayout(this);
         mMenuView.setOrientation(LinearLayout.VERTICAL);
-        int pad = dpToPx(12);
+        int pad = dpToPx(10);
         mMenuView.setPadding(pad, pad, pad, pad);
 
         GradientDrawable bg = new GradientDrawable();
-        bg.setCornerRadius(dpToPx(22));
-        bg.setColor(0xE618181C);
-        bg.setStroke(dpToPx(1), 0x33FFFFFF);
+        bg.setCornerRadius(dpToPx(24));
+        bg.setColor(applyAlpha(mColorSurface, 235));
+        bg.setStroke(dpToPx(1), applyAlpha(mColorAccent, 75));
         mMenuView.setBackground(bg);
+        mMenuView.setElevation(dpToPx(10));
 
         addMenuItem(getString(R.string.quick_note_title), () -> {
             closeMenu();
-            openQuickNoteCanvas(false);
-        });
-        addMenuItem(getString(R.string.quick_note_mode_annotation), () -> {
-            closeMenu();
-            openQuickNoteCanvas(true);
+            openQuickNoteCanvas();
         });
         addMenuItem(getString(R.string.toolbar_screenshot), () -> {
-            PenShortcuts.executeAction(this, PenShortcuts.ACTION_SCREENSHOT);
+            takeScreenshot();
             closeMenu();
         });
         addMenuItem(getString(R.string.toolbar_open_app), () -> {
             Intent intent = new Intent(this, AppPickerActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(intent);
+            ActivityOptions options = ActivityOptions.makeBasic();
+            options.setLaunchWindowingMode(5);
+            options.setLaunchBounds(appPickerBounds());
+            startActivity(intent, options.toBundle());
             closeMenu();
         });
         addMenuItem(getString(R.string.toolbar_play_pause), () -> {
-            PenShortcuts.executeAction(this, PenShortcuts.ACTION_PLAY_PAUSE);
+            dispatchPlayPause();
             closeMenu();
         });
         addMenuItem(getString(R.string.app_name), () -> {
@@ -387,7 +381,6 @@ public final class FloatingToolbarService extends Service {
             stopSelf();
         });
 
-
         mMenuView.setOnTouchListener((v, event) -> {
             if (event.getAction() == MotionEvent.ACTION_OUTSIDE) {
                 closeMenu();
@@ -398,14 +391,61 @@ public final class FloatingToolbarService extends Service {
     }
 
     private void addMenuItem(String title, Runnable action) {
-        Button button = new Button(this);
-        button.setText(title);
-        button.setTextColor(Color.WHITE);
-        button.setTextSize(13);
-        button.setBackgroundColor(Color.TRANSPARENT);
-        button.setPadding(dpToPx(14), dpToPx(6), dpToPx(14), dpToPx(6));
-        button.setOnClickListener(v -> action.run());
-        mMenuView.addView(button);
+        TextView item = new TextView(this);
+        item.setText(title);
+        item.setTextColor(mColorText);
+        item.setTextSize(13f);
+        item.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        item.setPadding(dpToPx(16), dpToPx(11), dpToPx(16), dpToPx(11));
+        android.util.TypedValue value = new android.util.TypedValue();
+        getTheme().resolveAttribute(android.R.attr.selectableItemBackground, value, true);
+        if (value.resourceId != 0) {
+            item.setBackgroundResource(value.resourceId);
+        }
+        item.setOnClickListener(v -> action.run());
+        mMenuView.addView(item);
+    }
+
+    private void takeScreenshot() {
+        injectKey(KeyEvent.KEYCODE_SYSRQ);
+    }
+
+    private Rect appPickerBounds() {
+        Rect bounds = getDisplayBounds();
+        int w = bounds.width();
+        int h = bounds.height();
+        int winW = Math.round(w * 0.55f);
+        int winH = Math.round(h * 0.6f);
+        int left = (w - winW) / 2;
+        int top = (h - winH) / 3;
+        return new Rect(left, top, left + winW, top + winH);
+    }
+
+    private void dispatchPlayPause() {
+        AudioManager am = getSystemService(AudioManager.class);
+        if (am != null) {
+            long now = SystemClock.uptimeMillis();
+            KeyEvent down = new KeyEvent(now, now, KeyEvent.ACTION_DOWN,
+                    KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, 0);
+            am.dispatchMediaKeyEvent(down);
+            KeyEvent up = new KeyEvent(now, now, KeyEvent.ACTION_UP,
+                    KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, 0);
+            am.dispatchMediaKeyEvent(up);
+        } else {
+            injectKey(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE);
+        }
+    }
+
+    private void injectKey(int keyCode) {
+        InputManager im = getSystemService(InputManager.class);
+        if (im == null) return;
+        long now = SystemClock.uptimeMillis();
+        int flags = KeyEvent.FLAG_FROM_SYSTEM | KeyEvent.FLAG_VIRTUAL_HARD_KEY;
+        KeyEvent down = new KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0, 0,
+                KeyCharacterMap.VIRTUAL_KEYBOARD, 0, flags, InputDevice.SOURCE_KEYBOARD);
+        KeyEvent up = KeyEvent.changeAction(down, KeyEvent.ACTION_UP);
+        im.injectInputEvent(down, InputManager.INJECT_INPUT_EVENT_MODE_ASYNC);
+        im.injectInputEvent(up, InputManager.INJECT_INPUT_EVENT_MODE_ASYNC);
     }
 
     private void toggleMenu() {
@@ -417,67 +457,73 @@ public final class FloatingToolbarService extends Service {
     }
 
     private void openMenu() {
-        if (mMenuOpen) {
-            return;
-        }
-        Rect bounds = getDisplayBounds();
-        int screenWidth = bounds.width();
-        int screenHeight = bounds.height();
-        int bubbleRight = mBubbleParams.x + mBubbleParams.width;
-
-        if (mBubbleParams.x < screenWidth / 2) {
-            mMenuParams.x = bubbleRight + dpToPx(8);
-        } else {
-            mMenuParams.x = Math.max(0, mBubbleParams.x - mMenuParams.width - dpToPx(8));
-        }
-        mMenuParams.x = Math.max(0, Math.min(mMenuParams.x,
-                screenWidth - mMenuParams.width));
-        mMenuParams.y = Math.max(dpToPx(16), Math.min(mBubbleParams.y,
-                screenHeight - dpToPx(330)));
-
+        if (mMenuView == null) return;
+        positionMenu();
         if (!mMenuView.isAttachedToWindow()) {
+            mMenuView.setScaleX(0.85f);
+            mMenuView.setScaleY(0.85f);
             mMenuView.setAlpha(0f);
             mWindowManager.addView(mMenuView, mMenuParams);
-            mMenuView.animate().alpha(1f).setDuration(180).start();
+            mMenuView.animate()
+                    .scaleX(1.0f)
+                    .scaleY(1.0f)
+                    .alpha(1.0f)
+                    .setDuration(180)
+                    .setInterpolator(new DecelerateInterpolator())
+                    .start();
         }
         mMenuOpen = true;
         resetIdleTimer();
     }
 
     private void closeMenu() {
-        if (!mMenuOpen) {
-            return;
-        }
-        if (mMenuView.isAttachedToWindow()) {
-            mWindowManager.removeView(mMenuView);
+        if (mMenuView != null && mMenuView.isAttachedToWindow()) {
+            mMenuView.animate()
+                    .scaleX(0.85f)
+                    .scaleY(0.85f)
+                    .alpha(0f)
+                    .setDuration(140)
+                    .withEndAction(() -> {
+                        if (mMenuView.isAttachedToWindow()) {
+                            mWindowManager.removeView(mMenuView);
+                        }
+                    })
+                    .start();
         }
         mMenuOpen = false;
         resetIdleTimer();
     }
 
+    private void positionMenu() {
+        Rect bounds = getDisplayBounds();
+        int screenWidth = bounds.width();
+        int screenHeight = bounds.height();
+        int menuWidth = mMenuParams.width;
+        int bubbleSize = mBubbleParams.width;
+
+        int menuX;
+        if (mBubbleParams.x + bubbleSize + menuWidth + dpToPx(8) <= screenWidth) {
+            menuX = mBubbleParams.x + bubbleSize + dpToPx(8);
+        } else {
+            menuX = Math.max(0, mBubbleParams.x - menuWidth - dpToPx(8));
+        }
+
+        int menuY = Math.max(0, Math.min(mBubbleParams.y, screenHeight - dpToPx(280)));
+        mMenuParams.x = menuX;
+        mMenuParams.y = menuY;
+    }
+
     private void resetIdleTimer() {
-        if (mBubbleView != null) {
-            mBubbleView.setAlpha(1.0f);
-        }
         mHandler.removeCallbacks(mFadeRunnable);
-        mHandler.postDelayed(mFadeRunnable, IDLE_TIMEOUT_MS);
-    }
-
-    private void hideViews() {
-        closeMenu();
-        if (mBubbleView != null && mBubbleView.isAttachedToWindow()) {
-            mBubbleView.setVisibility(View.GONE);
+        if (mBubbleView != null) {
+            mBubbleView.animate().alpha(1f).setDuration(120).start();
+        }
+        if (!mMenuOpen) {
+            mHandler.postDelayed(mFadeRunnable, IDLE_TIMEOUT_MS);
         }
     }
 
-    private void showViews() {
-        if (mBubbleView != null && mBubbleView.isAttachedToWindow()) {
-            mBubbleView.setVisibility(View.VISIBLE);
-            resetIdleTimer();
-        }
-    }
-
-    private void openQuickNoteCanvas(boolean isAnnotation) {
+    private void openQuickNoteCanvas() {
         if (mQuickNoteOverlay != null && mQuickNoteOverlay.isAttachedToWindow()) {
             return;
         }
@@ -491,9 +537,10 @@ public final class FloatingToolbarService extends Service {
                 PixelFormat.TRANSLUCENT);
 
         mQuickNoteOverlay = new FrameLayout(this);
-        mQuickNoteOverlay.setBackgroundColor(isAnnotation ? 0x00000000 : 0xF018181C);
+        mQuickNoteOverlay.setBackgroundColor(Color.TRANSPARENT);
 
-        DrawingCanvasView canvasView = new DrawingCanvasView(this);
+        DrawingCanvasView canvasView = new DrawingCanvasView(this,
+                0xFFFFEB3B, applyAlpha(mColorAccent, 150));
         mQuickNoteOverlay.addView(canvasView, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
@@ -501,71 +548,57 @@ public final class FloatingToolbarService extends Service {
         topBar.setOrientation(LinearLayout.HORIZONTAL);
         topBar.setGravity(Gravity.CENTER_VERTICAL);
         GradientDrawable barBg = new GradientDrawable();
-        barBg.setColor(0xE6202024);
-        barBg.setCornerRadius(dpToPx(20));
+        barBg.setColor(0xEE1A1B22);
+        barBg.setCornerRadius(dpToPx(26));
+        barBg.setStroke(dpToPx(1), applyAlpha(mColorAccent, 100));
         topBar.setBackground(barBg);
-        int padH = dpToPx(14);
+        topBar.setElevation(dpToPx(10));
+        int padH = dpToPx(16);
         int padV = dpToPx(8);
         topBar.setPadding(padH, padV, padH, padV);
 
         TextView title = new TextView(this);
-        title.setText(isAnnotation ? R.string.quick_note_mode_annotation : R.string.quick_note_title);
-        title.setTextColor(Color.WHITE);
-        title.setTextSize(14f);
-        title.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
+        title.setText(R.string.quick_note_title);
+        title.setTextColor(mColorAccent);
+        title.setTextSize(13f);
+        title.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
         topBar.addView(title);
 
-        Button modeBtn = new Button(this);
-        modeBtn.setText(isAnnotation ? R.string.quick_note_mode_normal : R.string.quick_note_mode_annotation);
-        modeBtn.setTextSize(11f);
-        modeBtn.setTextColor(Color.WHITE);
-        modeBtn.setBackgroundColor(Color.TRANSPARENT);
-        modeBtn.setOnClickListener(v -> {
-            boolean nextAnnotation = mQuickNoteOverlay.getBackground() == null ||
-                    ((android.graphics.drawable.ColorDrawable) mQuickNoteOverlay.getBackground()).getColor() != 0;
-            mQuickNoteOverlay.setBackgroundColor(nextAnnotation ? 0x00000000 : 0xF018181C);
-            title.setText(nextAnnotation ? R.string.quick_note_mode_annotation : R.string.quick_note_title);
-            modeBtn.setText(nextAnnotation ? R.string.quick_note_mode_normal : R.string.quick_note_mode_annotation);
+        View spacer = new View(this);
+        LinearLayout.LayoutParams spLp = new LinearLayout.LayoutParams(dpToPx(12), 1);
+        topBar.addView(spacer, spLp);
+
+        mPenBtn = createToolButton(mColorAccent, onColor(mColorAccent));
+        mPenBtn.setText(R.string.quick_note_pen);
+        mPenBtn.setOnClickListener(v -> {
+            canvasView.setTool(DrawingCanvasView.TOOL_PEN);
+            updateActiveTool(DrawingCanvasView.TOOL_PEN);
         });
-        topBar.addView(modeBtn);
+        topBar.addView(mPenBtn);
 
-        Button penBtn = new Button(this);
-        penBtn.setText(R.string.quick_note_pen);
-        penBtn.setTextSize(11f);
-        penBtn.setTextColor(0xFFFFD54F);
-        penBtn.setBackgroundColor(Color.TRANSPARENT);
-        penBtn.setOnClickListener(v -> canvasView.setTool(DrawingCanvasView.TOOL_PEN));
-        topBar.addView(penBtn);
+        mHighlighterBtn = createToolButton(applyAlpha(mColorText, 25), mColorText);
+        mHighlighterBtn.setText(R.string.quick_note_highlighter);
+        mHighlighterBtn.setOnClickListener(v -> {
+            canvasView.setTool(DrawingCanvasView.TOOL_HIGHLIGHTER);
+            updateActiveTool(DrawingCanvasView.TOOL_HIGHLIGHTER);
+        });
+        topBar.addView(mHighlighterBtn);
 
-        Button highlightBtn = new Button(this);
-        highlightBtn.setText(R.string.quick_note_highlighter);
-        highlightBtn.setTextSize(11f);
-        highlightBtn.setTextColor(0xFF00E5FF);
-        highlightBtn.setBackgroundColor(Color.TRANSPARENT);
-        highlightBtn.setOnClickListener(v -> canvasView.setTool(DrawingCanvasView.TOOL_HIGHLIGHTER));
-        topBar.addView(highlightBtn);
+        mEraserBtn = createToolButton(applyAlpha(mColorText, 25), mColorText);
+        mEraserBtn.setText(R.string.quick_note_eraser);
+        mEraserBtn.setOnClickListener(v -> {
+            canvasView.setTool(DrawingCanvasView.TOOL_ERASER);
+            updateActiveTool(DrawingCanvasView.TOOL_ERASER);
+        });
+        topBar.addView(mEraserBtn);
 
-        Button eraserBtn = new Button(this);
-        eraserBtn.setText(R.string.quick_note_eraser);
-        eraserBtn.setTextSize(11f);
-        eraserBtn.setTextColor(Color.WHITE);
-        eraserBtn.setBackgroundColor(Color.TRANSPARENT);
-        eraserBtn.setOnClickListener(v -> canvasView.setTool(DrawingCanvasView.TOOL_ERASER));
-        topBar.addView(eraserBtn);
-
-        Button clearBtn = new Button(this);
+        TextView clearBtn = createToolButton(applyAlpha(mColorText, 25), mColorText);
         clearBtn.setText(R.string.quick_note_clear);
-        clearBtn.setTextSize(11f);
-        clearBtn.setTextColor(Color.WHITE);
-        clearBtn.setBackgroundColor(Color.TRANSPARENT);
         clearBtn.setOnClickListener(v -> canvasView.clear());
         topBar.addView(clearBtn);
 
-        Button saveBtn = new Button(this);
+        TextView saveBtn = createToolButton(0xFF4CAF50, 0xFFFFFFFF);
         saveBtn.setText(R.string.quick_note_save);
-        saveBtn.setTextSize(11f);
-        saveBtn.setTextColor(0xFF81C784);
-        saveBtn.setBackgroundColor(Color.TRANSPARENT);
         saveBtn.setOnClickListener(v -> {
             if (saveCanvasBitmap(canvasView.getBitmap())) {
                 closeQuickNoteCanvas();
@@ -573,11 +606,8 @@ public final class FloatingToolbarService extends Service {
         });
         topBar.addView(saveBtn);
 
-        Button closeBtn = new Button(this);
+        TextView closeBtn = createToolButton(applyAlpha(mColorText, 35), mColorText);
         closeBtn.setText("✕");
-        closeBtn.setTextSize(14f);
-        closeBtn.setTextColor(Color.WHITE);
-        closeBtn.setBackgroundColor(Color.TRANSPARENT);
         closeBtn.setOnClickListener(v -> closeQuickNoteCanvas());
         topBar.addView(closeBtn);
 
@@ -588,6 +618,48 @@ public final class FloatingToolbarService extends Service {
         mQuickNoteOverlay.addView(topBar, barLp);
 
         mWindowManager.addView(mQuickNoteOverlay, overlayParams);
+    }
+
+    private void updateActiveTool(int tool) {
+        setToolButtonActive(mPenBtn, tool == DrawingCanvasView.TOOL_PEN);
+        setToolButtonActive(mHighlighterBtn, tool == DrawingCanvasView.TOOL_HIGHLIGHTER);
+        setToolButtonActive(mEraserBtn, tool == DrawingCanvasView.TOOL_ERASER);
+    }
+
+    private void setToolButtonActive(TextView btn, boolean active) {
+        if (btn == null) return;
+        GradientDrawable bg = (GradientDrawable) btn.getBackground();
+        if (active) {
+            bg.setColor(mColorAccent);
+            btn.setTextColor(onColor(mColorAccent));
+        } else {
+            bg.setColor(applyAlpha(mColorText, 25));
+            btn.setTextColor(mColorText);
+        }
+    }
+
+    private TextView createToolButton(int color, int textColor) {
+        TextView pill = new TextView(this);
+        pill.setTextSize(11f);
+        pill.setTextColor(textColor);
+        pill.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        pill.setPadding(dpToPx(12), dpToPx(7), dpToPx(12), dpToPx(7));
+        GradientDrawable pillBg = new GradientDrawable();
+        pillBg.setCornerRadius(dpToPx(16));
+        pillBg.setColor(color);
+        pill.setBackground(pillBg);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        params.setMargins(dpToPx(4), 0, 0, 0);
+        pill.setLayoutParams(params);
+        return pill;
+    }
+
+    private int onColor(int background) {
+        double luminance = (0.299 * Color.red(background)
+                + 0.587 * Color.green(background)
+                + 0.114 * Color.blue(background)) / 255.0;
+        return luminance > 0.5 ? 0xFF1C1B1F : 0xFFFFFFFF;
     }
 
     private void closeQuickNoteCanvas() {
@@ -601,41 +673,26 @@ public final class FloatingToolbarService extends Service {
         if (bitmap == null) {
             return false;
         }
-        android.net.Uri uri = null;
         try {
             String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
-            ContentValues values = new ContentValues();
-            values.put(MediaStore.Images.Media.DISPLAY_NAME,
-                    "QuickNote_" + timeStamp + ".png");
-            values.put(MediaStore.Images.Media.MIME_TYPE, "image/png");
-            values.put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/QuickNotes");
-            values.put(MediaStore.Images.Media.IS_PENDING, 1);
-            uri = getContentResolver().insert(
-                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
-            if (uri == null) {
-                throw new IllegalStateException("MediaStore insert failed");
+            File dir = new File(
+                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),
+                    "QuickNotes");
+            if (!dir.exists()) {
+                dir.mkdirs();
             }
-            Bitmap outputBitmap = Bitmap.createBitmap(
-                    bitmap.getWidth(), bitmap.getHeight(), Bitmap.Config.ARGB_8888);
-            Canvas outputCanvas = new Canvas(outputBitmap);
-            outputCanvas.drawColor(Color.rgb(18, 18, 18));
-            outputCanvas.drawBitmap(bitmap, 0, 0, null);
-            try (OutputStream output = getContentResolver().openOutputStream(uri)) {
-                if (output == null
-                        || !outputBitmap.compress(Bitmap.CompressFormat.PNG, 100, output)) {
-                    throw new IllegalStateException("PNG write failed");
-                }
+            File file = new File(dir, "QuickNote_" + timeStamp + ".png");
+            try (FileOutputStream fos = new FileOutputStream(file)) {
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos);
             }
-            outputBitmap.recycle();
-            values.clear();
-            values.put(MediaStore.Images.Media.IS_PENDING, 0);
-            getContentResolver().update(uri, values, null, null);
+            MediaScannerConnection.scanFile(this,
+                    new String[]{file.getAbsolutePath()},
+                    new String[]{"image/png"},
+                    null);
             Toast.makeText(this, R.string.quick_note_saved, Toast.LENGTH_SHORT).show();
             return true;
         } catch (Exception e) {
-            if (uri != null) {
-                getContentResolver().delete(uri, null, null);
-            }
+            Log.e(TAG, "Save note failed", e);
             Toast.makeText(this, R.string.quick_note_save_error, Toast.LENGTH_SHORT).show();
             return false;
         }
@@ -647,48 +704,54 @@ public final class FloatingToolbarService extends Service {
         static final int TOOL_ERASER = 2;
 
         private final Paint mPaint = new Paint();
-        private final Path mPath = new Path();
+        private final int mPenColor;
+        private final int mHighlighterColor;
         private Bitmap mBitmap;
         private Canvas mCanvas;
         private float mPrevX, mPrevY;
 
-        DrawingCanvasView(Context context) {
+        DrawingCanvasView(Context context, int penColor, int highlighterColor) {
             super(context);
+            setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+            mPenColor = penColor;
+            mHighlighterColor = highlighterColor;
             mPaint.setAntiAlias(true);
-            mPaint.setColor(Color.parseColor("#FFF59D"));
             mPaint.setStyle(Paint.Style.STROKE);
             mPaint.setStrokeJoin(Paint.Join.ROUND);
             mPaint.setStrokeCap(Paint.Cap.ROUND);
-            mPaint.setStrokeWidth(6f);
+            applyTool(TOOL_PEN);
         }
 
         void setTool(int tool) {
+            applyTool(tool);
+        }
+
+        private void applyTool(int tool) {
             if (tool == TOOL_PEN) {
-                mPaint.setColor(Color.parseColor("#FFF59D"));
+                mPaint.setColor(mPenColor);
                 mPaint.setStrokeWidth(6f);
                 mPaint.setXfermode(null);
             } else if (tool == TOOL_HIGHLIGHTER) {
-                mPaint.setColor(Color.parseColor("#6600E5FF"));
-                mPaint.setStrokeWidth(24f);
+                mPaint.setColor(mHighlighterColor);
+                mPaint.setStrokeWidth(28f);
                 mPaint.setXfermode(null);
             } else if (tool == TOOL_ERASER) {
                 mPaint.setColor(Color.TRANSPARENT);
-                mPaint.setStrokeWidth(36f);
+                mPaint.setStrokeWidth(44f);
                 mPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
             }
         }
-
 
         @Override
         protected void onSizeChanged(int w, int h, int oldw, int oldh) {
             super.onSizeChanged(w, h, oldw, oldh);
             if (w > 0 && h > 0) {
-                Bitmap previous = mBitmap;
+                Bitmap prev = mBitmap;
                 mBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
                 mCanvas = new Canvas(mBitmap);
-                if (previous != null) {
-                    mCanvas.drawBitmap(previous, 0, 0, null);
-                    previous.recycle();
+                if (prev != null) {
+                    mCanvas.drawBitmap(prev, 0, 0, null);
+                    prev.recycle();
                 }
             }
         }
@@ -699,7 +762,6 @@ public final class FloatingToolbarService extends Service {
             if (mBitmap != null) {
                 canvas.drawBitmap(mBitmap, 0, 0, null);
             }
-            canvas.drawPath(mPath, mPaint);
         }
 
         @Override
@@ -709,24 +771,26 @@ public final class FloatingToolbarService extends Service {
 
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
-                    mPath.reset();
-                    mPath.moveTo(x, y);
                     mPrevX = x;
                     mPrevY = y;
+                    if (mCanvas != null) {
+                        mCanvas.drawPoint(x, y, mPaint);
+                    }
                     invalidate();
                     return true;
                 case MotionEvent.ACTION_MOVE:
-                    mPath.quadTo(mPrevX, mPrevY, (x + mPrevX) / 2, (y + mPrevY) / 2);
+                    if (mCanvas != null) {
+                        mCanvas.drawLine(mPrevX, mPrevY, x, y, mPaint);
+                    }
                     mPrevX = x;
                     mPrevY = y;
                     invalidate();
                     return true;
                 case MotionEvent.ACTION_UP:
-                    mPath.lineTo(x, y);
+                case MotionEvent.ACTION_CANCEL:
                     if (mCanvas != null) {
-                        mCanvas.drawPath(mPath, mPaint);
+                        mCanvas.drawLine(mPrevX, mPrevY, x, y, mPaint);
                     }
-                    mPath.reset();
                     invalidate();
                     return true;
             }
@@ -736,7 +800,6 @@ public final class FloatingToolbarService extends Service {
         void clear() {
             if (mBitmap != null) {
                 mBitmap.eraseColor(Color.TRANSPARENT);
-                mPath.reset();
                 invalidate();
             }
         }
@@ -744,6 +807,64 @@ public final class FloatingToolbarService extends Service {
         Bitmap getBitmap() {
             return mBitmap;
         }
+    }
+
+    private void restoreBubblePosition() {
+        Rect bounds = getDisplayBounds();
+        int screenWidth = bounds.width();
+        int screenHeight = bounds.height();
+        int size = dpToPx(BUBBLE_SIZE_DP);
+
+        int anchor = Settings.Secure.getInt(getContentResolver(),
+                POSITION_ANCHOR_SETTING, ANCHOR_RIGHT);
+        int savedX = Settings.Secure.getInt(getContentResolver(),
+                POSITION_X_SETTING, screenWidth - size);
+        int savedY = Settings.Secure.getInt(getContentResolver(),
+                POSITION_Y_SETTING, screenHeight / 3);
+
+        if (anchor == ANCHOR_LEFT) {
+            mBubbleParams.x = 0;
+        } else if (anchor == ANCHOR_RIGHT) {
+            mBubbleParams.x = screenWidth - size;
+        } else {
+            mBubbleParams.x = Math.max(0, Math.min(savedX, screenWidth - size));
+        }
+        mBubbleParams.y = Math.max(0, Math.min(savedY, screenHeight - size));
+    }
+
+    private void saveBubblePosition(int anchor, int x, int y) {
+        Settings.Secure.putInt(getContentResolver(), POSITION_ANCHOR_SETTING, anchor);
+        Settings.Secure.putInt(getContentResolver(), POSITION_X_SETTING, x);
+        Settings.Secure.putInt(getContentResolver(), POSITION_Y_SETTING, y);
+    }
+
+    private Rect getDisplayBounds() {
+        return mWindowManager.getCurrentWindowMetrics().getBounds();
+    }
+
+    private void hideViews() {
+        if (mBubbleView != null && mBubbleView.isAttachedToWindow()) {
+            mBubbleView.setVisibility(View.GONE);
+        }
+        closeMenu();
+        closeQuickNoteCanvas();
+    }
+
+    private void showViews() {
+        if (mBubbleView != null && mBubbleView.isAttachedToWindow()) {
+            mBubbleView.setVisibility(View.VISIBLE);
+            resetIdleTimer();
+        }
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        restoreBubblePosition();
+        if (mBubbleView != null && mBubbleView.isAttachedToWindow()) {
+            mWindowManager.updateViewLayout(mBubbleView, mBubbleParams);
+        }
+        closeMenu();
     }
 
     @Override
