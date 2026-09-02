@@ -10,8 +10,10 @@
     <uses-permission android:name="android.permission.INJECT_EVENTS" />
     <uses-permission android:name="android.permission.MANAGE_KEY_GESTURES" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.STATUS_BAR" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
+
     <queries>
         <intent>
             <action android:name="android.intent.action.MAIN" />
@@ -60,7 +62,16 @@
             android:name=".AppPickerActivity"
             android:excludeFromRecents="true"
             android:exported="false"
-            android:theme="@android:style/Theme.DeviceDefault.Dialog.Alert" />
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
+        <activity
+            android:name=".EdgeCalibrationActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+        <activity
+            android:name=".GamingOverlaySettingsActivity"
+            android:exported="false"
+            android:label="@string/gaming_overlay_settings_title" />
         <service
             android:name=".FloatingToolbarService"
             android:exported="false"
@@ -68,6 +79,14 @@
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Persistent user-controlled Lenovo Pen floating toolbar" />
+        </service>
+        <service
+            android:name=".GamingOverlayService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Gaming performance island HUD overlay" />
         </service>
         <receiver
             android:name=".GamingBypassReceiver"

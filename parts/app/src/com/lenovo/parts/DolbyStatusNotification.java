@@ -1,17 +1,12 @@
 /*
  * Copyright (C) 2026 hirero-exists <hirerokazuoa@gmail.com>
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Compatible with GNU General Public License, Version 2.0 (GPLv2) or later
+ * pursuant to Section 3.3 of the Mozilla Public License, v. 2.0.
  */
 
 package com.lenovo.parts;
@@ -20,7 +15,9 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.app.StatusBarManager;
 import android.content.Context;
+
 import android.content.Intent;
 import android.database.ContentObserver;
 import android.os.Handler;
@@ -79,7 +76,16 @@ final class DolbyStatusNotification {
         boolean dolbyEnabled = DolbyMode.isEnabled(mContext.getContentResolver());
         boolean showIcon = DolbyMode.isIconEnabled(mContext.getContentResolver());
 
+        StatusBarManager sbm = mContext.getSystemService(StatusBarManager.class);
+
         if (dolbyEnabled && showIcon) {
+            if (sbm != null) {
+                try {
+                    sbm.setIcon("dolby", R.drawable.ic_dolby_status, 0, "Dolby Atmos");
+                    sbm.setIconVisibility("dolby", true);
+                } catch (Exception ignored) {
+                }
+            }
             Intent intent = new Intent(mContext, LenovoPartsActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
             PendingIntent pendingIntent = PendingIntent.getActivity(
@@ -96,7 +102,15 @@ final class DolbyStatusNotification {
 
             mNotificationManager.notify(NOTIFICATION_ID, notification);
         } else {
+            if (sbm != null) {
+                try {
+                    sbm.setIconVisibility("dolby", false);
+                    sbm.removeIcon("dolby");
+                } catch (Exception ignored) {
+                }
+            }
             mNotificationManager.cancel(NOTIFICATION_ID);
         }
     }
+
 }

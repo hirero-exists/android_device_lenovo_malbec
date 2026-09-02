@@ -1,22 +1,19 @@
 /*
  * Copyright (C) 2026 hirero-exists <hirerokazuoa@gmail.com>
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Compatible with GNU General Public License, Version 2.0 (GPLv2) or later
+ * pursuant to Section 3.3 of the Mozilla Public License, v. 2.0.
  */
 
 #include <android-base/file.h>
 #include <android-base/logging.h>
 #include <android-base/properties.h>
+#include <android-base/strings.h>
+
 #include <dirent.h>
 #include <fcntl.h>
 #include <linux/input.h>
@@ -29,10 +26,12 @@
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
-#include <cstring>
+#include <cmath>
+#include <sstream>
 #include <string>
 
 namespace {
+
 
 constexpr char kFolioEnabledProperty[] = "persist.sys.folio.enabled";
 constexpr char kFolioHallStateProperty[] = "sys.malbec.folio.closed";
@@ -48,11 +47,34 @@ constexpr char kBypassHeartbeatProperty[] = "sys.malbec.bypass.heartbeat";
 constexpr char kBypassActiveProperty[] = "sys.malbec.bypass.active";
 constexpr char kBypassStateProperty[] = "sys.malbec.bypass.state";
 
+constexpr char kEdgeGridZoneProperty[] = "persist.sys.touch.edge_grid_zone";
+constexpr char kEdgeGridZoneAppliedProperty[] =
+        "sys.malbec.touch.edge_grid_zone_applied";
+constexpr char kPerfOverlayActiveProperty[] = "sys.malbec.perf.overlay_active";
+constexpr char kPerfCpuUsageProperty[] = "sys.malbec.perf.cpu_usage";
+constexpr char kPerfCpuFreqProperty[] = "sys.malbec.perf.cpu_freq_mhz";
+constexpr char kPerfCpuTempProperty[] = "sys.malbec.perf.cpu_temp_c";
+constexpr char kPerfCpuPowerProperty[] = "sys.malbec.perf.cpu_power_mw";
+constexpr char kPerfGpuUsageProperty[] = "sys.malbec.perf.gpu_usage";
+constexpr char kPerfGpuFreqProperty[] = "sys.malbec.perf.gpu_freq_mhz";
+constexpr char kPerfGpuTempProperty[] = "sys.malbec.perf.gpu_temp_c";
+constexpr char kPerfGpuPowerProperty[] = "sys.malbec.perf.gpu_power_mw";
+constexpr char kPerfSocPowerProperty[] = "sys.malbec.perf.soc_power_mw";
+constexpr char kPerfPowerProperty[] = "sys.malbec.perf.power_mw";
+
+
 constexpr char kFolioModePath[] = "/proc/folio_case_mode";
 constexpr char kPenModePath[] = "/proc/pen_type";
 constexpr char kPenWakePath[] = "/proc/pen_wakeup_mode";
 constexpr char kHighReportRatePath[] = "/proc/HighReportRate";
 constexpr char kGameEdgePath[] = "/proc/game_edge";
+constexpr char kEdgeGridZonePath[] = "/proc/edge_grid_zone";
+constexpr char kGpuBusyPath[] = "/sys/class/kgsl/kgsl-3d0/gpu_busy_percentage";
+constexpr char kGpuClockPath[] = "/sys/class/kgsl/kgsl-3d0/clock_mhz";
+constexpr char kGpuTempPath[] = "/sys/class/kgsl/kgsl-3d0/temp";
+constexpr char kCpuFreqPath[] =
+        "/sys/devices/system/cpu/cpu7/cpufreq/scaling_cur_freq";
+
 constexpr char kChargingEnabledPath[] =
         "/sys/class/power_supply/battery/charging_enabled";
 constexpr char kInputSuspendPath[] =
@@ -198,6 +220,128 @@ void PublishPowerTelemetry() {
     SetIntProperty(kPowerInputSuspendProperty, ReadInt(kInputSuspendPath, 0));
 }
 
+struct CpuTicks {
+    unsigned long long user = 0;
+    unsigned long long nice = 0;
+    unsigned long long system = 0;
+    unsigned long long idle = 0;
+    unsigned long long iowait = 0;
+    unsigned long long irq = 0;
+    unsigned long long softirq = 0;
+    unsigned long long steal = 0;
+};
+
+CpuTicks g_prev_ticks = {};
+bool g_has_prev_ticks = false;
+std::string g_cpu_temp_path;
+
+std::string FindThermalZone(const std::string& target_type) {
+    for (int index = 0; index < 60; ++index) {
+        std::string type_path =
+                "/sys/class/thermal/thermal_zone" + std::to_string(index) + "/type";
+        std::string type;
+        if (android::base::ReadFileToString(type_path, &type)) {
+            type = android::base::Trim(type);
+            if (type == target_type) {
+                return "/sys/class/thermal/thermal_zone" + std::to_string(index) +
+                        "/temp";
+            }
+        }
+    }
+    return "";
+}
+
+int CalculateCpuUsage() {
+    std::string stat_content;
+    if (!android::base::ReadFileToString("/proc/stat", &stat_content)) {
+        return 0;
+    }
+    std::istringstream stream(stat_content);
+    std::string line;
+    if (!std::getline(stream, line) || line.rfind("cpu ", 0) != 0) {
+        return 0;
+    }
+    CpuTicks curr = {};
+    std::sscanf(line.c_str(), "cpu %llu %llu %llu %llu %llu %llu %llu %llu",
+            &curr.user, &curr.nice, &curr.system, &curr.idle, &curr.iowait,
+            &curr.irq, &curr.softirq, &curr.steal);
+    if (!g_has_prev_ticks) {
+        g_prev_ticks = curr;
+        g_has_prev_ticks = true;
+        return 0;
+    }
+    unsigned long long prev_idle = g_prev_ticks.idle + g_prev_ticks.iowait;
+    unsigned long long curr_idle = curr.idle + curr.iowait;
+    unsigned long long prev_total = prev_idle + g_prev_ticks.user +
+            g_prev_ticks.nice + g_prev_ticks.system + g_prev_ticks.irq +
+            g_prev_ticks.softirq + g_prev_ticks.steal;
+    unsigned long long curr_total = curr_idle + curr.user + curr.nice +
+            curr.system + curr.irq + curr.softirq + curr.steal;
+    g_prev_ticks = curr;
+    if (curr_total <= prev_total) {
+        return 0;
+    }
+    unsigned long long total_diff = curr_total - prev_total;
+    unsigned long long idle_diff = curr_idle - prev_idle;
+    if (total_diff == 0 || idle_diff > total_diff) {
+        return 0;
+    }
+    return static_cast<int>((total_diff - idle_diff) * 100 / total_diff);
+}
+
+void PublishPerformanceTelemetry() {
+    if (g_cpu_temp_path.empty()) {
+        g_cpu_temp_path = FindThermalZone("cpuss-0-0");
+        if (g_cpu_temp_path.empty()) {
+            g_cpu_temp_path = "/sys/class/thermal/thermal_zone16/temp";
+        }
+    }
+
+    int cpu_usage = CalculateCpuUsage();
+    int cpu_freq_mhz = ReadInt(kCpuFreqPath, 0) / 1000;
+    int cpu_temp_c = ReadInt(g_cpu_temp_path.c_str(), 0) / 1000;
+
+
+    int gpu_busy = ReadInt(kGpuBusyPath, 0);
+    int gpu_freq_mhz = ReadInt(kGpuClockPath, 0);
+    int gpu_temp_c = ReadInt(kGpuTempPath, 0) / 1000;
+
+    double cpu_f_ratio = std::max(0.15, static_cast<double>(cpu_freq_mhz) / 3206.0);
+    int cpu_power_mw = static_cast<int>(250.0 + (cpu_f_ratio * cpu_f_ratio * 3800.0 * (static_cast<double>(cpu_usage) / 100.0)));
+
+    double gpu_f_ratio = std::max(0.2, static_cast<double>(gpu_freq_mhz) / 1050.0);
+    int gpu_power_mw = static_cast<int>(80.0 + (gpu_f_ratio * gpu_f_ratio * 4500.0 * (static_cast<double>(gpu_busy) / 100.0)));
+
+    int soc_power_mw = cpu_power_mw + gpu_power_mw + 300;
+
+    SetIntProperty(kPerfCpuUsageProperty, cpu_usage);
+    SetIntProperty(kPerfCpuFreqProperty, cpu_freq_mhz);
+    SetIntProperty(kPerfCpuTempProperty, cpu_temp_c);
+    SetIntProperty(kPerfCpuPowerProperty, cpu_power_mw);
+
+    SetIntProperty(kPerfGpuUsageProperty, gpu_busy);
+    SetIntProperty(kPerfGpuFreqProperty, gpu_freq_mhz);
+    SetIntProperty(kPerfGpuTempProperty, gpu_temp_c);
+    SetIntProperty(kPerfGpuPowerProperty, gpu_power_mw);
+
+    SetIntProperty(kPerfSocPowerProperty, soc_power_mw);
+
+    int usb_online = ReadInt(kUsbOnlinePath, 0);
+    long long power_mw = 0;
+    if (usb_online == 1) {
+        long long voltage_uv = ReadInt(kUsbVoltagePath, 0);
+        long long current_ua = ReadInt(kUsbCurrentPath, 0);
+        power_mw = (voltage_uv * current_ua) / 1000000000LL;
+    } else {
+        long long voltage_uv = std::abs(ReadInt(kBatteryVoltagePath, 0));
+        long long current_ua = std::abs(ReadInt(kBatteryCurrentPath, 0));
+        power_mw = (voltage_uv * current_ua) / 1000000000LL;
+    }
+    SetIntProperty(kPerfPowerProperty, static_cast<int>(power_mw));
+}
+
+
+
 int BootSeconds() {
     timespec time = {};
     if (clock_gettime(CLOCK_BOOTTIME, &time) != 0) {
@@ -263,12 +407,14 @@ int main() {
     int pen_wakeup_applied = -1;
     int high_report_applied = -1;
     int game_edge_applied = -1;
+    std::string edge_grid_zone_applied;
     bool bypass_active = android::base::GetBoolProperty(kBypassActiveProperty, false);
 
     int input_state = -1;
     int emitted_state = 0;
     int hall_retry = 0;
     int hardware_tick = 4;
+    int perf_tick = 0;
 
     while (true) {
         if (hall_input < 0 && hall_retry-- <= 0) {
@@ -286,6 +432,13 @@ int main() {
         if (result < 0 && errno != EINTR) {
             PLOG(ERROR) << "Folio input poll failed";
             return 1;
+        }
+
+        if (android::base::GetBoolProperty(kPerfOverlayActiveProperty, false)) {
+            if (++perf_tick >= 2) {
+                perf_tick = 0;
+                PublishPerformanceTelemetry();
+            }
         }
 
         if (result > 0 && hall_input >= 0 && (fds[0].revents & POLLIN) != 0) {
@@ -329,7 +482,6 @@ int main() {
         folio_enabled = new_folio_enabled;
 
         bool new_pen_enabled = android::base::GetBoolProperty(kPenEnabledProperty, true);
-        bool new_pen_wakeup = android::base::GetBoolProperty(kPenWakeProperty, false);
         bool new_high_report =
                 android::base::GetBoolProperty(kHighReportRateProperty, false);
         bool new_game_edge =
@@ -339,12 +491,21 @@ int main() {
             hardware_tick = 0;
             ApplyMode(kFolioModePath, new_folio_enabled, &folio_applied, nullptr);
             ApplyMode(kPenModePath, new_pen_enabled, &pen_applied, nullptr);
-            ApplyMode(kPenWakePath, new_pen_enabled && new_pen_wakeup,
-                    &pen_wakeup_applied, nullptr);
+            ApplyMode(kPenWakePath, true, &pen_wakeup_applied, nullptr);
             ApplyMode(kHighReportRatePath, new_high_report, &high_report_applied,
                     kHighReportRateAppliedProperty);
             ApplyMode(kGameEdgePath, new_game_edge, &game_edge_applied,
                     kGameEdgeAppliedProperty);
+
+            std::string new_edge_grid =
+                    android::base::GetProperty(kEdgeGridZoneProperty, "");
+            if (!new_edge_grid.empty() && new_edge_grid != edge_grid_zone_applied) {
+                if (android::base::WriteStringToFile(new_edge_grid, kEdgeGridZonePath)) {
+                    edge_grid_zone_applied = new_edge_grid;
+                    android::base::SetProperty(kEdgeGridZoneAppliedProperty, "1");
+                }
+            }
+
 
             PublishPowerTelemetry();
             bool bypass_requested =

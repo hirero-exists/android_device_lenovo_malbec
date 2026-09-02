@@ -11,12 +11,6 @@ $(call inherit-product, $(SRC_TARGET_DIR)/product/aosp_base.mk)
 # Inherit some common Lineage stuff.
 $(call inherit-product, vendor/lineage/config/common_full_tablet_wifionly.mk)
 
-ifneq ($(wildcard vendor/lineage-priv/keys/keys.mk),)
-include vendor/lineage-priv/keys/keys.mk
-else ifneq ($(wildcard vendor/extra/product.mk),)
-include vendor/extra/product.mk
-endif
-
 # Inherit from malbec device
 $(call inherit-product, device/lenovo/malbec/device.mk)
 
@@ -39,3 +33,9 @@ PRODUCT_BUILD_PROP_OVERRIDES += \
     DeviceProduct=$(PRODUCT_SYSTEM_NAME)
 
 PRODUCT_GMS_CLIENTID_BASE := android-lenovo
+
+ifneq ($(wildcard vendor/lineage-priv/keys/keys.mk),)
+include vendor/lineage-priv/keys/keys.mk
+else ifneq ($(wildcard vendor/extra/product.mk),)
+include vendor/extra/product.mk
+endif

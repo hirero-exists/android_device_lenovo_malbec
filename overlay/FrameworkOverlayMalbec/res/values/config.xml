@@ -921,5 +921,45 @@
     <!-- Adjust dividers if needed (usually 1000 for millidegrees, 10 for decidegrees) -->
     <integer name="config_cpu_temp_divider">1000</integer>
 
+    <string-array name="config_statusBarIcons">
+        <item>@*android:string/status_bar_no_calling</item>
+        <item>@*android:string/status_bar_call_strength</item>
+        <item>@*android:string/status_bar_alarm_clock</item>
+        <item>@*android:string/status_bar_rotate</item>
+        <item>@*android:string/status_bar_headset</item>
+        <item>@*android:string/status_bar_data_saver</item>
+        <item>@*android:string/status_bar_ime</item>
+        <item>@*android:string/status_bar_sync_failing</item>
+        <item>@*android:string/status_bar_sync_active</item>
+        <item>@*android:string/status_bar_nfc</item>
+        <item>@*android:string/status_bar_tty</item>
+        <item>@*android:string/status_bar_speakerphone</item>
+        <item>@*android:string/status_bar_cdma_eri</item>
+        <item>@*android:string/status_bar_data_connection</item>
+        <item>@*android:string/status_bar_phone_evdo_signal</item>
+        <item>@*android:string/status_bar_phone_signal</item>
+        <item>@*android:string/status_bar_secure</item>
+        <item>@*android:string/status_bar_managed_profile</item>
+        <item>@*android:string/status_bar_connected_display</item>
+        <item>@*android:string/status_bar_vpn</item>
+        <item>@*android:string/status_bar_bluetooth</item>
+        <item>@*android:string/status_bar_camera</item>
+        <item>@*android:string/status_bar_microphone</item>
+        <item>@*android:string/status_bar_location</item>
+        <item>@*android:string/status_bar_mute</item>
+        <item>@*android:string/status_bar_volume</item>
+        <item>@*android:string/status_bar_zen</item>
+        <item>@*android:string/status_bar_screen_record</item>
+        <item>@*android:string/status_bar_cast</item>
+        <item>@*android:string/status_bar_ethernet</item>
+        <item>@*android:string/status_bar_oem_satellite</item>
+        <item>@*android:string/status_bar_hotspot</item>
+        <item>@*android:string/status_bar_stacked_mobile</item>
+        <item>@*android:string/status_bar_mobile</item>
+        <item>dolby</item>
+        <item>@*android:string/status_bar_wifi</item>
+        <item>@*android:string/status_bar_airplane</item>
+        <item>@*android:string/status_bar_battery</item>
+        <item>@*android:string/status_bar_sensors_off</item>
+    </string-array>
 </resources>
-	
