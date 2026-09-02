@@ -1,82 +1,128 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-    <com.android.settingslib.widget.MainSwitchPreference
-        android:defaultValue="true"
-        android:key="folio_cover"
-        android:persistent="false"
-        android:summary="@string/folio_summary"
-        android:title="@string/folio_title" />
-    <com.android.settingslib.widget.MainSwitchPreference
-        android:defaultValue="true"
-        android:key="pen_enabled"
-        android:persistent="false"
-        android:summary="@string/pen_enabled_summary"
-        android:title="@string/pen_enabled_title" />
-    <androidx.preference.SwitchPreferenceCompat
-        android:defaultValue="false"
-        android:dependency="pen_enabled"
-        android:key="pen_wakeup"
-        android:persistent="false"
-        android:summary="@string/pen_wakeup_summary"
-        android:title="@string/pen_wakeup_title" />
-    <androidx.preference.ListPreference
-        android:defaultValue="5"
-        android:dependency="pen_enabled"
-        android:entries="@array/pen_action_entries"
-        android:entryValues="@array/pen_action_values"
-        android:key="pen_single_action"
-        android:persistent="false"
-        android:summary="%s"
-        android:title="@string/pen_single_action_title" />
-    <androidx.preference.ListPreference
-        android:defaultValue="10"
-        android:dependency="pen_enabled"
-        android:entries="@array/pen_action_entries"
-        android:entryValues="@array/pen_action_values"
-        android:key="pen_double_action"
-        android:persistent="false"
-        android:summary="%s"
-        android:title="@string/pen_double_action_title" />
-    <androidx.preference.ListPreference
-        android:defaultValue="2"
-        android:dependency="pen_enabled"
-        android:entries="@array/pen_action_entries"
-        android:entryValues="@array/pen_action_values"
-        android:key="pen_triple_action"
-        android:persistent="false"
-        android:summary="%s"
-        android:title="@string/pen_triple_action_title" />
-    <androidx.preference.ListPreference
-        android:defaultValue="0"
-        android:dependency="pen_enabled"
-        android:entries="@array/pen_action_entries"
-        android:entryValues="@array/pen_action_values"
-        android:key="pen_long_action"
-        android:persistent="false"
-        android:summary="%s"
-        android:title="@string/pen_long_action_title" />
-    <androidx.preference.ListPreference
-        android:defaultValue="0"
-        android:dependency="pen_enabled"
-        android:entries="@array/pen_action_entries"
-        android:entryValues="@array/pen_action_values"
-        android:key="pen_long_click_action"
-        android:persistent="false"
-        android:summary="%s"
-        android:title="@string/pen_long_click_action_title" />
-    <com.android.settingslib.widget.MainSwitchPreference
-        android:defaultValue="true"
-        android:key="dolby_enabled"
-        android:persistent="false"
-        android:summary="@string/dolby_enabled_summary"
-        android:title="@string/dolby_enabled_title" />
-    <androidx.preference.ListPreference
-        android:defaultValue="0"
-        android:dependency="dolby_enabled"
-        android:entries="@array/dolby_profile_entries"
-        android:entryValues="@array/dolby_profile_values"
-        android:key="dolby_profile"
-        android:persistent="false"
-        android:summary="%s"
-        android:title="@string/dolby_profile_title" />
+    <PreferenceCategory
+        android:key="category_folio"
+        android:title="@string/category_folio_title">
+        <androidx.preference.SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="folio_cover"
+            android:persistent="false"
+            android:summary="@string/folio_summary"
+            android:title="@string/folio_title" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:key="category_pen"
+        android:title="@string/category_pen_title">
+        <androidx.preference.SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="pen_enabled"
+            android:persistent="false"
+            android:summary="@string/pen_enabled_summary"
+            android:title="@string/pen_enabled_title" />
+        <androidx.preference.SwitchPreferenceCompat
+            android:defaultValue="false"
+            android:dependency="pen_enabled"
+            android:key="pen_wakeup"
+            android:persistent="false"
+            android:summary="@string/pen_wakeup_summary"
+            android:title="@string/pen_wakeup_title" />
+        <androidx.preference.SwitchPreferenceCompat
+            android:defaultValue="false"
+            android:dependency="pen_enabled"
+            android:key="pen_toolbar"
+            android:persistent="false"
+            android:summary="@string/pen_toolbar_summary"
+            android:title="@string/pen_toolbar_title" />
+        <androidx.preference.ListPreference
+            android:defaultValue="4"
+            android:dependency="pen_enabled"
+            android:entries="@array/pen_action_entries"
+            android:entryValues="@array/pen_action_values"
+            android:key="pen_single_action"
+            android:persistent="false"
+            android:summary="%s"
+            android:title="@string/pen_single_action_title" />
+        <androidx.preference.ListPreference
+            android:defaultValue="2"
+            android:dependency="pen_enabled"
+            android:entries="@array/pen_action_entries"
+            android:entryValues="@array/pen_action_values"
+            android:key="pen_double_action"
+            android:persistent="false"
+            android:summary="%s"
+            android:title="@string/pen_double_action_title" />
+        <androidx.preference.ListPreference
+            android:defaultValue="0"
+            android:dependency="pen_enabled"
+            android:entries="@array/pen_action_entries"
+            android:entryValues="@array/pen_action_values"
+            android:key="pen_long_action"
+            android:persistent="false"
+            android:summary="%s"
+            android:title="@string/pen_long_action_title" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:key="category_display"
+        android:title="@string/category_display_title">
+        <androidx.preference.ListPreference
+            android:defaultValue="0"
+            android:entries="@array/refresh_rate_entries"
+            android:entryValues="@array/refresh_rate_values"
+            android:key="refresh_rate"
+            android:persistent="false"
+            android:summary="%s"
+            android:title="@string/refresh_rate_title" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:key="category_touch"
+        android:title="@string/category_touch_title">
+        <androidx.preference.SwitchPreferenceCompat
+            android:defaultValue="false"
+            android:key="high_report_rate"
+            android:persistent="false"
+            android:summary="@string/high_report_rate_summary"
+            android:title="@string/high_report_rate_title" />
+        <androidx.preference.SwitchPreferenceCompat
+            android:defaultValue="false"
+            android:key="game_edge"
+            android:persistent="false"
+            android:summary="@string/game_edge_summary"
+            android:title="@string/game_edge_title" />
+        <androidx.preference.SwitchPreferenceCompat
+            android:defaultValue="false"
+            android:key="gaming_bypass"
+            android:persistent="false"
+            android:summary="@string/gaming_bypass_summary"
+            android:title="@string/gaming_bypass_title" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:key="category_dolby"
+        android:title="@string/category_dolby_title">
+        <androidx.preference.SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="dolby_enabled"
+            android:persistent="false"
+            android:summary="@string/dolby_enabled_summary"
+            android:title="@string/dolby_enabled_title" />
+        <androidx.preference.ListPreference
+            android:defaultValue="0"
+            android:dependency="dolby_enabled"
+            android:entries="@array/dolby_profile_entries"
+            android:entryValues="@array/dolby_profile_values"
+            android:key="dolby_profile"
+            android:persistent="false"
+            android:summary="%s"
+            android:title="@string/dolby_profile_title" />
+        <androidx.preference.SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:dependency="dolby_enabled"
+            android:key="dolby_show_icon"
+            android:persistent="false"
+            android:summary="@string/dolby_show_icon_summary"
+            android:title="@string/dolby_show_icon_title" />
+    </PreferenceCategory>
 </PreferenceScreen>
