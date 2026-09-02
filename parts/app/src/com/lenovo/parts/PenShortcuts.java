@@ -23,6 +23,8 @@ import android.hardware.input.KeyGestureEvent;
 import android.os.SystemClock;
 import android.provider.Settings;
 import android.util.Log;
+import android.view.InputDevice;
+import android.view.KeyCharacterMap;
 import android.view.KeyEvent;
 
 final class PenShortcuts {
@@ -142,9 +144,17 @@ final class PenShortcuts {
             return;
         }
         long now = SystemClock.uptimeMillis();
-        KeyEvent down = new KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0);
-        KeyEvent up = new KeyEvent(now, now, KeyEvent.ACTION_UP, keyCode, 0);
-        inputManager.injectInputEvent(down, InputManager.INJECT_INPUT_EVENT_MODE_ASYNC);
-        inputManager.injectInputEvent(up, InputManager.INJECT_INPUT_EVENT_MODE_ASYNC);
+        int flags = KeyEvent.FLAG_FROM_SYSTEM | KeyEvent.FLAG_VIRTUAL_HARD_KEY;
+        KeyEvent down = new KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0, 0,
+                KeyCharacterMap.VIRTUAL_KEYBOARD, 0, flags, InputDevice.SOURCE_KEYBOARD);
+        KeyEvent up = KeyEvent.changeAction(down, KeyEvent.ACTION_UP);
+        boolean downInjected = inputManager.injectInputEvent(
+                down, InputManager.INJECT_INPUT_EVENT_MODE_WAIT_FOR_RESULT);
+        boolean upInjected = inputManager.injectInputEvent(
+                up, InputManager.INJECT_INPUT_EVENT_MODE_WAIT_FOR_RESULT);
+        if (!downInjected || !upInjected) {
+            Log.e(TAG, "Unable to inject key " + keyCode + ", down="
+                    + downInjected + ", up=" + upInjected);
+        }
     }
 }

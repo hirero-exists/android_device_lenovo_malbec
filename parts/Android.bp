@@ -26,6 +26,14 @@ prebuilt_etc {
     system_ext_specific: true,
 }
 
+prebuilt_etc {
+    name: "default_permissions_com.lenovo.parts",
+    src: "permissions/default-permissions-com.lenovo.parts.xml",
+    filename_from_src: true,
+    sub_dir: "default-permissions",
+    system_ext_specific: true,
+}
+
 cc_binary {
     name: "malbec_partsd",
     srcs: ["backend/malbec_partsd.cpp"],

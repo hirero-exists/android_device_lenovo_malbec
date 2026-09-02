@@ -4,8 +4,12 @@ type malbec_partsd_exec, exec_type, vendor_file_type, file_type;
 init_daemon_domain(malbec_partsd)
 
 get_prop(malbec_partsd, malbec_parts_prop)
+set_prop(malbec_partsd, malbec_parts_prop)
 
 allow malbec_partsd input_device:dir r_dir_perms;
 allow malbec_partsd input_device:chr_file r_file_perms;
 allow malbec_partsd proc_lenovo_touchscreen:file rw_file_perms;
 allow malbec_partsd uhid_device:chr_file { getattr ioctl open write };
+allow malbec_partsd vendor_sysfs_battery_supply:dir r_dir_perms;
+allow malbec_partsd vendor_sysfs_battery_supply:file rw_file_perms;
+allow malbec_partsd vendor_sysfs_battery_supply:lnk_file r_file_perms;

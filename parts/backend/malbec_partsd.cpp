@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <android-base/file.h>
 #include <android-base/logging.h>
 #include <android-base/properties.h>
 #include <dirent.h>
@@ -22,11 +23,14 @@
 #include <linux/uinput.h>
 #include <poll.h>
 #include <sys/ioctl.h>
+#include <time.h>
 #include <unistd.h>
 
 #include <cerrno>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
+#include <string>
 
 namespace {
 
@@ -36,12 +40,57 @@ constexpr char kPenEnabledProperty[] = "persist.sys.pen.enabled";
 constexpr char kPenWakeProperty[] = "persist.sys.pen.wakeup";
 constexpr char kHighReportRateProperty[] = "persist.sys.touch.high_report_rate";
 constexpr char kGameEdgeProperty[] = "persist.sys.touch.game_edge";
+constexpr char kHighReportRateAppliedProperty[] =
+        "sys.malbec.touch.high_report_rate_applied";
+constexpr char kGameEdgeAppliedProperty[] = "sys.malbec.touch.game_edge_applied";
+constexpr char kBypassRequestProperty[] = "sys.malbec.bypass.requested";
+constexpr char kBypassHeartbeatProperty[] = "sys.malbec.bypass.heartbeat";
+constexpr char kBypassActiveProperty[] = "sys.malbec.bypass.active";
+constexpr char kBypassStateProperty[] = "sys.malbec.bypass.state";
 
 constexpr char kFolioModePath[] = "/proc/folio_case_mode";
 constexpr char kPenModePath[] = "/proc/pen_type";
 constexpr char kPenWakePath[] = "/proc/pen_wakeup_mode";
 constexpr char kHighReportRatePath[] = "/proc/HighReportRate";
 constexpr char kGameEdgePath[] = "/proc/game_edge";
+constexpr char kChargingEnabledPath[] =
+        "/sys/class/power_supply/battery/charging_enabled";
+constexpr char kInputSuspendPath[] =
+        "/sys/class/power_supply/battery/input_suspend";
+constexpr char kUsbOnlinePath[] = "/sys/class/power_supply/usb/online";
+constexpr char kUsbVoltagePath[] = "/sys/class/power_supply/usb/voltage_now";
+constexpr char kUsbCurrentPath[] = "/sys/class/power_supply/usb/current_now";
+constexpr char kUsbVoltageMaxPath[] = "/sys/class/power_supply/usb/voltage_max";
+constexpr char kUsbCurrentMaxPath[] = "/sys/class/power_supply/usb/current_max";
+constexpr char kUsbTypePath[] = "/sys/class/power_supply/usb/usb_type";
+constexpr char kBatteryCapacityPath[] =
+        "/sys/class/power_supply/battery/capacity";
+constexpr char kBatteryVoltagePath[] =
+        "/sys/class/power_supply/battery/voltage_now";
+constexpr char kBatteryCurrentPath[] =
+        "/sys/class/power_supply/battery/current_now";
+constexpr char kBatteryTempPath[] = "/sys/class/power_supply/battery/temp";
+
+constexpr char kPowerUsbOnlineProperty[] = "sys.malbec.power.usb_online";
+constexpr char kPowerUsbVoltageProperty[] = "sys.malbec.power.usb_voltage_uv";
+constexpr char kPowerUsbCurrentProperty[] = "sys.malbec.power.usb_current_ua";
+constexpr char kPowerUsbVoltageMaxProperty[] =
+        "sys.malbec.power.usb_voltage_max_uv";
+constexpr char kPowerUsbCurrentMaxProperty[] =
+        "sys.malbec.power.usb_current_max_ua";
+constexpr char kPowerUsbTypeProperty[] = "sys.malbec.power.usb_type";
+constexpr char kPowerBatteryCapacityProperty[] =
+        "sys.malbec.power.battery_capacity";
+constexpr char kPowerBatteryVoltageProperty[] =
+        "sys.malbec.power.battery_voltage_uv";
+constexpr char kPowerBatteryCurrentProperty[] =
+        "sys.malbec.power.battery_current_ua";
+constexpr char kPowerBatteryTempProperty[] =
+        "sys.malbec.power.battery_temp_tenth_c";
+constexpr char kPowerChargingEnabledProperty[] =
+        "sys.malbec.power.charging_enabled";
+constexpr char kPowerInputSuspendProperty[] =
+        "sys.malbec.power.battery_input_suspend";
 
 constexpr char kHallInputName[] = "hall_irq";
 constexpr int kHallOpenKey = 750;
@@ -84,6 +133,82 @@ bool WriteMode(const char* path, bool enabled) {
     }
     close(fd);
     return success;
+}
+
+int ReadInt(const char* path, int fallback) {
+    std::string value;
+    if (!android::base::ReadFileToString(path, &value)) {
+        return fallback;
+    }
+    char* end = nullptr;
+    errno = 0;
+    long parsed = std::strtol(value.c_str(), &end, 10);
+    if (errno != 0 || end == value.c_str()) {
+        return fallback;
+    }
+    return static_cast<int>(parsed);
+}
+
+std::string ReadUsbType() {
+    std::string value;
+    if (!android::base::ReadFileToString(kUsbTypePath, &value)) {
+        return "Unknown";
+    }
+    size_t open = value.find('[');
+    size_t close = value.find(']', open == std::string::npos ? 0 : open + 1);
+    if (open != std::string::npos && close != std::string::npos && close > open + 1) {
+        return value.substr(open + 1, close - open - 1);
+    }
+    while (!value.empty() && (value.back() == '\n' || value.back() == '\r')) {
+        value.pop_back();
+    }
+    return value.empty() ? "Unknown" : value;
+}
+
+void SetIntProperty(const char* property, int value) {
+    android::base::SetProperty(property, std::to_string(value));
+}
+
+void ApplyMode(const char* path, bool desired, int* applied,
+        const char* applied_property) {
+    int requested = desired ? 1 : 0;
+    if (*applied == requested) {
+        return;
+    }
+    if (WriteMode(path, desired)) {
+        *applied = requested;
+        if (applied_property != nullptr) {
+            SetIntProperty(applied_property, requested);
+        }
+    }
+}
+
+void PublishPowerTelemetry() {
+    SetIntProperty(kPowerUsbOnlineProperty, ReadInt(kUsbOnlinePath, 0));
+    SetIntProperty(kPowerUsbVoltageProperty, ReadInt(kUsbVoltagePath, 0));
+    SetIntProperty(kPowerUsbCurrentProperty, ReadInt(kUsbCurrentPath, 0));
+    SetIntProperty(kPowerUsbVoltageMaxProperty, ReadInt(kUsbVoltageMaxPath, 0));
+    SetIntProperty(kPowerUsbCurrentMaxProperty, ReadInt(kUsbCurrentMaxPath, 0));
+    android::base::SetProperty(kPowerUsbTypeProperty, ReadUsbType());
+    SetIntProperty(kPowerBatteryCapacityProperty, ReadInt(kBatteryCapacityPath, 0));
+    SetIntProperty(kPowerBatteryVoltageProperty, ReadInt(kBatteryVoltagePath, 0));
+    SetIntProperty(kPowerBatteryCurrentProperty, ReadInt(kBatteryCurrentPath, 0));
+    SetIntProperty(kPowerBatteryTempProperty, ReadInt(kBatteryTempPath, 0));
+    SetIntProperty(kPowerChargingEnabledProperty, ReadInt(kChargingEnabledPath, 1));
+    SetIntProperty(kPowerInputSuspendProperty, ReadInt(kInputSuspendPath, 0));
+}
+
+int BootSeconds() {
+    timespec time = {};
+    if (clock_gettime(CLOCK_BOOTTIME, &time) != 0) {
+        return 0;
+    }
+    return static_cast<int>(time.tv_sec);
+}
+
+void SetBypassState(bool active, int state) {
+    android::base::SetProperty(kBypassActiveProperty, active ? "1" : "0");
+    SetIntProperty(kBypassStateProperty, state);
 }
 
 int OpenHallInput() {
@@ -133,20 +258,17 @@ int main() {
     }
 
     bool folio_enabled = android::base::GetBoolProperty(kFolioEnabledProperty, true);
-    bool pen_enabled = android::base::GetBoolProperty(kPenEnabledProperty, true);
-    bool pen_wakeup = android::base::GetBoolProperty(kPenWakeProperty, false);
-    bool high_report = android::base::GetBoolProperty(kHighReportRateProperty, false);
-    bool game_edge = android::base::GetBoolProperty(kGameEdgeProperty, false);
-
-    WriteMode(kFolioModePath, folio_enabled);
-    WriteMode(kPenModePath, pen_enabled);
-    WriteMode(kPenWakePath, pen_enabled && pen_wakeup);
-    WriteMode(kHighReportRatePath, high_report);
-    WriteMode(kGameEdgePath, game_edge);
+    int folio_applied = -1;
+    int pen_applied = -1;
+    int pen_wakeup_applied = -1;
+    int high_report_applied = -1;
+    int game_edge_applied = -1;
+    bool bypass_active = android::base::GetBoolProperty(kBypassActiveProperty, false);
 
     int input_state = -1;
     int emitted_state = 0;
     int hall_retry = 0;
+    int hardware_tick = 4;
 
     while (true) {
         if (hall_input < 0 && hall_retry-- <= 0) {
@@ -191,9 +313,6 @@ int main() {
 
         bool new_folio_enabled =
                 android::base::GetBoolProperty(kFolioEnabledProperty, true);
-        if (new_folio_enabled != folio_enabled) {
-            WriteMode(kFolioModePath, new_folio_enabled);
-        }
 
         int hall_state = android::base::GetIntProperty(kFolioHallStateProperty, -1);
         int known_state = input_state >= 0 ? input_state : hall_state;
@@ -211,29 +330,71 @@ int main() {
 
         bool new_pen_enabled = android::base::GetBoolProperty(kPenEnabledProperty, true);
         bool new_pen_wakeup = android::base::GetBoolProperty(kPenWakeProperty, false);
-        if (new_pen_enabled != pen_enabled) {
-            WriteMode(kPenModePath, new_pen_enabled);
-            WriteMode(kPenWakePath, new_pen_enabled && new_pen_wakeup);
-            pen_enabled = new_pen_enabled;
-        }
-
-        if (new_pen_wakeup != pen_wakeup) {
-            WriteMode(kPenWakePath, pen_enabled && new_pen_wakeup);
-            pen_wakeup = new_pen_wakeup;
-        }
-
         bool new_high_report =
                 android::base::GetBoolProperty(kHighReportRateProperty, false);
-        if (new_high_report != high_report) {
-            WriteMode(kHighReportRatePath, new_high_report);
-            high_report = new_high_report;
-        }
-
         bool new_game_edge =
                 android::base::GetBoolProperty(kGameEdgeProperty, false);
-        if (new_game_edge != game_edge) {
-            WriteMode(kGameEdgePath, new_game_edge);
-            game_edge = new_game_edge;
+
+        if (++hardware_tick >= 4) {
+            hardware_tick = 0;
+            ApplyMode(kFolioModePath, new_folio_enabled, &folio_applied, nullptr);
+            ApplyMode(kPenModePath, new_pen_enabled, &pen_applied, nullptr);
+            ApplyMode(kPenWakePath, new_pen_enabled && new_pen_wakeup,
+                    &pen_wakeup_applied, nullptr);
+            ApplyMode(kHighReportRatePath, new_high_report, &high_report_applied,
+                    kHighReportRateAppliedProperty);
+            ApplyMode(kGameEdgePath, new_game_edge, &game_edge_applied,
+                    kGameEdgeAppliedProperty);
+
+            PublishPowerTelemetry();
+            bool bypass_requested =
+                    android::base::GetBoolProperty(kBypassRequestProperty, false);
+            int usb_online = ReadInt(kUsbOnlinePath, 0);
+            int heartbeat = android::base::GetIntProperty(kBypassHeartbeatProperty, 0);
+            int heartbeat_age = BootSeconds() - heartbeat;
+
+            if (bypass_requested) {
+                if (usb_online != 1) {
+                    if (bypass_active && WriteMode(kChargingEnabledPath, true)) {
+                        bypass_active = false;
+                    }
+                    android::base::SetProperty(kBypassRequestProperty, "0");
+                    SetBypassState(bypass_active, 2);
+                } else if (heartbeat <= 0 || heartbeat_age < 0 || heartbeat_age > 20) {
+                    if (bypass_active && WriteMode(kChargingEnabledPath, true)) {
+                        bypass_active = false;
+                    }
+                    android::base::SetProperty(kBypassRequestProperty, "0");
+                    SetBypassState(bypass_active, 4);
+                } else if (!bypass_active) {
+                    if (WriteMode(kChargingEnabledPath, false)
+                            && ReadInt(kChargingEnabledPath, 1) == 0) {
+                        bypass_active = true;
+                        SetBypassState(true, 1);
+                    } else {
+                        android::base::SetProperty(kBypassRequestProperty, "0");
+                        SetBypassState(false, 3);
+                    }
+                } else if (ReadInt(kChargingEnabledPath, 1) != 0) {
+                    bypass_active = false;
+                    android::base::SetProperty(kBypassRequestProperty, "0");
+                    SetBypassState(false, 5);
+                } else {
+                    SetBypassState(true, 1);
+                }
+            } else if (bypass_active) {
+                if (WriteMode(kChargingEnabledPath, true)
+                        && ReadInt(kChargingEnabledPath, 0) == 1) {
+                    bypass_active = false;
+                    SetBypassState(false, 0);
+                } else {
+                    SetBypassState(true, 3);
+                }
+            } else if (android::base::GetIntProperty(kBypassStateProperty, 0) == 1) {
+                SetBypassState(false, 0);
+            }
         }
+
+        folio_enabled = new_folio_enabled;
     }
 }
