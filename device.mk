@@ -191,11 +191,6 @@ PRODUCT_COPY_FILES += \
 PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.location.gps.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.location.gps.xml
 
-# Input
-PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/idc/NVTCapacitivePen.idc:$(TARGET_COPY_OUT_SYSTEM)/usr/idc/NVTCapacitivePen.idc \
-    $(LOCAL_PATH)/idc/NVTCapacitivePen.idc:$(TARGET_COPY_OUT_VENDOR)/usr/idc/NVTCapacitivePen.idc
-
 # Health
 PRODUCT_PACKAGES += \
     android.hardware.health-service.qti \
@@ -339,6 +334,7 @@ PRODUCT_COPY_FILES += \
 # LenovoParts
 PRODUCT_PACKAGES += \
     LenovoParts \
+    default_permissions_com.lenovo.parts \
     malbec_partsd \
     privapp_permissions_com.lenovo.parts
 
