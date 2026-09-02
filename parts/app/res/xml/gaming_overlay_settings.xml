@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <PreferenceCategory
+        android:key="category_overlay_metrics"
+        android:title="@string/gaming_overlay_settings_title">
+        <androidx.preference.SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="gaming_overlay_show_cpu_usage"
+            android:title="@string/gaming_overlay_show_cpu_usage" />
+        <androidx.preference.SwitchPreferenceCompat
+            android:defaultValue="false"
+            android:key="gaming_overlay_show_cpu_freq"
+            android:title="@string/gaming_overlay_show_cpu_freq" />
+        <androidx.preference.SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="gaming_overlay_show_cpu_temp"
+            android:title="@string/gaming_overlay_show_cpu_temp" />
+        <androidx.preference.SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="gaming_overlay_show_gpu_usage"
+            android:title="@string/gaming_overlay_show_gpu_usage" />
+        <androidx.preference.SwitchPreferenceCompat
+            android:defaultValue="false"
+            android:key="gaming_overlay_show_gpu_freq"
+            android:title="@string/gaming_overlay_show_gpu_freq" />
+        <androidx.preference.SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="gaming_overlay_show_gpu_temp"
+            android:title="@string/gaming_overlay_show_gpu_temp" />
+        <androidx.preference.SwitchPreferenceCompat
+            android:defaultValue="false"
+            android:key="gaming_overlay_show_fps"
+            android:title="@string/gaming_overlay_show_fps" />
+        <androidx.preference.SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="gaming_overlay_show_total_power"
+            android:title="@string/gaming_overlay_show_total_power" />
+        <androidx.preference.ListPreference
+            android:defaultValue="3"
+            android:entries="@array/soc_power_entries"
+            android:entryValues="@array/soc_power_values"
+            android:key="gaming_overlay_soc_power_mode"
+            android:summary="%s"
+            android:title="@string/gaming_overlay_soc_power_title" />
+        <androidx.preference.SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="gaming_overlay_show_battery"
+            android:title="@string/gaming_overlay_show_battery" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:key="category_overlay_layout"
+        android:title="@string/gaming_overlay_compact_default">
+        <androidx.preference.SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="gaming_overlay_compact_default"
+            android:title="@string/gaming_overlay_compact_default" />
+    </PreferenceCategory>
+</PreferenceScreen>

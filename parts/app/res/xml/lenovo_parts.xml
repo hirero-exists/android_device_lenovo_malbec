@@ -91,6 +91,11 @@
             android:persistent="false"
             android:summary="@string/game_edge_summary"
             android:title="@string/game_edge_title" />
+        <androidx.preference.Preference
+            android:dependency="game_edge"
+            android:key="game_edge_calibrate"
+            android:summary="@string/game_edge_calibrate_summary"
+            android:title="@string/game_edge_calibrate_title" />
         <androidx.preference.SwitchPreferenceCompat
             android:defaultValue="false"
             android:key="gaming_bypass"
@@ -98,6 +103,23 @@
             android:summary="@string/gaming_bypass_summary"
             android:title="@string/gaming_bypass_title" />
     </PreferenceCategory>
+
+    <PreferenceCategory
+        android:key="category_gaming_overlay"
+        android:title="@string/category_gaming_overlay_title">
+        <androidx.preference.SwitchPreferenceCompat
+            android:defaultValue="false"
+            android:key="gaming_overlay"
+            android:persistent="false"
+            android:summary="@string/gaming_overlay_summary"
+            android:title="@string/gaming_overlay_title" />
+        <androidx.preference.Preference
+            android:dependency="gaming_overlay"
+            android:key="gaming_overlay_settings"
+            android:summary="@string/gaming_overlay_settings_summary"
+            android:title="@string/gaming_overlay_settings_title" />
+    </PreferenceCategory>
+
 
     <PreferenceCategory
         android:key="category_dolby"
