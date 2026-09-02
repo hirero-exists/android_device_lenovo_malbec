@@ -1,8 +1,7 @@
 service malbec_partsd /vendor/bin/malbec_partsd
     class core
-    user root
-    group root input system uhid
-    capabilities SYSLOG
+    user system
+    group system input uhid
     disabled
 
 on post-fs-data

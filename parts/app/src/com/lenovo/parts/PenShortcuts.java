@@ -28,11 +28,16 @@ import android.view.KeyEvent;
 final class PenShortcuts {
     static final String SINGLE_SETTING = "malbec_pen_single_action";
     static final String DOUBLE_SETTING = "malbec_pen_double_action";
-    static final String TRIPLE_SETTING = "malbec_pen_triple_action";
     static final String LONG_SETTING = "malbec_pen_long_action";
-    static final String LONG_CLICK_SETTING = "malbec_pen_long_click_action";
 
-    private static final String TAG = "LenovoParts";
+    static final int ACTION_NONE = 0;
+    static final int ACTION_TOOLBAR = 1;
+    static final int ACTION_SCREENSHOT = 2;
+    static final int ACTION_RECENTS = 3;
+    static final int ACTION_HOME = 4;
+    static final int ACTION_PLAY_PAUSE = 5;
+
+    private static final String TAG = "PenShortcuts";
 
     private PenShortcuts() {
     }
@@ -51,35 +56,33 @@ final class PenShortcuts {
 
     static void apply(Context context) {
         InputManager inputManager = context.getSystemService(InputManager.class);
-        apply(inputManager, KeyEvent.KEYCODE_STYLUS_BUTTON_PRIMARY,
-                getAction(context, SINGLE_SETTING,
-                        KeyGestureEvent.KEY_GESTURE_TYPE_LAUNCH_ASSISTANT));
-        apply(inputManager, KeyEvent.KEYCODE_STYLUS_BUTTON_SECONDARY,
-                getAction(context, DOUBLE_SETTING,
-                        KeyGestureEvent.KEY_GESTURE_TYPE_TAKE_SCREENSHOT));
-        apply(inputManager, KeyEvent.KEYCODE_STYLUS_BUTTON_TERTIARY,
-                getAction(context, TRIPLE_SETTING,
-                        KeyGestureEvent.KEY_GESTURE_TYPE_RECENT_APPS));
-        apply(inputManager, KeyEvent.KEYCODE_STYLUS_BUTTON_TAIL,
-                getAction(context, LONG_SETTING,
-                        KeyGestureEvent.KEY_GESTURE_TYPE_UNSPECIFIED));
-        apply(inputManager, KeyEvent.KEYCODE_F13,
-                getAction(context, LONG_CLICK_SETTING,
-                        KeyGestureEvent.KEY_GESTURE_TYPE_UNSPECIFIED));
+        if (inputManager == null) {
+            return;
+        }
+
+        applyKeyTrigger(inputManager, KeyEvent.KEYCODE_STYLUS_BUTTON_PRIMARY,
+                getAction(context, SINGLE_SETTING, ACTION_HOME));
+        applyKeyTrigger(inputManager, KeyEvent.KEYCODE_STYLUS_BUTTON_SECONDARY,
+                getAction(context, DOUBLE_SETTING, ACTION_SCREENSHOT));
+        applyKeyTrigger(inputManager, KeyEvent.KEYCODE_STYLUS_BUTTON_TAIL,
+                getAction(context, LONG_SETTING, ACTION_NONE));
     }
 
-    private static void apply(InputManager inputManager, int keyCode, int action) {
+    private static void applyKeyTrigger(InputManager inputManager, int keyCode, int action) {
         InputGestureData.Trigger trigger = InputGestureData.createKeyTrigger(keyCode, 0);
         InputGestureData existing = inputManager.getInputGesture(trigger);
         if (existing != null) {
             inputManager.removeCustomInputGesture(existing);
         }
-        if (action == KeyGestureEvent.KEY_GESTURE_TYPE_UNSPECIFIED) {
+
+        int frameworkAction = mapToFrameworkGestureType(action);
+        if (frameworkAction == KeyGestureEvent.KEY_GESTURE_TYPE_UNSPECIFIED) {
             return;
         }
+
         InputGestureData gesture = new InputGestureData.Builder()
                 .setTrigger(trigger)
-                .setKeyGestureType(action)
+                .setKeyGestureType(frameworkAction)
                 .setAllowCaptureByFocusedWindow(false)
                 .build();
         int result = inputManager.addCustomInputGesture(gesture);
@@ -88,47 +91,55 @@ final class PenShortcuts {
         }
     }
 
+    private static int mapToFrameworkGestureType(int action) {
+        switch (action) {
+            case ACTION_SCREENSHOT:
+                return KeyGestureEvent.KEY_GESTURE_TYPE_TAKE_SCREENSHOT;
+            case ACTION_RECENTS:
+                return KeyGestureEvent.KEY_GESTURE_TYPE_RECENT_APPS;
+            case ACTION_HOME:
+                return KeyGestureEvent.KEY_GESTURE_TYPE_HOME;
+            default:
+                return KeyGestureEvent.KEY_GESTURE_TYPE_UNSPECIFIED;
+        }
+    }
+
     static void executeGesture(Context context, int gestureMask) {
         if ((gestureMask & 0x01) != 0) {
-            executeAction(context, getAction(context, SINGLE_SETTING,
-                    KeyGestureEvent.KEY_GESTURE_TYPE_LAUNCH_ASSISTANT));
+            executeAction(context, getAction(context, SINGLE_SETTING, ACTION_HOME));
         } else if ((gestureMask & 0x02) != 0) {
-            executeAction(context, getAction(context, DOUBLE_SETTING,
-                    KeyGestureEvent.KEY_GESTURE_TYPE_TAKE_SCREENSHOT));
-        } else if ((gestureMask & 0x04) != 0) {
-            executeAction(context, getAction(context, TRIPLE_SETTING,
-                    KeyGestureEvent.KEY_GESTURE_TYPE_RECENT_APPS));
+            executeAction(context, getAction(context, DOUBLE_SETTING, ACTION_SCREENSHOT));
         } else if ((gestureMask & 0x08) != 0) {
-            executeAction(context, getAction(context, LONG_SETTING,
-                    KeyGestureEvent.KEY_GESTURE_TYPE_UNSPECIFIED));
-        } else if ((gestureMask & 0x10) != 0) {
-            executeAction(context, getAction(context, LONG_CLICK_SETTING,
-                    KeyGestureEvent.KEY_GESTURE_TYPE_UNSPECIFIED));
+            executeAction(context, getAction(context, LONG_SETTING, ACTION_NONE));
         }
     }
 
     static void executeAction(Context context, int action) {
+        switch (action) {
+            case ACTION_TOOLBAR:
+                FloatingToolbarService.showToolbar(context);
+                break;
+            case ACTION_SCREENSHOT:
+                injectKey(context, KeyEvent.KEYCODE_SYSRQ);
+                break;
+            case ACTION_RECENTS:
+                injectKey(context, KeyEvent.KEYCODE_APP_SWITCH);
+                break;
+            case ACTION_HOME:
+                injectKey(context, KeyEvent.KEYCODE_HOME);
+                break;
+            case ACTION_PLAY_PAUSE:
+                injectKey(context, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE);
+                break;
+            default:
+                break;
+        }
+    }
+
+    private static void injectKey(Context context, int keyCode) {
         InputManager inputManager = context.getSystemService(InputManager.class);
         if (inputManager == null) {
             return;
-        }
-        int keyCode;
-        switch (action) {
-            case KeyGestureEvent.KEY_GESTURE_TYPE_TAKE_SCREENSHOT:
-                keyCode = KeyEvent.KEYCODE_SYSRQ;
-                break;
-            case KeyGestureEvent.KEY_GESTURE_TYPE_RECENT_APPS:
-                keyCode = KeyEvent.KEYCODE_APP_SWITCH;
-                break;
-            case KeyGestureEvent.KEY_GESTURE_TYPE_LAUNCH_ASSISTANT:
-            case KeyGestureEvent.KEY_GESTURE_TYPE_LAUNCH_VOICE_ASSISTANT:
-                keyCode = KeyEvent.KEYCODE_ASSIST;
-                break;
-            case KeyGestureEvent.KEY_GESTURE_TYPE_HOME:
-                keyCode = KeyEvent.KEYCODE_HOME;
-                break;
-            default:
-                return;
         }
         long now = SystemClock.uptimeMillis();
         KeyEvent down = new KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0);

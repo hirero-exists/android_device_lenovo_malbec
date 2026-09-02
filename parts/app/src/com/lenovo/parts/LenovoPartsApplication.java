@@ -17,6 +17,9 @@
 package com.lenovo.parts;
 
 import android.app.Application;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -29,13 +32,30 @@ public final class LenovoPartsApplication extends Application implements SensorE
     private static final int SENSOR_TYPE_HALL_EFFECT = 33171002;
     private static final String CLOSED_PROPERTY = "sys.malbec.folio.closed";
 
+    private final GamingBypassReceiver mBypassReceiver = new GamingBypassReceiver();
+
     @Override
     public void onCreate() {
         super.onCreate();
         PenShortcuts.apply(this);
         new PenGattService(this).start();
+        DolbyStatusNotification.init(this);
+        GamingBypassController.getInstance(this);
+
+        IntentFilter bypassFilter = new IntentFilter();
+        bypassFilter.addAction(GamingBypassController.ACTION_TURN_OFF);
+        bypassFilter.addAction(Intent.ACTION_POWER_DISCONNECTED);
+        registerReceiver(mBypassReceiver, bypassFilter, Context.RECEIVER_NOT_EXPORTED);
+
+        if (PenMode.isEnabled() && PenMode.isToolbarEnabled()) {
+            Intent toolbarIntent = new Intent(this, FloatingToolbarService.class);
+            startForegroundService(toolbarIntent);
+        }
 
         SensorManager sensorManager = getSystemService(SensorManager.class);
+        if (sensorManager == null) {
+            return;
+        }
         Sensor hallSensor = null;
         for (Sensor sensor : sensorManager.getSensorList(Sensor.TYPE_ALL)) {
             if (sensor.getType() == SENSOR_TYPE_HALL_EFFECT
