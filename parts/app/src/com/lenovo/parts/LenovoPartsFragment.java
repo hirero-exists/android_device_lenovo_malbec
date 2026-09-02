@@ -19,6 +19,8 @@ package com.lenovo.parts;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.widget.Toast;
 
 import androidx.preference.ListPreference;
@@ -43,6 +45,7 @@ public final class LenovoPartsFragment extends SettingsBasePreferenceFragment
     private static final String KEY_DOLBY_ENABLED = "dolby_enabled";
     private static final String KEY_DOLBY_PROFILE = "dolby_profile";
     private static final String KEY_DOLBY_SHOW_ICON = "dolby_show_icon";
+    private final Handler mHandler = new Handler(Looper.getMainLooper());
 
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
@@ -179,6 +182,7 @@ public final class LenovoPartsFragment extends SettingsBasePreferenceFragment
         } else if (KEY_PEN_ENABLED.equals(key)) {
             boolean enabled = (Boolean) newValue;
             if (PenMode.setEnabled(enabled)) {
+                PenGattService.onPenEnabledChanged();
                 Preference penWakeup = findPreference(KEY_PEN_WAKEUP);
                 if (penWakeup != null) {
                     penWakeup.setEnabled(enabled);
@@ -233,16 +237,32 @@ public final class LenovoPartsFragment extends SettingsBasePreferenceFragment
             int rate = Integer.parseInt((String) newValue);
             return DisplayTouchMode.setRefreshRate(context.getContentResolver(), rate);
         } else if (KEY_HIGH_REPORT_RATE.equals(key)) {
-            return DisplayTouchMode.setHighReportRateEnabled((Boolean) newValue);
+            boolean success = DisplayTouchMode.setHighReportRateEnabled((Boolean) newValue);
+            if (success) {
+                mHandler.postDelayed(this::refreshPreferences, 1200);
+            }
+            return success;
         } else if (KEY_GAME_EDGE.equals(key)) {
-            return DisplayTouchMode.setGameEdgeEnabled((Boolean) newValue);
+            boolean success = DisplayTouchMode.setGameEdgeEnabled((Boolean) newValue);
+            if (success) {
+                mHandler.postDelayed(this::refreshPreferences, 1200);
+            }
+            return success;
         } else if (KEY_GAMING_BYPASS.equals(key)) {
             boolean enable = (Boolean) newValue;
             if (enable && !GamingBypassController.isPowerConnected(context)) {
-                Toast.makeText(context, "Connect a USB-PD charger first", Toast.LENGTH_SHORT).show();
+                Toast.makeText(context, R.string.gaming_bypass_connect_charger,
+                        Toast.LENGTH_SHORT).show();
                 return false;
             }
-            return GamingBypassController.getInstance(context).setBypassEnabled(enable);
+            boolean success = GamingBypassController.getInstance(context)
+                    .setBypassEnabled(enable);
+            if (!success) {
+                Toast.makeText(context, R.string.gaming_bypass_backend_error,
+                        Toast.LENGTH_SHORT).show();
+            }
+            mHandler.postDelayed(this::refreshPreferences, 1000);
+            return success;
         } else if (KEY_DOLBY_ENABLED.equals(key)) {
             boolean enabled = (Boolean) newValue;
             boolean success = DolbyMode.setEnabled(context.getContentResolver(), enabled);

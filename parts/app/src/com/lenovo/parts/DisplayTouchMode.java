@@ -23,6 +23,10 @@ import android.provider.Settings;
 final class DisplayTouchMode {
     private static final String HIGH_REPORT_PROPERTY = "persist.sys.touch.high_report_rate";
     private static final String GAME_EDGE_PROPERTY = "persist.sys.touch.game_edge";
+    private static final String HIGH_REPORT_APPLIED_PROPERTY =
+            "sys.malbec.touch.high_report_rate_applied";
+    private static final String GAME_EDGE_APPLIED_PROPERTY =
+            "sys.malbec.touch.game_edge_applied";
 
     private DisplayTouchMode() {
     }
@@ -38,16 +42,25 @@ final class DisplayTouchMode {
 
     static boolean setRefreshRate(ContentResolver resolver, int rate) {
         if (rate == 0) {
-            Settings.System.putFloat(resolver, Settings.System.MIN_REFRESH_RATE, 0.0f);
-            return Settings.System.putFloat(resolver, Settings.System.PEAK_REFRESH_RATE, 144.0f);
+            boolean minRemoved = Settings.System.putString(
+                    resolver, Settings.System.MIN_REFRESH_RATE, null);
+            boolean peakRemoved = Settings.System.putString(
+                    resolver, Settings.System.PEAK_REFRESH_RATE, null);
+            return minRemoved && peakRemoved;
         }
         float target = (float) rate;
-        Settings.System.putFloat(resolver, Settings.System.MIN_REFRESH_RATE, target);
-        return Settings.System.putFloat(resolver, Settings.System.PEAK_REFRESH_RATE, target);
+        boolean minSet = Settings.System.putFloat(
+                resolver, Settings.System.MIN_REFRESH_RATE, target);
+        boolean peakSet = Settings.System.putFloat(
+                resolver, Settings.System.PEAK_REFRESH_RATE, target);
+        return minSet && peakSet;
     }
 
     static boolean isHighReportRateEnabled() {
-        return SystemProperties.getBoolean(HIGH_REPORT_PROPERTY, false);
+        String applied = SystemProperties.get(HIGH_REPORT_APPLIED_PROPERTY, "");
+        return applied.isEmpty()
+                ? SystemProperties.getBoolean(HIGH_REPORT_PROPERTY, false)
+                : "1".equals(applied);
     }
 
     static boolean setHighReportRateEnabled(boolean enabled) {
@@ -60,7 +73,10 @@ final class DisplayTouchMode {
     }
 
     static boolean isGameEdgeEnabled() {
-        return SystemProperties.getBoolean(GAME_EDGE_PROPERTY, false);
+        String applied = SystemProperties.get(GAME_EDGE_APPLIED_PROPERTY, "");
+        return applied.isEmpty()
+                ? SystemProperties.getBoolean(GAME_EDGE_PROPERTY, false)
+                : "1".equals(applied);
     }
 
     static boolean setGameEdgeEnabled(boolean enabled) {
