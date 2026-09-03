@@ -26,6 +26,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.PixelFormat;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
@@ -114,9 +115,12 @@ public final class FloatingToolbarService extends Service {
     private final BroadcastReceiver mScreenReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            if (Intent.ACTION_SCREEN_OFF.equals(intent.getAction())) {
-                hideViews();
-            } else if (Intent.ACTION_USER_PRESENT.equals(intent.getAction())) {
+            String action = intent != null ? intent.getAction() : null;
+            if (Intent.ACTION_SCREEN_OFF.equals(action)) {
+                closeMenu();
+                closeQuickNoteCanvas();
+            } else if (Intent.ACTION_SCREEN_ON.equals(action)
+                    || Intent.ACTION_USER_PRESENT.equals(action)) {
                 showViews();
             }
         }
@@ -156,6 +160,7 @@ public final class FloatingToolbarService extends Service {
 
         IntentFilter filter = new IntentFilter();
         filter.addAction(Intent.ACTION_SCREEN_OFF);
+        filter.addAction(Intent.ACTION_SCREEN_ON);
         filter.addAction(Intent.ACTION_USER_PRESENT);
         registerReceiver(mScreenReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
 
@@ -449,6 +454,7 @@ public final class FloatingToolbarService extends Service {
     }
 
     private void toggleMenu() {
+        showViews();
         if (mMenuOpen) {
             closeMenu();
         } else {
@@ -498,8 +504,14 @@ public final class FloatingToolbarService extends Service {
         Rect bounds = getDisplayBounds();
         int screenWidth = bounds.width();
         int screenHeight = bounds.height();
-        int menuWidth = mMenuParams.width;
-        int bubbleSize = mBubbleParams.width;
+        if (mMenuView != null && (mMenuView.getWidth() == 0 || mMenuView.getHeight() == 0)) {
+            mMenuView.measure(
+                    View.MeasureSpec.makeMeasureSpec(screenWidth, View.MeasureSpec.AT_MOST),
+                    View.MeasureSpec.makeMeasureSpec(screenHeight, View.MeasureSpec.AT_MOST));
+        }
+        int menuWidth = mMenuView != null && mMenuView.getMeasuredWidth() > 0
+                ? mMenuView.getMeasuredWidth() : dpToPx(280);
+        int bubbleSize = mBubbleParams.width > 0 ? mBubbleParams.width : dpToPx(BUBBLE_SIZE_DP);
 
         int menuX;
         if (mBubbleParams.x + bubbleSize + menuWidth + dpToPx(8) <= screenWidth) {
@@ -533,7 +545,8 @@ public final class FloatingToolbarService extends Service {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
-                        | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                        | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+                        | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
                 PixelFormat.TRANSLUCENT);
 
         mQuickNoteOverlay = new FrameLayout(this);
@@ -549,7 +562,7 @@ public final class FloatingToolbarService extends Service {
         topBar.setGravity(Gravity.CENTER_VERTICAL);
         GradientDrawable barBg = new GradientDrawable();
         barBg.setColor(0xEE1A1B22);
-        barBg.setCornerRadius(dpToPx(26));
+        barBg.setCornerRadius(dpToPx(28));
         barBg.setStroke(dpToPx(1), applyAlpha(mColorAccent, 100));
         topBar.setBackground(barBg);
         topBar.setElevation(dpToPx(10));
@@ -704,8 +717,10 @@ public final class FloatingToolbarService extends Service {
         static final int TOOL_ERASER = 2;
 
         private final Paint mPaint = new Paint();
+        private final Path mCurrentPath = new Path();
         private final int mPenColor;
         private final int mHighlighterColor;
+        private int mCurrentTool = TOOL_PEN;
         private Bitmap mBitmap;
         private Canvas mCanvas;
         private float mPrevX, mPrevY;
@@ -717,12 +732,11 @@ public final class FloatingToolbarService extends Service {
             mHighlighterColor = highlighterColor;
             mPaint.setAntiAlias(true);
             mPaint.setStyle(Paint.Style.STROKE);
-            mPaint.setStrokeJoin(Paint.Join.ROUND);
-            mPaint.setStrokeCap(Paint.Cap.ROUND);
             applyTool(TOOL_PEN);
         }
 
         void setTool(int tool) {
+            mCurrentTool = tool;
             applyTool(tool);
         }
 
@@ -730,14 +744,20 @@ public final class FloatingToolbarService extends Service {
             if (tool == TOOL_PEN) {
                 mPaint.setColor(mPenColor);
                 mPaint.setStrokeWidth(6f);
+                mPaint.setStrokeCap(Paint.Cap.ROUND);
+                mPaint.setStrokeJoin(Paint.Join.ROUND);
                 mPaint.setXfermode(null);
             } else if (tool == TOOL_HIGHLIGHTER) {
-                mPaint.setColor(mHighlighterColor);
-                mPaint.setStrokeWidth(28f);
+                mPaint.setColor(0x55FFE066);
+                mPaint.setStrokeWidth(36f);
+                mPaint.setStrokeCap(Paint.Cap.SQUARE);
+                mPaint.setStrokeJoin(Paint.Join.BEVEL);
                 mPaint.setXfermode(null);
             } else if (tool == TOOL_ERASER) {
                 mPaint.setColor(Color.TRANSPARENT);
-                mPaint.setStrokeWidth(44f);
+                mPaint.setStrokeWidth(48f);
+                mPaint.setStrokeCap(Paint.Cap.ROUND);
+                mPaint.setStrokeJoin(Paint.Join.ROUND);
                 mPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
             }
         }
@@ -762,6 +782,9 @@ public final class FloatingToolbarService extends Service {
             if (mBitmap != null) {
                 canvas.drawBitmap(mBitmap, 0, 0, null);
             }
+            if (mCurrentTool != TOOL_ERASER && !mCurrentPath.isEmpty()) {
+                canvas.drawPath(mCurrentPath, mPaint);
+            }
         }
 
         @Override
@@ -773,24 +796,33 @@ public final class FloatingToolbarService extends Service {
                 case MotionEvent.ACTION_DOWN:
                     mPrevX = x;
                     mPrevY = y;
-                    if (mCanvas != null) {
+                    mCurrentPath.reset();
+                    mCurrentPath.moveTo(x, y);
+                    if (mCurrentTool == TOOL_ERASER && mCanvas != null) {
                         mCanvas.drawPoint(x, y, mPaint);
                     }
                     invalidate();
                     return true;
                 case MotionEvent.ACTION_MOVE:
-                    if (mCanvas != null) {
-                        mCanvas.drawLine(mPrevX, mPrevY, x, y, mPaint);
+                    float dx = Math.abs(x - mPrevX);
+                    float dy = Math.abs(y - mPrevY);
+                    if (dx >= 2 || dy >= 2) {
+                        mCurrentPath.quadTo(mPrevX, mPrevY, (x + mPrevX) / 2, (y + mPrevY) / 2);
+                        if (mCurrentTool == TOOL_ERASER && mCanvas != null) {
+                            mCanvas.drawLine(mPrevX, mPrevY, x, y, mPaint);
+                        }
+                        mPrevX = x;
+                        mPrevY = y;
+                        invalidate();
                     }
-                    mPrevX = x;
-                    mPrevY = y;
-                    invalidate();
                     return true;
                 case MotionEvent.ACTION_UP:
                 case MotionEvent.ACTION_CANCEL:
-                    if (mCanvas != null) {
-                        mCanvas.drawLine(mPrevX, mPrevY, x, y, mPaint);
+                    if (mCurrentTool != TOOL_ERASER && mCanvas != null) {
+                        mCurrentPath.lineTo(x, y);
+                        mCanvas.drawPath(mCurrentPath, mPaint);
                     }
+                    mCurrentPath.reset();
                     invalidate();
                     return true;
             }
@@ -800,6 +832,7 @@ public final class FloatingToolbarService extends Service {
         void clear() {
             if (mBitmap != null) {
                 mBitmap.eraseColor(Color.TRANSPARENT);
+                mCurrentPath.reset();
                 invalidate();
             }
         }
@@ -860,11 +893,21 @@ public final class FloatingToolbarService extends Service {
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
+        resolveThemeColors();
         restoreBubblePosition();
         if (mBubbleView != null && mBubbleView.isAttachedToWindow()) {
             mWindowManager.updateViewLayout(mBubbleView, mBubbleParams);
         }
         closeMenu();
+        if (mQuickNoteOverlay != null && mQuickNoteOverlay.isAttachedToWindow()) {
+            WindowManager.LayoutParams qnParams = (WindowManager.LayoutParams) mQuickNoteOverlay.getLayoutParams();
+            if (qnParams != null) {
+                Rect bounds = getDisplayBounds();
+                qnParams.width = bounds.width();
+                qnParams.height = bounds.height();
+                mWindowManager.updateViewLayout(mQuickNoteOverlay, qnParams);
+            }
+        }
     }
 
     @Override

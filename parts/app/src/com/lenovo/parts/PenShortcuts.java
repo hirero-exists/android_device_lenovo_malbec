@@ -17,6 +17,7 @@ import android.hardware.input.InputGestureData;
 import android.hardware.input.InputManager;
 import android.hardware.input.KeyGestureEvent;
 import android.media.AudioManager;
+import android.media.session.MediaSessionManager;
 import android.os.SystemClock;
 import android.provider.Settings;
 import android.util.Log;
@@ -76,18 +77,31 @@ final class PenShortcuts {
     }
 
     static void dispatchMediaPlayPause(Context context) {
+        long now = SystemClock.uptimeMillis();
+        KeyEvent down = new KeyEvent(now, now, KeyEvent.ACTION_DOWN,
+                KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, 0);
+        KeyEvent up = new KeyEvent(now, now, KeyEvent.ACTION_UP,
+                KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, 0);
+
+        MediaSessionManager mediaSessionManager = context.getSystemService(MediaSessionManager.class);
+        if (mediaSessionManager != null) {
+            try {
+                mediaSessionManager.dispatchMediaKeyEvent(down, false);
+                mediaSessionManager.dispatchMediaKeyEvent(up, false);
+            } catch (Exception ignored) {
+            }
+        }
+
         AudioManager audioManager = context.getSystemService(AudioManager.class);
         if (audioManager != null) {
-            long now = SystemClock.uptimeMillis();
-            KeyEvent down = new KeyEvent(now, now, KeyEvent.ACTION_DOWN,
-                    KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, 0);
-            audioManager.dispatchMediaKeyEvent(down);
-            KeyEvent up = new KeyEvent(now, now, KeyEvent.ACTION_UP,
-                    KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, 0);
-            audioManager.dispatchMediaKeyEvent(up);
-        } else {
-            injectKey(context, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE);
+            try {
+                audioManager.dispatchMediaKeyEvent(down);
+                audioManager.dispatchMediaKeyEvent(up);
+            } catch (Exception ignored) {
+            }
         }
+
+        injectKey(context, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE);
     }
 
     static void injectKey(Context context, int keyCode) {

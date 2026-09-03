@@ -136,6 +136,12 @@ final class PenGattService {
 
         @Override
         public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor,
+                int status) {
+            onDescriptorRead(gatt, descriptor, status, descriptor != null ? descriptor.getValue() : null);
+        }
+
+        @Override
+        public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor,
                 int status, byte[] value) {
             if (gatt != mGatt) {
                 return;
@@ -166,6 +172,12 @@ final class PenGattService {
                 Log.e(TAG, "Report ID 2 CCCD write failed: " + status);
             }
             processNextDescriptorRead(gatt);
+        }
+
+        @Override
+        public void onCharacteristicChanged(BluetoothGatt gatt,
+                BluetoothGattCharacteristic characteristic) {
+            handleReportData(characteristic != null ? characteristic.getValue() : null);
         }
 
         @Override
@@ -316,10 +328,10 @@ final class PenGattService {
             return;
         }
         int mask = 0;
-        if (data.length >= 2 && data[0] == 0x02) {
+        if (data.length >= 2 && data[0] == 0x02 && data[1] != 0) {
             mask = data[1] & 0xff;
-        } else if (data.length == 1) {
-            mask = data[0] & 0xff;
+        } else {
+            mask = (data[0] & 0xff) | ((data.length > 1 ? (data[1] & 0xff) : 0) << 8);
         }
         if (mask != 0) {
             int action = PenShortcuts.ACTION_NONE;
