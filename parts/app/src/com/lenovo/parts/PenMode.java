@@ -16,7 +16,8 @@ import android.os.SystemProperties;
 final class PenMode {
     private static final String ENABLED_PROPERTY = "persist.sys.pen.enabled";
     private static final String TOOLBAR_PROPERTY = "persist.sys.pen.toolbar";
-    private static final String POINTER_PROPERTY = "persist.sys.pen.pointer";
+    private static final String GESTURES_PROPERTY = "persist.sys.pen.gestures_disabled";
+    private static final String GESTURES_LEGACY_PROPERTY = "persist.sys.pen.gestures_fingers_only";
 
     private PenMode() {
     }
@@ -47,13 +48,15 @@ final class PenMode {
         }
     }
 
-    static boolean isPointerEnabled() {
-        return SystemProperties.getBoolean(POINTER_PROPERTY, false);
+    static boolean isGesturesEnabled() {
+        return SystemProperties.getBoolean(GESTURES_PROPERTY,
+                SystemProperties.getBoolean(GESTURES_LEGACY_PROPERTY, false));
     }
 
-    static boolean setPointerEnabled(boolean enabled) {
+    static boolean setGesturesEnabled(boolean enabled) {
         try {
-            SystemProperties.set(POINTER_PROPERTY, enabled ? "1" : "0");
+            SystemProperties.set(GESTURES_PROPERTY, enabled ? "1" : "0");
+            SystemProperties.set(GESTURES_LEGACY_PROPERTY, enabled ? "1" : "0");
             return true;
         } catch (RuntimeException e) {
             return false;

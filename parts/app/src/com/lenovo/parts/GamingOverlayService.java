@@ -162,23 +162,9 @@ public final class GamingOverlayService extends Service {
     }
 
     private void resolveThemeColors() {
-        mColorSurface = themedColor(android.R.attr.colorBackgroundFloating, 0xFF14151A);
-        mColorAccent = themedColor(android.R.attr.colorAccent, 0xFFA8C7FA);
-        TypedArray ta = obtainStyledAttributes(new int[]{android.R.attr.textColorPrimary});
-        try {
-            mColorText = ta.getColor(0, 0xFFFFFFFF);
-        } finally {
-            ta.recycle();
-        }
-    }
-
-    private int themedColor(int attr, int fallback) {
-        TypedArray ta = obtainStyledAttributes(new int[]{attr});
-        try {
-            return ta.getColor(0, fallback);
-        } finally {
-            ta.recycle();
-        }
+        mColorSurface = 0xEE121214;
+        mColorAccent = 0xFF90CAF9;
+        mColorText = 0xFFFFFFFF;
     }
 
     private void buildOverlayView() {
@@ -201,9 +187,9 @@ public final class GamingOverlayService extends Service {
         mRootView.setPadding(dpToPx(14), dpToPx(10), dpToPx(14), dpToPx(10));
 
         GradientDrawable bg = new GradientDrawable();
-        bg.setColor(applyAlpha(mColorSurface, 220));
-        bg.setCornerRadius(dpToPx(20));
-        bg.setStroke(dpToPx(1), applyAlpha(mColorAccent, 90));
+        bg.setColor(0xEE121214);
+        bg.setCornerRadius(dpToPx(18));
+        bg.setStroke(dpToPx(1), 0x33FFFFFF);
         mRootView.setBackground(bg);
         mRootView.setElevation(dpToPx(8));
 
@@ -214,7 +200,7 @@ public final class GamingOverlayService extends Service {
 
         View dragHandle = new View(this);
         GradientDrawable handleBg = new GradientDrawable();
-        handleBg.setColor(applyAlpha(mColorText, 45));
+        handleBg.setColor(0x4DFFFFFF);
         handleBg.setCornerRadius(dpToPx(3));
         dragHandle.setBackground(handleBg);
         LinearLayout.LayoutParams handleLp = new LinearLayout.LayoutParams(0, dpToPx(4), 1.0f);
@@ -224,7 +210,7 @@ public final class GamingOverlayService extends Service {
         FrameLayout closeBtn = new FrameLayout(this);
         GradientDrawable closeBg = new GradientDrawable();
         closeBg.setShape(GradientDrawable.OVAL);
-        closeBg.setColor(applyAlpha(mColorText, 35));
+        closeBg.setColor(0x33FFFFFF);
         closeBtn.setBackground(closeBg);
         int btnSize = dpToPx(24);
         LinearLayout.LayoutParams closeLp = new LinearLayout.LayoutParams(btnSize, btnSize);
@@ -232,7 +218,7 @@ public final class GamingOverlayService extends Service {
 
         TextView closeIcon = new TextView(this);
         closeIcon.setText("✕");
-        closeIcon.setTextColor(mColorText);
+        closeIcon.setTextColor(0xFFFFFFFF);
         closeIcon.setTextSize(11f);
         closeIcon.setGravity(Gravity.CENTER);
         closeBtn.addView(closeIcon, new FrameLayout.LayoutParams(
@@ -312,8 +298,8 @@ public final class GamingOverlayService extends Service {
 
     private TextView createMetricRow() {
         TextView tv = new TextView(this);
-        tv.setTextColor(0xFFE3E2E6);
-        tv.setTextSize(11f);
+        tv.setTextColor(0xFFFFFFFF);
+        tv.setTextSize(11.5f);
         tv.setTypeface(Typeface.MONOSPACE);
         tv.setPadding(0, dpToPx(2), 0, dpToPx(2));
         return tv;

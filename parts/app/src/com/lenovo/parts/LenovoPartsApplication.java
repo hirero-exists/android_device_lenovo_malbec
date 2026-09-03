@@ -19,13 +19,18 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.hardware.display.DisplayManager;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.SystemProperties;
 import android.util.Log;
+import android.view.Display;
 
 public final class LenovoPartsApplication extends Application implements SensorEventListener {
     private static final String TAG = "LenovoParts";
     private static final int SENSOR_TYPE_HALL_EFFECT = 33171002;
     private static final String CLOSED_PROPERTY = "sys.malbec.folio.closed";
+    private static final String ROTATION_PROPERTY = "sys.malbec.display.rotation";
 
     private final GamingBypassReceiver mBypassReceiver = new GamingBypassReceiver();
 
@@ -36,6 +41,33 @@ public final class LenovoPartsApplication extends Application implements SensorE
         new PenGattService(this).start();
         DolbyStatusNotification.init(this);
         GamingBypassController.getInstance(this);
+
+        DisplayManager dm = getSystemService(DisplayManager.class);
+        if (dm != null) {
+            Display defaultDisplay = dm.getDisplay(Display.DEFAULT_DISPLAY);
+            if (defaultDisplay != null) {
+                SystemProperties.set(ROTATION_PROPERTY, String.valueOf(defaultDisplay.getRotation()));
+            }
+            dm.registerDisplayListener(new DisplayManager.DisplayListener() {
+                @Override
+                public void onDisplayAdded(int displayId) {
+                }
+
+                @Override
+                public void onDisplayRemoved(int displayId) {
+                }
+
+                @Override
+                public void onDisplayChanged(int displayId) {
+                    if (displayId == Display.DEFAULT_DISPLAY) {
+                        Display d = dm.getDisplay(Display.DEFAULT_DISPLAY);
+                        if (d != null) {
+                            SystemProperties.set(ROTATION_PROPERTY, String.valueOf(d.getRotation()));
+                        }
+                    }
+                }
+            }, new Handler(Looper.getMainLooper()));
+        }
 
         IntentFilter bypassFilter = new IntentFilter();
         bypassFilter.addAction(GamingBypassController.ACTION_TURN_OFF);

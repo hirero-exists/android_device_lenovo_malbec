@@ -28,14 +28,14 @@
             android:summary="@string/pen_toolbar_summary"
             android:title="@string/pen_toolbar_title" />
         <androidx.preference.SwitchPreferenceCompat
-            android:defaultValue="false"
+            android:defaultValue="true"
             android:dependency="pen_enabled"
-            android:key="pen_pointer"
+            android:key="pen_gestures"
             android:persistent="false"
-            android:summary="@string/pen_pointer_toggle_summary"
-            android:title="@string/pen_pointer_toggle_title" />
+            android:summary="@string/pen_gestures_summary"
+            android:title="@string/pen_gestures_title" />
         <androidx.preference.ListPreference
-            android:defaultValue="4"
+            android:defaultValue="5"
             android:dependency="pen_enabled"
             android:entries="@array/pen_action_entries"
             android:entryValues="@array/pen_action_values"

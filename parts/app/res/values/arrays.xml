@@ -15,19 +15,17 @@
     </string-array>
     <string-array name="pen_action_entries">
         <item>None</item>
-        <item>Open pen toolbar</item>
+        <item>Play / Pause</item>
         <item>Take screenshot</item>
         <item>Recent apps</item>
         <item>Home</item>
-        <item>Play / Pause</item>
     </string-array>
     <string-array name="pen_action_values">
         <item>0</item>
-        <item>1</item>
+        <item>5</item>
         <item>2</item>
         <item>3</item>
         <item>4</item>
-        <item>5</item>
     </string-array>
     <string-array name="refresh_rate_entries">
         <item>Highest refresh rate (144 Hz) (Pen disabled)</item>
