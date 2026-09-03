@@ -44,7 +44,6 @@ final class PenGattService {
     private static final String CHANNEL_ID = "pen_alert_channel";
     private static final int NOTIFICATION_ID = 1004;
     private static final int GATT_CONNECTION_TIMEOUT = 8;
-    private static final int OPERATION_TIMEOUT_MS = 5000;
 
     private static PenGattService sInstance;
 
@@ -54,31 +53,16 @@ final class PenGattService {
             UUID.fromString("00002a4d-0000-1000-8000-00805f9b34fb");
     private static final UUID CCCD_UUID =
             UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
-    private static final UUID REPORT_REF_UUID =
-            UUID.fromString("00002908-0000-1000-8000-00805f9b34fb");
 
     private final Context mContext;
     private final Handler mHandler = new Handler(Looper.getMainLooper());
     private final NotificationManager mNotificationManager;
-    private final Queue<BluetoothGattDescriptor> mDescriptorReadQueue = new LinkedList<>();
+    private final Queue<BluetoothGattDescriptor> mDescriptorWriteQueue = new LinkedList<>();
 
     private BluetoothGatt mGatt;
     private BluetoothDevice mTargetDevice;
-    private boolean mReadingDescriptor = false;
+    private boolean mWritingDescriptor = false;
     private long mConnectedTimestamp = 0;
-
-    private final Runnable mOperationTimeout = () -> {
-        synchronized (PenGattService.this) {
-            if (!mReadingDescriptor || mGatt == null) {
-                return;
-            }
-            Log.e(TAG, "GATT descriptor operation timed out");
-            BluetoothGatt gatt = mGatt;
-            mReadingDescriptor = false;
-            mDescriptorReadQueue.clear();
-            gatt.disconnect();
-        }
-    };
 
     private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
         @Override
@@ -89,12 +73,11 @@ final class PenGattService {
                 dismissOutOfRangeNotification();
                 gatt.discoverServices();
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                Log.i(TAG, "GATT disconnected from pen");
+                Log.i(TAG, "GATT disconnected from pen status=" + status);
                 boolean established = mConnectedTimestamp > 0
                         && SystemClock.uptimeMillis() - mConnectedTimestamp > 15000;
                 boolean unexpected = status == GATT_CONNECTION_TIMEOUT;
-                if (established && unexpected && PenMode.isEnabled()
-                        && isBluetoothEnabled()) {
+                if (established && unexpected && PenMode.isEnabled() && isBluetoothEnabled()) {
                     showOutOfRangeNotification();
                 }
                 mConnectedTimestamp = 0;
@@ -118,60 +101,38 @@ final class PenGattService {
                 return;
             }
 
-            mDescriptorReadQueue.clear();
-            mReadingDescriptor = false;
+            synchronized (PenGattService.this) {
+                mDescriptorWriteQueue.clear();
+                mWritingDescriptor = false;
 
-            for (BluetoothGattCharacteristic characteristic : hidService.getCharacteristics()) {
-                if (REPORT_CHAR_UUID.equals(characteristic.getUuid())) {
-                    BluetoothGattDescriptor reportRef = characteristic.getDescriptor(REPORT_REF_UUID);
-                    if (reportRef != null) {
-                        mDescriptorReadQueue.add(reportRef);
-                    } else if ((characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) != 0) {
-                        subscribeToCharacteristic(gatt, characteristic);
+                for (BluetoothGattCharacteristic characteristic : hidService.getCharacteristics()) {
+                    if (REPORT_CHAR_UUID.equals(characteristic.getUuid())
+                            || (characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) != 0) {
+                        gatt.setCharacteristicNotification(characteristic, true);
+                        BluetoothGattDescriptor cccd = characteristic.getDescriptor(CCCD_UUID);
+                        if (cccd != null) {
+                            mDescriptorWriteQueue.add(cccd);
+                        }
                     }
                 }
+                processNextDescriptorWrite(gatt);
             }
-            processNextDescriptorRead(gatt);
-        }
-
-        @Override
-        public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor,
-                int status) {
-            onDescriptorRead(gatt, descriptor, status, descriptor != null ? descriptor.getValue() : null);
-        }
-
-        @Override
-        public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor,
-                int status, byte[] value) {
-            if (gatt != mGatt) {
-                return;
-            }
-            mHandler.removeCallbacks(mOperationTimeout);
-            mReadingDescriptor = false;
-            if (status == BluetoothGatt.GATT_SUCCESS && value != null && value.length >= 2) {
-                if (value[0] == 0x02 && value[1] == 0x01) {
-                    if (subscribeToCharacteristic(gatt, descriptor.getCharacteristic())) {
-                        return;
-                    }
-                }
-            }
-            processNextDescriptorRead(gatt);
         }
 
         @Override
         public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor,
                 int status) {
-            if (gatt != mGatt) {
-                return;
+            synchronized (PenGattService.this) {
+                mWritingDescriptor = false;
+                if (status == BluetoothGatt.GATT_SUCCESS) {
+                    Log.i(TAG, "Subscribed to pen notification: "
+                            + (descriptor != null && descriptor.getCharacteristic() != null
+                                    ? descriptor.getCharacteristic().getUuid() : "unknown"));
+                } else {
+                    Log.e(TAG, "Pen CCCD write failed: " + status);
+                }
+                processNextDescriptorWrite(gatt);
             }
-            mHandler.removeCallbacks(mOperationTimeout);
-            mReadingDescriptor = false;
-            if (status == BluetoothGatt.GATT_SUCCESS) {
-                Log.i(TAG, "Subscribed to Report ID 2 notifications");
-            } else {
-                Log.e(TAG, "Report ID 2 CCCD write failed: " + status);
-            }
-            processNextDescriptorRead(gatt);
         }
 
         @Override
@@ -268,9 +229,12 @@ final class PenGattService {
         BluetoothDevice penDevice = null;
         for (BluetoothDevice device : bondedDevices) {
             String name = device.getName();
-            if (name != null && (name.toLowerCase().contains("pen") || name.toLowerCase().contains("stylus"))) {
-                penDevice = device;
-                break;
+            if (name != null) {
+                String lower = name.toLowerCase();
+                if (lower.contains("pen") || lower.contains("stylus") || lower.contains("ap50")) {
+                    penDevice = device;
+                    break;
+                }
             }
         }
         if (penDevice == null) {
@@ -282,45 +246,23 @@ final class PenGattService {
         closeGatt();
         mTargetDevice = penDevice;
         Log.i(TAG, "Connecting GATT to pen " + penDevice.getAddress());
-        mGatt = penDevice.connectGatt(mContext, true, mGattCallback, BluetoothDevice.TRANSPORT_LE);
+        mGatt = penDevice.connectGatt(mContext, false, mGattCallback, BluetoothDevice.TRANSPORT_LE);
     }
 
-    private synchronized void processNextDescriptorRead(BluetoothGatt gatt) {
-        if (mReadingDescriptor || mDescriptorReadQueue.isEmpty() || gatt == null) {
+    private synchronized void processNextDescriptorWrite(BluetoothGatt gatt) {
+        if (mWritingDescriptor || mDescriptorWriteQueue.isEmpty() || gatt == null) {
             return;
         }
-        BluetoothGattDescriptor descriptor = mDescriptorReadQueue.poll();
+        BluetoothGattDescriptor descriptor = mDescriptorWriteQueue.poll();
         if (descriptor != null) {
-            mReadingDescriptor = true;
-            if (gatt.readDescriptor(descriptor)) {
-                mHandler.postDelayed(mOperationTimeout, OPERATION_TIMEOUT_MS);
-            } else {
-                mReadingDescriptor = false;
-                processNextDescriptorRead(gatt);
+            mWritingDescriptor = true;
+            int result = gatt.writeDescriptor(descriptor, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+            if (result != BluetoothStatusCodes.SUCCESS) {
+                Log.e(TAG, "CCCD write initiation failed: " + result);
+                mWritingDescriptor = false;
+                processNextDescriptorWrite(gatt);
             }
         }
-    }
-
-    private synchronized boolean subscribeToCharacteristic(BluetoothGatt gatt,
-            BluetoothGattCharacteristic characteristic) {
-        if (!gatt.setCharacteristicNotification(characteristic, true)) {
-            Log.e(TAG, "Unable to enable local Report ID 2 notification routing");
-            return false;
-        }
-        BluetoothGattDescriptor descriptor = characteristic.getDescriptor(CCCD_UUID);
-        if (descriptor == null) {
-            Log.e(TAG, "Report ID 2 CCCD is missing");
-            return false;
-        }
-        int result = gatt.writeDescriptor(
-                descriptor, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-        if (result != BluetoothStatusCodes.SUCCESS) {
-            Log.e(TAG, "Unable to start Report ID 2 CCCD write: " + result);
-            return false;
-        }
-        mReadingDescriptor = true;
-        mHandler.postDelayed(mOperationTimeout, OPERATION_TIMEOUT_MS);
-        return true;
     }
 
     private void handleReportData(byte[] data) {
@@ -328,16 +270,19 @@ final class PenGattService {
             return;
         }
         int mask = 0;
-        if (data.length >= 2 && data[0] == 0x02 && data[1] != 0) {
+        if (data.length >= 2 && data[0] == 0x02) {
             mask = data[1] & 0xff;
+        } else if (data.length == 1) {
+            mask = data[0] & 0xff;
         } else {
-            mask = (data[0] & 0xff) | ((data.length > 1 ? (data[1] & 0xff) : 0) << 8);
+            mask = (data[0] & 0xff) | ((data[1] & 0xff) << 8);
         }
+        Log.i(TAG, "Received pen report raw data: " + bytesToHex(data) + " mask=" + mask);
         if (mask != 0) {
             int action = PenShortcuts.ACTION_NONE;
             if ((mask & 0x01) != 0) {
                 action = PenShortcuts.getAction(mContext, PenShortcuts.SINGLE_SETTING,
-                        PenShortcuts.ACTION_HOME);
+                        PenShortcuts.ACTION_PLAY_PAUSE);
             } else if ((mask & 0x02) != 0 || (mask & 0x04) != 0) {
                 action = PenShortcuts.getAction(mContext, PenShortcuts.DOUBLE_SETTING,
                         PenShortcuts.ACTION_SCREENSHOT);
@@ -350,6 +295,15 @@ final class PenGattService {
                 mHandler.post(() -> PenShortcuts.executeAction(mContext, targetAction));
             }
         }
+    }
+
+    private static String bytesToHex(byte[] bytes) {
+        if (bytes == null) return "null";
+        StringBuilder sb = new StringBuilder();
+        for (byte b : bytes) {
+            sb.append(String.format("%02x ", b));
+        }
+        return sb.toString().trim();
     }
 
     private void showOutOfRangeNotification() {
@@ -367,7 +321,6 @@ final class PenGattService {
     }
 
     synchronized void closeGatt() {
-        mHandler.removeCallbacks(mOperationTimeout);
         if (mGatt != null) {
             try {
                 mGatt.close();
@@ -376,7 +329,7 @@ final class PenGattService {
             mGatt = null;
         }
         mTargetDevice = null;
-        mDescriptorReadQueue.clear();
-        mReadingDescriptor = false;
+        mDescriptorWriteQueue.clear();
+        mWritingDescriptor = false;
     }
 }

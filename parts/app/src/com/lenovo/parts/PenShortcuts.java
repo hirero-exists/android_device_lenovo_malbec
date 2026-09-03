@@ -31,11 +31,10 @@ final class PenShortcuts {
     static final String LONG_SETTING = "malbec_pen_long_action";
 
     static final int ACTION_NONE = 0;
-    static final int ACTION_TOOLBAR = 1;
+    static final int ACTION_PLAY_PAUSE = 5;
     static final int ACTION_SCREENSHOT = 2;
     static final int ACTION_RECENTS = 3;
     static final int ACTION_HOME = 4;
-    static final int ACTION_PLAY_PAUSE = 5;
 
     private static final String TAG = "PenShortcuts";
 
@@ -56,9 +55,6 @@ final class PenShortcuts {
 
     static void executeAction(Context context, int action) {
         switch (action) {
-            case ACTION_TOOLBAR:
-                FloatingToolbarService.showToolbar(context);
-                break;
             case ACTION_PLAY_PAUSE:
                 dispatchMediaPlayPause(context);
                 break;
@@ -105,16 +101,22 @@ final class PenShortcuts {
     }
 
     static void injectKey(Context context, int keyCode) {
+        injectKeyWithMeta(context, keyCode, 0);
+    }
+
+    static void injectKeyWithMeta(Context context, int keyCode, int metaState) {
         InputManager inputManager = context.getSystemService(InputManager.class);
         if (inputManager == null) {
             return;
         }
         long now = SystemClock.uptimeMillis();
         int flags = KeyEvent.FLAG_FROM_SYSTEM | KeyEvent.FLAG_VIRTUAL_HARD_KEY;
-        KeyEvent down = new KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0, 0,
+        KeyEvent down = new KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0, metaState,
                 KeyCharacterMap.VIRTUAL_KEYBOARD, 0, flags,
                 InputDevice.SOURCE_KEYBOARD);
-        KeyEvent up = KeyEvent.changeAction(down, KeyEvent.ACTION_UP);
+        KeyEvent up = new KeyEvent(now, now, KeyEvent.ACTION_UP, keyCode, 0, metaState,
+                KeyCharacterMap.VIRTUAL_KEYBOARD, 0, flags,
+                InputDevice.SOURCE_KEYBOARD);
         inputManager.injectInputEvent(down,
                 InputManager.INJECT_INPUT_EVENT_MODE_ASYNC);
         inputManager.injectInputEvent(up,
@@ -128,13 +130,13 @@ final class PenShortcuts {
         }
 
         applyKeyTrigger(context, inputManager, KeyEvent.KEYCODE_BUTTON_1,
-                getAction(context, SINGLE_SETTING, ACTION_HOME));
+                getAction(context, SINGLE_SETTING, ACTION_PLAY_PAUSE));
         applyKeyTrigger(context, inputManager, KeyEvent.KEYCODE_BUTTON_2,
                 getAction(context, DOUBLE_SETTING, ACTION_SCREENSHOT));
         applyKeyTrigger(context, inputManager, KeyEvent.KEYCODE_BUTTON_3,
                 getAction(context, LONG_SETTING, ACTION_NONE));
         applyKeyTrigger(context, inputManager, KeyEvent.KEYCODE_STYLUS_BUTTON_PRIMARY,
-                getAction(context, SINGLE_SETTING, ACTION_HOME));
+                getAction(context, SINGLE_SETTING, ACTION_PLAY_PAUSE));
         applyKeyTrigger(context, inputManager, KeyEvent.KEYCODE_STYLUS_BUTTON_SECONDARY,
                 getAction(context, DOUBLE_SETTING, ACTION_SCREENSHOT));
         applyKeyTrigger(context, inputManager, KeyEvent.KEYCODE_STYLUS_BUTTON_TAIL,
@@ -153,12 +155,6 @@ final class PenShortcuts {
                 .setTrigger(trigger)
                 .setAllowCaptureByFocusedWindow(false);
         switch (action) {
-            case ACTION_TOOLBAR:
-                builder.setKeyGestureType(KeyGestureEvent.KEY_GESTURE_TYPE_LAUNCH_APPLICATION)
-                        .setAppLaunchData(AppLaunchData.createLaunchDataForComponent(
-                                context.getPackageName(),
-                                ToolbarTrampolineActivity.class.getName()));
-                break;
             case ACTION_PLAY_PAUSE:
                 builder.setKeyGestureType(KeyGestureEvent.KEY_GESTURE_TYPE_LAUNCH_APPLICATION)
                         .setAppLaunchData(AppLaunchData.createLaunchDataForComponent(

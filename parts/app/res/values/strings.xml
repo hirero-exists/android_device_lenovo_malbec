@@ -85,11 +85,11 @@
     <string name="gaming_overlay_turn_off">Turn off</string>
     <string name="gaming_overlay_opacity_title">Island opacity</string>
     <string name="gaming_overlay_bypass_enable">Enable bypass</string>
-    <string name="gaming_overlay_bypass_disable">Disable bypass</string>
-    <string name="pen_pointer_title">Pen pointer</string>
-    <string name="pen_pointer_summary">Show an on-screen pointer that follows the pen tip</string>
-    <string name="pen_pointer_toggle_title">Pen pointer</string>
-    <string name="pen_pointer_toggle_summary">Draw a cursor dot that follows the pen in the air and on screen</string>
+    <string name="pen_gestures_title">Disable pen gestures</string>
+    <string name="pen_gestures_summary">Prevent pen strokes from triggering system navigation gestures (Back/Home) so gestures can only be used by fingers</string>
+    <string name="toolbar_desktop_mode">Desktop mode</string>
+    <string name="desktop_mode_enabled">Desktop mode enabled</string>
+    <string name="desktop_mode_disabled">Desktop mode disabled</string>
     <string name="quick_note_background_canvas">Blank canvas</string>
     <string name="quick_note_background_screen">Screen background</string>
 </resources>

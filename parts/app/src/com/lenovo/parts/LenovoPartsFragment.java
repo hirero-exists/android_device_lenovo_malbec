@@ -29,7 +29,7 @@ public final class LenovoPartsFragment extends SettingsBasePreferenceFragment
     private static final String KEY_FOLIO_COVER = "folio_cover";
     private static final String KEY_PEN_ENABLED = "pen_enabled";
     private static final String KEY_PEN_TOOLBAR = "pen_toolbar";
-    private static final String KEY_PEN_POINTER = "pen_pointer";
+    private static final String KEY_PEN_GESTURES = "pen_gestures";
     private static final String KEY_PEN_SINGLE_ACTION = "pen_single_action";
     private static final String KEY_PEN_DOUBLE_ACTION = "pen_double_action";
     private static final String KEY_PEN_LONG_ACTION = "pen_long_action";
@@ -42,6 +42,7 @@ public final class LenovoPartsFragment extends SettingsBasePreferenceFragment
     private static final String KEY_DOLBY_ENABLED = "dolby_enabled";
     private static final String KEY_DOLBY_PROFILE = "dolby_profile";
     private static final String KEY_DOLBY_SHOW_ICON = "dolby_show_icon";
+
     private final Handler mHandler = new Handler(Looper.getMainLooper());
 
     @Override
@@ -51,7 +52,7 @@ public final class LenovoPartsFragment extends SettingsBasePreferenceFragment
         setupPreference(KEY_FOLIO_COVER);
         setupPreference(KEY_PEN_ENABLED);
         setupPreference(KEY_PEN_TOOLBAR);
-        setupPreference(KEY_PEN_POINTER);
+        setupPreference(KEY_PEN_GESTURES);
         setupPreference(KEY_PEN_SINGLE_ACTION);
         setupPreference(KEY_PEN_DOUBLE_ACTION);
         setupPreference(KEY_PEN_LONG_ACTION);
@@ -106,10 +107,10 @@ public final class LenovoPartsFragment extends SettingsBasePreferenceFragment
             penToolbar.setChecked(PenMode.isToolbarEnabled());
         }
 
-        TwoStatePreference penPointer = findPreference(KEY_PEN_POINTER);
-        if (penPointer != null) {
-            penPointer.setEnabled(penEnabled);
-            penPointer.setChecked(PenMode.isPointerEnabled());
+        TwoStatePreference penGestures = findPreference(KEY_PEN_GESTURES);
+        if (penGestures != null) {
+            penGestures.setEnabled(penEnabled);
+            penGestures.setChecked(PenMode.isGesturesEnabled());
         }
 
         refreshPenAction(KEY_PEN_SINGLE_ACTION, PenShortcuts.SINGLE_SETTING, PenShortcuts.ACTION_HOME);
@@ -238,13 +239,9 @@ public final class LenovoPartsFragment extends SettingsBasePreferenceFragment
                 return true;
             }
             return false;
-        } else if (KEY_PEN_POINTER.equals(key)) {
+        } else if (KEY_PEN_GESTURES.equals(key)) {
             boolean enabled = (Boolean) newValue;
-            if (PenMode.setPointerEnabled(enabled)) {
-                PenPointerAccessibilityService.apply(context, enabled);
-                return true;
-            }
-            return false;
+            return PenMode.setGesturesEnabled(enabled);
         } else if (KEY_PEN_SINGLE_ACTION.equals(key)) {
             return PenShortcuts.setAction(context, PenShortcuts.SINGLE_SETTING,
                     Integer.parseInt((String) newValue));

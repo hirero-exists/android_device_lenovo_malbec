@@ -24,3 +24,4 @@ ro.telephony.sim_slots.count=2
 telephony.active_modems.max_count=2
 
 persist.device_config.window_manager.enable_freeform_box_shadows=true
+persist.device_config.input_native_boot.palm_rejection_enabled=true

@@ -88,12 +88,7 @@ public final class FloatingToolbarService extends Service {
     private WindowManager.LayoutParams mMenuParams;
     private FrameLayout mBubbleView;
     private LinearLayout mMenuView;
-    private FrameLayout mQuickNoteOverlay;
     private boolean mMenuOpen = false;
-
-    private TextView mPenBtn;
-    private TextView mHighlighterBtn;
-    private TextView mEraserBtn;
 
     private int mColorSurface = 0xFF1C1B1F;
     private int mColorAccent = 0xFF7C4DFF;
@@ -118,7 +113,6 @@ public final class FloatingToolbarService extends Service {
             String action = intent != null ? intent.getAction() : null;
             if (Intent.ACTION_SCREEN_OFF.equals(action)) {
                 closeMenu();
-                closeQuickNoteCanvas();
             } else if (Intent.ACTION_SCREEN_ON.equals(action)
                     || Intent.ACTION_USER_PRESENT.equals(action)) {
                 showViews();
@@ -375,19 +369,16 @@ public final class FloatingToolbarService extends Service {
 
         addMenuItem(getString(R.string.quick_note_title), () -> {
             closeMenu();
-            openQuickNoteCanvas();
+            Intent intent = new Intent(this, QuickNoteActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
         });
         addMenuItem(getString(R.string.toolbar_screenshot), () -> {
             takeScreenshot();
             closeMenu();
         });
-        addMenuItem(getString(R.string.toolbar_open_app), () -> {
-            Intent intent = new Intent(this, AppPickerActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            ActivityOptions options = ActivityOptions.makeBasic();
-            options.setLaunchWindowingMode(5);
-            options.setLaunchBounds(appPickerBounds());
-            startActivity(intent, options.toBundle());
+        addMenuItem(getString(R.string.toolbar_desktop_mode), () -> {
+            toggleDesktopMode();
             closeMenu();
         });
         addMenuItem(getString(R.string.toolbar_play_pause), () -> {
@@ -560,329 +551,12 @@ public final class FloatingToolbarService extends Service {
         }
     }
 
-    private void openQuickNoteCanvas() {
-        if (mQuickNoteOverlay != null && mQuickNoteOverlay.isAttachedToWindow()) {
-            return;
-        }
-
-        WindowManager.LayoutParams overlayParams = new WindowManager.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
-                        | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
-                        | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
-                PixelFormat.TRANSLUCENT);
-
-        mQuickNoteOverlay = new FrameLayout(this);
-        mQuickNoteOverlay.setBackgroundColor(Color.TRANSPARENT);
-
-        DrawingCanvasView canvasView = new DrawingCanvasView(this,
-                0xFFFFEB3B, applyAlpha(mColorAccent, 150));
-        mQuickNoteOverlay.addView(canvasView, new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-
-        LinearLayout topBar = new LinearLayout(this);
-        topBar.setOrientation(LinearLayout.HORIZONTAL);
-        topBar.setGravity(Gravity.CENTER_VERTICAL);
-        GradientDrawable barBg = new GradientDrawable();
-        barBg.setColor(0xEE1A1B22);
-        barBg.setCornerRadius(dpToPx(28));
-        barBg.setStroke(dpToPx(1), applyAlpha(mColorAccent, 100));
-        topBar.setBackground(barBg);
-        topBar.setElevation(dpToPx(10));
-        int padH = dpToPx(16);
-        int padV = dpToPx(8);
-        topBar.setPadding(padH, padV, padH, padV);
-
-        TextView title = new TextView(this);
-        title.setText(R.string.quick_note_title);
-        title.setTextColor(mColorAccent);
-        title.setTextSize(13f);
-        title.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
-        topBar.addView(title);
-
-        View spacer = new View(this);
-        LinearLayout.LayoutParams spLp = new LinearLayout.LayoutParams(dpToPx(12), 1);
-        topBar.addView(spacer, spLp);
-
-        mPenBtn = createToolButton(mColorAccent, onColor(mColorAccent));
-        mPenBtn.setText(R.string.quick_note_pen);
-        mPenBtn.setOnClickListener(v -> {
-            canvasView.setTool(DrawingCanvasView.TOOL_PEN);
-            updateActiveTool(DrawingCanvasView.TOOL_PEN);
-        });
-        topBar.addView(mPenBtn);
-
-        mHighlighterBtn = createToolButton(applyAlpha(mColorText, 25), mColorText);
-        mHighlighterBtn.setText(R.string.quick_note_highlighter);
-        mHighlighterBtn.setOnClickListener(v -> {
-            canvasView.setTool(DrawingCanvasView.TOOL_HIGHLIGHTER);
-            updateActiveTool(DrawingCanvasView.TOOL_HIGHLIGHTER);
-        });
-        topBar.addView(mHighlighterBtn);
-
-        mEraserBtn = createToolButton(applyAlpha(mColorText, 25), mColorText);
-        mEraserBtn.setText(R.string.quick_note_eraser);
-        mEraserBtn.setOnClickListener(v -> {
-            canvasView.setTool(DrawingCanvasView.TOOL_ERASER);
-            updateActiveTool(DrawingCanvasView.TOOL_ERASER);
-        });
-        topBar.addView(mEraserBtn);
-
-        TextView clearBtn = createToolButton(applyAlpha(mColorText, 25), mColorText);
-        clearBtn.setText(R.string.quick_note_clear);
-        clearBtn.setOnClickListener(v -> canvasView.clear());
-        topBar.addView(clearBtn);
-
-        TextView saveBtn = createToolButton(mColorAccent, onColor(mColorAccent));
-        saveBtn.setText(R.string.quick_note_save);
-        saveBtn.setOnClickListener(v -> {
-            if (saveCanvasBitmap(canvasView.getBitmap())) {
-                closeQuickNoteCanvas();
-            }
-        });
-        topBar.addView(saveBtn);
-
-        TextView closeBtn = createToolButton(applyAlpha(mColorText, 35), mColorText);
-        closeBtn.setText("✕");
-        closeBtn.setOnClickListener(v -> closeQuickNoteCanvas());
-        topBar.addView(closeBtn);
-
-        FrameLayout.LayoutParams barLp = new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);
-        barLp.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
-        barLp.topMargin = dpToPx(16);
-        mQuickNoteOverlay.addView(topBar, barLp);
-        topBar.bringToFront();
-        canvasView.setTopBar(topBar);
-
-        mWindowManager.addView(mQuickNoteOverlay, overlayParams);
-    }
-
-    private void updateActiveTool(int tool) {
-        setToolButtonActive(mPenBtn, tool == DrawingCanvasView.TOOL_PEN);
-        setToolButtonActive(mHighlighterBtn, tool == DrawingCanvasView.TOOL_HIGHLIGHTER);
-        setToolButtonActive(mEraserBtn, tool == DrawingCanvasView.TOOL_ERASER);
-    }
-
-    private void setToolButtonActive(TextView btn, boolean active) {
-        if (btn == null) return;
-        GradientDrawable bg = (GradientDrawable) btn.getBackground();
-        if (active) {
-            bg.setColor(mColorAccent);
-            btn.setTextColor(onColor(mColorAccent));
-        } else {
-            bg.setColor(applyAlpha(mColorText, 25));
-            btn.setTextColor(mColorText);
-        }
-    }
-
-    private TextView createToolButton(int color, int textColor) {
-        TextView pill = new TextView(this);
-        pill.setTextSize(11f);
-        pill.setTextColor(textColor);
-        pill.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-        pill.setPadding(dpToPx(12), dpToPx(7), dpToPx(12), dpToPx(7));
-        GradientDrawable pillBg = new GradientDrawable();
-        pillBg.setCornerRadius(dpToPx(16));
-        pillBg.setColor(color);
-        pill.setBackground(pillBg);
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        params.setMargins(dpToPx(4), 0, 0, 0);
-        pill.setLayoutParams(params);
-        return pill;
-    }
-
-    private int onColor(int background) {
-        double luminance = (0.299 * Color.red(background)
-                + 0.587 * Color.green(background)
-                + 0.114 * Color.blue(background)) / 255.0;
-        return luminance > 0.5 ? 0xFF1C1B1F : 0xFFFFFFFF;
-    }
-
-    private void closeQuickNoteCanvas() {
-        if (mQuickNoteOverlay != null && mQuickNoteOverlay.isAttachedToWindow()) {
-            mWindowManager.removeView(mQuickNoteOverlay);
-            mQuickNoteOverlay = null;
-        }
-    }
-
-    private boolean saveCanvasBitmap(Bitmap bitmap) {
-        if (bitmap == null) {
-            return false;
-        }
-        try {
-            String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
-            File dir = new File(
-                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),
-                    "QuickNotes");
-            if (!dir.exists()) {
-                dir.mkdirs();
-            }
-            File file = new File(dir, "QuickNote_" + timeStamp + ".png");
-            try (FileOutputStream fos = new FileOutputStream(file)) {
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos);
-            }
-            MediaScannerConnection.scanFile(this,
-                    new String[]{file.getAbsolutePath()},
-                    new String[]{"image/png"},
-                    null);
-            Toast.makeText(this, R.string.quick_note_saved, Toast.LENGTH_SHORT).show();
-            return true;
-        } catch (Exception e) {
-            Log.e(TAG, "Save note failed", e);
-            Toast.makeText(this, R.string.quick_note_save_error, Toast.LENGTH_SHORT).show();
-            return false;
-        }
-    }
-
-    private static class DrawingCanvasView extends View {
-        static final int TOOL_PEN = 0;
-        static final int TOOL_HIGHLIGHTER = 1;
-        static final int TOOL_ERASER = 2;
-
-        private final Paint mPaint = new Paint();
-        private final Path mCurrentPath = new Path();
-        private final int mPenColor;
-        private final int mHighlighterColor;
-        private int mCurrentTool = TOOL_PEN;
-        private Bitmap mBitmap;
-        private Canvas mCanvas;
-        private float mPrevX, mPrevY;
-
-        DrawingCanvasView(Context context, int penColor, int highlighterColor) {
-            super(context);
-            setLayerType(View.LAYER_TYPE_SOFTWARE, null);
-            mPenColor = penColor;
-            mHighlighterColor = highlighterColor;
-            mPaint.setAntiAlias(true);
-            mPaint.setStyle(Paint.Style.STROKE);
-            applyTool(TOOL_PEN);
-        }
-
-        void setTool(int tool) {
-            mCurrentTool = tool;
-            applyTool(tool);
-        }
-
-        private void applyTool(int tool) {
-            if (tool == TOOL_PEN) {
-                mPaint.setColor(mPenColor);
-                mPaint.setStrokeWidth(6f);
-                mPaint.setStrokeCap(Paint.Cap.ROUND);
-                mPaint.setStrokeJoin(Paint.Join.ROUND);
-                mPaint.setXfermode(null);
-            } else if (tool == TOOL_HIGHLIGHTER) {
-                mPaint.setColor(0x55FFE066);
-                mPaint.setStrokeWidth(36f);
-                mPaint.setStrokeCap(Paint.Cap.SQUARE);
-                mPaint.setStrokeJoin(Paint.Join.BEVEL);
-                mPaint.setXfermode(null);
-            } else if (tool == TOOL_ERASER) {
-                mPaint.setColor(Color.TRANSPARENT);
-                mPaint.setStrokeWidth(48f);
-                mPaint.setStrokeCap(Paint.Cap.ROUND);
-                mPaint.setStrokeJoin(Paint.Join.ROUND);
-                mPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
-            }
-        }
-
-        @Override
-        protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-            super.onSizeChanged(w, h, oldw, oldh);
-            if (w > 0 && h > 0) {
-                Bitmap prev = mBitmap;
-                mBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
-                mCanvas = new Canvas(mBitmap);
-                if (prev != null) {
-                    mCanvas.drawBitmap(prev, 0, 0, null);
-                    prev.recycle();
-                }
-            }
-        }
-
-        @Override
-        protected void onDraw(Canvas canvas) {
-            super.onDraw(canvas);
-            if (mBitmap != null) {
-                canvas.drawBitmap(mBitmap, 0, 0, null);
-            }
-            if (mCurrentTool != TOOL_ERASER && !mCurrentPath.isEmpty()) {
-                canvas.drawPath(mCurrentPath, mPaint);
-            }
-        }
-
-        private View mTopBar;
-
-        void setTopBar(View topBar) {
-            mTopBar = topBar;
-        }
-
-        @Override
-        public boolean onTouchEvent(MotionEvent event) {
-            if (mTopBar != null && mTopBar.getVisibility() == View.VISIBLE) {
-                int[] loc = new int[2];
-                mTopBar.getLocationOnScreen(loc);
-                float rx = event.getRawX();
-                float ry = event.getRawY();
-                if (rx >= loc[0] && rx <= loc[0] + mTopBar.getWidth()
-                        && ry >= loc[1] && ry <= loc[1] + mTopBar.getHeight()) {
-                    return false;
-                }
-            }
-            float x = event.getX();
-            float y = event.getY();
-
-            switch (event.getAction()) {
-                case MotionEvent.ACTION_DOWN:
-                    mPrevX = x;
-                    mPrevY = y;
-                    mCurrentPath.reset();
-                    mCurrentPath.moveTo(x, y);
-                    if (mCurrentTool == TOOL_ERASER && mCanvas != null) {
-                        mCanvas.drawPoint(x, y, mPaint);
-                    }
-                    invalidate();
-                    return true;
-                case MotionEvent.ACTION_MOVE:
-                    float dx = Math.abs(x - mPrevX);
-                    float dy = Math.abs(y - mPrevY);
-                    if (dx >= 2 || dy >= 2) {
-                        mCurrentPath.quadTo(mPrevX, mPrevY, (x + mPrevX) / 2, (y + mPrevY) / 2);
-                        if (mCurrentTool == TOOL_ERASER && mCanvas != null) {
-                            mCanvas.drawLine(mPrevX, mPrevY, x, y, mPaint);
-                        }
-                        mPrevX = x;
-                        mPrevY = y;
-                        invalidate();
-                    }
-                    return true;
-                case MotionEvent.ACTION_UP:
-                case MotionEvent.ACTION_CANCEL:
-                    if (mCurrentTool != TOOL_ERASER && mCanvas != null) {
-                        mCurrentPath.lineTo(x, y);
-                        mCanvas.drawPath(mCurrentPath, mPaint);
-                    }
-                    mCurrentPath.reset();
-                    invalidate();
-                    return true;
-            }
-            return false;
-        }
-
-        void clear() {
-            if (mBitmap != null) {
-                mBitmap.eraseColor(Color.TRANSPARENT);
-                mCurrentPath.reset();
-                invalidate();
-            }
-        }
-
-        Bitmap getBitmap() {
-            return mBitmap;
-        }
+    private void toggleDesktopMode() {
+        Settings.Global.putInt(
+                getContentResolver(), "override_desktop_mode_features", 1);
+        PenShortcuts.injectKeyWithMeta(this, KeyEvent.KEYCODE_DPAD_DOWN,
+                KeyEvent.META_META_ON | KeyEvent.META_CTRL_ON);
+        Toast.makeText(this, R.string.desktop_mode_enabled, Toast.LENGTH_SHORT).show();
     }
 
     private void restoreBubblePosition() {
@@ -923,7 +597,6 @@ public final class FloatingToolbarService extends Service {
             mBubbleView.setVisibility(View.GONE);
         }
         closeMenu();
-        closeQuickNoteCanvas();
     }
 
     private void showViews() {
@@ -942,15 +615,6 @@ public final class FloatingToolbarService extends Service {
             mWindowManager.updateViewLayout(mBubbleView, mBubbleParams);
         }
         closeMenu();
-        if (mQuickNoteOverlay != null && mQuickNoteOverlay.isAttachedToWindow()) {
-            WindowManager.LayoutParams qnParams = (WindowManager.LayoutParams) mQuickNoteOverlay.getLayoutParams();
-            if (qnParams != null) {
-                Rect bounds = getDisplayBounds();
-                qnParams.width = bounds.width();
-                qnParams.height = bounds.height();
-                mWindowManager.updateViewLayout(mQuickNoteOverlay, qnParams);
-            }
-        }
     }
 
     @Override
@@ -978,11 +642,6 @@ public final class FloatingToolbarService extends Service {
         super.onDestroy();
         sInstance = null;
         unregisterReceiver(mScreenReceiver);
-        try {
-            unregisterReceiver(mPenActionReceiver);
-        } catch (Exception ignored) {
-        }
-        closeQuickNoteCanvas();
         closeMenu();
         if (mBubbleView != null && mBubbleView.isAttachedToWindow()) {
             mWindowManager.removeView(mBubbleView);

@@ -68,7 +68,10 @@ constexpr char kPenModePath[] = "/proc/pen_type";
 constexpr char kPenWakePath[] = "/proc/pen_wakeup_mode";
 constexpr char kHighReportRatePath[] = "/proc/HighReportRate";
 constexpr char kGameEdgePath[] = "/proc/game_edge";
+constexpr char kGameModePath[] = "/proc/game_mode";
 constexpr char kEdgeGridZonePath[] = "/proc/edge_grid_zone";
+constexpr char kPanelDirectionPath[] = "/proc/panel_direction";
+constexpr char kDisplayRotationProperty[] = "sys.malbec.display.rotation";
 constexpr char kGpuLoadPath[] = "/sys/class/kgsl/kgsl-3d0/devfreq/gpu_load";
 constexpr char kGpuClockPath[] = "/sys/class/kgsl/kgsl-3d0/clock_mhz";
 constexpr char kGpuTempPath[] = "/sys/class/kgsl/kgsl-3d0/temp";
@@ -483,6 +486,8 @@ int main() {
     int pen_wakeup_applied = -1;
     int high_report_applied = -1;
     int game_edge_applied = -1;
+    int game_mode_applied = -1;
+    int rotation_applied = -1;
     std::string edge_grid_zone_applied;
     bool bypass_active = android::base::GetBoolProperty(kBypassActiveProperty, false);
 
@@ -606,15 +611,25 @@ int main() {
             ApplyMode(kPenWakePath, true, &pen_wakeup_applied, nullptr);
             ApplyMode(kHighReportRatePath, new_high_report, &high_report_applied,
                     kHighReportRateAppliedProperty);
+            ApplyMode(kGameModePath, new_game_edge || new_pen_enabled, &game_mode_applied,
+                    nullptr);
             ApplyMode(kGameEdgePath, new_game_edge, &game_edge_applied,
                     kGameEdgeAppliedProperty);
 
-            std::string new_edge_grid =
-                    android::base::GetProperty(kEdgeGridZoneProperty, "16,16,500,500");
-            if (!new_edge_grid.empty() && new_edge_grid != edge_grid_zone_applied) {
-                if (android::base::WriteStringToFile(new_edge_grid, kEdgeGridZonePath)) {
-                    edge_grid_zone_applied = new_edge_grid;
-                    android::base::SetProperty(kEdgeGridZoneAppliedProperty, "1");
+            int new_rotation = android::base::GetIntProperty(kDisplayRotationProperty, 0);
+            if (new_rotation != rotation_applied) {
+                if (android::base::WriteStringToFile(std::to_string(new_rotation), kPanelDirectionPath)) {
+                    rotation_applied = new_rotation;
+                }
+            }
+
+            std::string target_edge_grid = new_game_edge
+                    ? (std::to_string(new_rotation + 1) + ",2,0,3200")
+                    : "0,0,0,0";
+            if (target_edge_grid != edge_grid_zone_applied) {
+                if (android::base::WriteStringToFile(target_edge_grid, kEdgeGridZonePath)) {
+                    edge_grid_zone_applied = target_edge_grid;
+                    android::base::SetProperty(kEdgeGridZoneAppliedProperty, new_game_edge ? "1" : "0");
                 }
             }
 
