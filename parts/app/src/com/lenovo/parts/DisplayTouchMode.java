@@ -23,7 +23,7 @@ final class DisplayTouchMode {
             "sys.malbec.touch.high_report_rate_applied";
     private static final String GAME_EDGE_APPLIED_PROPERTY =
             "sys.malbec.touch.game_edge_applied";
-    private static final String DEFAULT_EDGE_GRID_ZONE = "16,16,1200,1200";
+    private static final String DEFAULT_EDGE_GRID_ZONE = "16,16,400,400";
 
     private DisplayTouchMode() {
     }

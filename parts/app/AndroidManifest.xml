@@ -38,10 +38,6 @@
             android:exported="true"
             android:label="@string/app_name">
             <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-            <intent-filter>
                 <action android:name="com.android.settings.action.IA_SETTINGS" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
@@ -116,9 +112,6 @@
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Gaming performance island HUD overlay" />
         </service>
-        <service
-            android:name=".FreeformFrameService"
-            android:exported="false" />
         <receiver
             android:name=".GamingBypassReceiver"
             android:exported="false" />

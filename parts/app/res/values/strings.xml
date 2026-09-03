@@ -62,8 +62,8 @@
     <string name="app_picker_title">Apps</string>
     <string name="app_picker_empty">No launchable apps found</string>
     <string name="app_drawer_search_hint">Search apps...</string>
-    <string name="window_control_fullscreen">Full</string>
-    <string name="window_control_split">Split</string>
+    <string name="window_control_fullscreen">Full screen</string>
+    <string name="window_control_split">Split screen</string>
     <string name="window_control_close">Close</string>
     <string name="category_gaming_overlay_title">Gaming overlay</string>
     <string name="gaming_overlay_title">Performance island</string>
