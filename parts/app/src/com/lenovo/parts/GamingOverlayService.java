@@ -19,9 +19,11 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
+import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Handler;
@@ -33,7 +35,10 @@ import android.os.SystemProperties;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
+import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.preference.PreferenceManager;
@@ -211,29 +216,35 @@ public final class GamingOverlayService extends Service {
         dotBg.setColor(0xFF6DD58C);
         dot.setBackground(dotBg);
         LinearLayout.LayoutParams dotLp = new LinearLayout.LayoutParams(dpToPx(7), dpToPx(7));
-        dotLp.setMargins(0, 0, dpToPx(6), 0);
+        dotLp.setMargins(0, 0, dpToPx(8), 0);
         header.addView(dot, dotLp);
 
-        TextView title = new TextView(this);
-        title.setText(R.string.gaming_overlay_title);
-        title.setTextColor(mColorAccent);
-        title.setTextSize(11f);
-        title.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
-        title.setLetterSpacing(0.04f);
-        LinearLayout.LayoutParams titleLp = new LinearLayout.LayoutParams(
-                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f);
-        header.addView(title, titleLp);
+        View dragHandle = new View(this);
+        GradientDrawable handleBg = new GradientDrawable();
+        handleBg.setColor(0x33FFFFFF);
+        handleBg.setCornerRadius(dpToPx(3));
+        dragHandle.setBackground(handleBg);
+        LinearLayout.LayoutParams handleLp = new LinearLayout.LayoutParams(0, dpToPx(4), 1.0f);
+        handleLp.setMargins(0, 0, dpToPx(8), 0);
+        header.addView(dragHandle, handleLp);
 
-        TextView closeBtn = new TextView(this);
-        closeBtn.setText("✕");
-        closeBtn.setTextColor(0xFFCCCCCC);
-        closeBtn.setTextSize(13f);
-        closeBtn.setGravity(Gravity.CENTER);
-        closeBtn.setPadding(dpToPx(8), dpToPx(2), dpToPx(8), dpToPx(2));
+        FrameLayout closeBtn = new FrameLayout(this);
         GradientDrawable closeBg = new GradientDrawable();
-        closeBg.setColor(0x33FFFFFF);
-        closeBg.setCornerRadius(dpToPx(12));
+        closeBg.setShape(GradientDrawable.OVAL);
+        closeBg.setColor(0x28FFFFFF);
         closeBtn.setBackground(closeBg);
+        int btnSize = dpToPx(24);
+        LinearLayout.LayoutParams closeLp = new LinearLayout.LayoutParams(btnSize, btnSize);
+        closeBtn.setLayoutParams(closeLp);
+
+        TextView closeIcon = new TextView(this);
+        closeIcon.setText("✕");
+        closeIcon.setTextColor(0xFFE3E2E6);
+        closeIcon.setTextSize(11f);
+        closeIcon.setGravity(Gravity.CENTER);
+        closeBtn.addView(closeIcon, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
         closeBtn.setOnClickListener(v -> {
             try {
                 SystemProperties.set(PROP_PERSIST_OVERLAY, "0");
@@ -261,6 +272,9 @@ public final class GamingOverlayService extends Service {
 
         mRootView.addView(statsBox);
 
+        final int touchSlop = ViewConfiguration.get(this).getScaledTouchSlop();
+        final Rect closeHitRect = new Rect();
+
         mRootView.setOnTouchListener(new View.OnTouchListener() {
             private int initialX;
             private int initialY;
@@ -270,6 +284,10 @@ public final class GamingOverlayService extends Service {
 
             @Override
             public boolean onTouch(View v, MotionEvent event) {
+                closeBtn.getGlobalVisibleRect(closeHitRect);
+                if (closeHitRect.contains((int) event.getRawX(), (int) event.getRawY())) {
+                    return false;
+                }
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
                         initialX = mParams.x;
@@ -281,7 +299,7 @@ public final class GamingOverlayService extends Service {
                     case MotionEvent.ACTION_MOVE:
                         int dx = (int) (event.getRawX() - initialTouchX);
                         int dy = (int) (event.getRawY() - initialTouchY);
-                        if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+                        if (Math.abs(dx) > touchSlop || Math.abs(dy) > touchSlop) {
                             isMoving = true;
                             mParams.x = initialX + dx;
                             mParams.y = initialY + dy;
@@ -369,8 +387,17 @@ public final class GamingOverlayService extends Service {
         StringBuilder pwrSb = new StringBuilder();
         pwrSb.append(String.format(Locale.US, "SoC: %.1fW", socPower / 1000.0));
         if (showTotalPower) {
-            pwrSb.append(String.format(Locale.US, "  •  %s: %.1fW",
-                    bypass ? "Bypass" : "Draw", totalPower / 1000.0));
+            String label;
+            boolean isUsb = SystemProperties.getInt("sys.malbec.power.usb_online", 0) == 1;
+            if (bypass) {
+                label = "Bypass";
+            } else if (isUsb) {
+                label = "Charge";
+            } else {
+                label = "Draw";
+            }
+            pwrSb.append(String.format(Locale.US, "  •  %s: %s%.1fW",
+                    label, "Charge".equals(label) ? "+" : "", totalPower / 1000.0));
         }
         if (showBattery) {
             pwrSb.append("  •  Bat: ").append(battery).append("%");
@@ -451,6 +478,22 @@ public final class GamingOverlayService extends Service {
 
     private int dpToPx(int dp) {
         return Math.round(dp * getResources().getDisplayMetrics().density);
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        resolveThemeColors();
+        if (mRootView != null && mRootView.isAttachedToWindow()) {
+            Rect bounds = mWindowManager.getCurrentWindowMetrics().getBounds();
+            int screenWidth = bounds.width();
+            int screenHeight = bounds.height();
+            int viewWidth = mParams.width > 0 ? mParams.width : dpToPx(340);
+            int halfRemainingX = Math.max(0, (screenWidth - viewWidth) / 2);
+            mParams.x = Math.max(-halfRemainingX, Math.min(mParams.x, halfRemainingX));
+            mParams.y = Math.max(dpToPx(8), Math.min(mParams.y, screenHeight - dpToPx(120)));
+            mWindowManager.updateViewLayout(mRootView, mParams);
+        }
     }
 
     @Override

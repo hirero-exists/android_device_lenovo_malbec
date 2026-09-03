@@ -335,29 +335,15 @@ void PublishPerformanceTelemetry() {
     double r1 = std::max(0.1, static_cast<double>(c1_freq) / 3014.0);
     double r2 = std::max(0.1, static_cast<double>(c2_freq) / 2803.0);
     double r3 = std::max(0.1, static_cast<double>(c3_freq) / 3206.0);
-    int cpu_power_mw = static_cast<int>(400.0 + load_ratio * (
-            r0 * r0 * 1200.0 +
-            r1 * r1 * 3800.0 +
-            r2 * r2 * 3000.0 +
-            r3 * r3 * 4500.0));
+    int cpu_power_mw = static_cast<int>(350.0 + load_ratio * (
+            r0 * r0 * 500.0 +
+            r1 * r1 * 1600.0 +
+            r2 * r2 * 1400.0 +
+            r3 * r3 * 2000.0));
 
     double gpu_load_ratio = static_cast<double>(gpu_busy) / 100.0;
     double gpu_r = std::max(0.1, static_cast<double>(gpu_freq_mhz) / 1150.0);
-    int gpu_power_mw = static_cast<int>(150.0 + gpu_load_ratio * gpu_r * gpu_r * 9500.0);
-
-    int soc_power_mw = cpu_power_mw + gpu_power_mw + 500;
-
-    SetIntProperty(kPerfCpuUsageProperty, cpu_usage);
-    SetIntProperty(kPerfCpuFreqProperty, cpu_freq_mhz);
-    SetIntProperty(kPerfCpuTempProperty, cpu_temp_c);
-    SetIntProperty(kPerfCpuPowerProperty, cpu_power_mw);
-
-    SetIntProperty(kPerfGpuUsageProperty, gpu_busy);
-    SetIntProperty(kPerfGpuFreqProperty, gpu_freq_mhz);
-    SetIntProperty(kPerfGpuTempProperty, gpu_temp_c);
-    SetIntProperty(kPerfGpuPowerProperty, gpu_power_mw);
-
-    SetIntProperty(kPerfSocPowerProperty, soc_power_mw);
+    int gpu_power_mw = static_cast<int>(150.0 + gpu_load_ratio * gpu_r * gpu_r * 4500.0);
 
     int usb_online = ReadInt(kUsbOnlinePath, 0);
     long long power_mw = 0;
@@ -370,7 +356,22 @@ void PublishPerformanceTelemetry() {
         long long current_ua = std::abs(ReadInt(kBatteryCurrentPath, 0));
         power_mw = (voltage_uv * current_ua) / 1000000000LL;
     }
+
+    int soc_power_mw = cpu_power_mw + gpu_power_mw;
+
+    SetIntProperty(kPerfCpuUsageProperty, cpu_usage);
+    SetIntProperty(kPerfCpuFreqProperty, cpu_freq_mhz);
+    SetIntProperty(kPerfCpuTempProperty, cpu_temp_c);
+    SetIntProperty(kPerfCpuPowerProperty, cpu_power_mw);
+
+    SetIntProperty(kPerfGpuUsageProperty, gpu_busy);
+    SetIntProperty(kPerfGpuFreqProperty, gpu_freq_mhz);
+    SetIntProperty(kPerfGpuTempProperty, gpu_temp_c);
+    SetIntProperty(kPerfGpuPowerProperty, gpu_power_mw);
+
+    SetIntProperty(kPerfSocPowerProperty, soc_power_mw);
     SetIntProperty(kPerfPowerProperty, static_cast<int>(power_mw));
+    SetIntProperty("sys.malbec.power.usb_online", usb_online);
 }
 
 
