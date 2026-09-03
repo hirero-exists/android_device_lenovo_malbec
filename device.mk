@@ -338,6 +338,9 @@ PRODUCT_PACKAGES += \
     malbec_partsd \
     privapp_permissions_com.lenovo.parts
 
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/idc/NVTCapacitivePen.idc:$(TARGET_COPY_OUT_VENDOR)/usr/idc/NVTCapacitivePen.idc
+
 # Update engine
 PRODUCT_PACKAGES += \
     update_engine \

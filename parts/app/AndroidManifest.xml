@@ -84,18 +84,13 @@
             android:exported="false"
             android:noHistory="true"
             android:theme="@android:style/Theme.NoDisplay" />
-        <service
-            android:name=".PenPointerAccessibilityService"
+        <activity
+            android:name=".QuickNoteActivity"
             android:exported="false"
-            android:label="@string/pen_pointer_title"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
-            <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService" />
-            </intent-filter>
-            <meta-data
-                android:name="android.accessibilityservice"
-                android:resource="@xml/pen_pointer_service_config" />
-        </service>
+            android:excludeFromRecents="true"
+            android:launchMode="singleTask"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:theme="@style/Theme.QuickNote" />
         <service
             android:name=".FloatingToolbarService"
             android:exported="false"
