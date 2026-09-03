@@ -15,6 +15,7 @@ import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.AccessibilityServiceInfo;
 import android.content.Context;
 import android.graphics.Color;
+import android.graphics.Insets;
 import android.graphics.PixelFormat;
 import android.graphics.drawable.GradientDrawable;
 import android.hardware.input.InputManager;
@@ -25,7 +26,9 @@ import android.view.Gravity;
 import android.view.InputDevice;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.WindowInsets;
 import android.view.WindowManager;
+import android.view.WindowMetrics;
 import android.view.accessibility.AccessibilityEvent;
 
 public final class PenPointerAccessibilityService extends AccessibilityService {
@@ -60,13 +63,6 @@ public final class PenPointerAccessibilityService extends AccessibilityService {
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
                 hideDot();
-                MotionEvent clone = MotionEvent.obtain(event);
-                clone.setSource(InputDevice.SOURCE_TOUCHSCREEN);
-                InputManager inputManager = getSystemService(InputManager.class);
-                if (inputManager != null) {
-                    inputManager.injectInputEvent(clone, InputManager.INJECT_INPUT_EVENT_MODE_ASYNC);
-                }
-                clone.recycle();
                 break;
             default:
                 break;
@@ -149,8 +145,18 @@ public final class PenPointerAccessibilityService extends AccessibilityService {
                         | WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
                 PixelFormat.TRANSLUCENT);
         params.gravity = Gravity.TOP | Gravity.START;
+        int insetTop = 0;
+        if (mWindowManager != null) {
+            try {
+                WindowMetrics metrics = mWindowManager.getCurrentWindowMetrics();
+                WindowInsets insets = metrics.getWindowInsets();
+                Insets sb = insets.getInsetsIgnoringVisibility(WindowInsets.Type.statusBars());
+                insetTop = sb.top;
+            } catch (Exception ignored) {
+            }
+        }
         params.x = x - size / 2;
-        params.y = y - size / 2;
+        params.y = y - size / 2 - insetTop;
         params.setTitle("PenPointer");
         return params;
     }
@@ -161,6 +167,8 @@ public final class PenPointerAccessibilityService extends AccessibilityService {
 
     static void apply(Context context, boolean enabled) {
         Settings.Secure.putInt(context.getContentResolver(),
+                "stylus_pointer_icon_enabled", enabled ? 1 : 0);
+        Settings.System.putInt(context.getContentResolver(),
                 "stylus_pointer_icon_enabled", enabled ? 1 : 0);
         try {
             SystemProperties.set(

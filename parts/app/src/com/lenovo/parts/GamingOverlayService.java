@@ -183,12 +183,14 @@ public final class GamingOverlayService extends Service {
 
     private void buildOverlayView() {
         mParams = new WindowManager.LayoutParams(
-                WindowManager.LayoutParams.WRAP_CONTENT,
+                dpToPx(280),
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                        | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+                        | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+                        | WindowManager.LayoutParams.FLAG_BLUR_BEHIND,
                 PixelFormat.TRANSLUCENT);
+        mParams.setBlurBehindRadius(dpToPx(20));
 
         mParams.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
         mParams.x = 0;
@@ -199,8 +201,8 @@ public final class GamingOverlayService extends Service {
         mRootView.setPadding(dpToPx(14), dpToPx(10), dpToPx(14), dpToPx(10));
 
         GradientDrawable bg = new GradientDrawable();
-        bg.setColor(0xDD14151A);
-        bg.setCornerRadius(dpToPx(18));
+        bg.setColor(applyAlpha(mColorSurface, 220));
+        bg.setCornerRadius(dpToPx(20));
         bg.setStroke(dpToPx(1), applyAlpha(mColorAccent, 90));
         mRootView.setBackground(bg);
         mRootView.setElevation(dpToPx(8));
@@ -210,18 +212,9 @@ public final class GamingOverlayService extends Service {
         header.setGravity(Gravity.CENTER_VERTICAL);
         header.setPadding(0, 0, 0, dpToPx(6));
 
-        View dot = new View(this);
-        GradientDrawable dotBg = new GradientDrawable();
-        dotBg.setShape(GradientDrawable.OVAL);
-        dotBg.setColor(0xFF6DD58C);
-        dot.setBackground(dotBg);
-        LinearLayout.LayoutParams dotLp = new LinearLayout.LayoutParams(dpToPx(7), dpToPx(7));
-        dotLp.setMargins(0, 0, dpToPx(8), 0);
-        header.addView(dot, dotLp);
-
         View dragHandle = new View(this);
         GradientDrawable handleBg = new GradientDrawable();
-        handleBg.setColor(0x33FFFFFF);
+        handleBg.setColor(applyAlpha(mColorText, 45));
         handleBg.setCornerRadius(dpToPx(3));
         dragHandle.setBackground(handleBg);
         LinearLayout.LayoutParams handleLp = new LinearLayout.LayoutParams(0, dpToPx(4), 1.0f);
@@ -231,7 +224,7 @@ public final class GamingOverlayService extends Service {
         FrameLayout closeBtn = new FrameLayout(this);
         GradientDrawable closeBg = new GradientDrawable();
         closeBg.setShape(GradientDrawable.OVAL);
-        closeBg.setColor(0x28FFFFFF);
+        closeBg.setColor(applyAlpha(mColorText, 35));
         closeBtn.setBackground(closeBg);
         int btnSize = dpToPx(24);
         LinearLayout.LayoutParams closeLp = new LinearLayout.LayoutParams(btnSize, btnSize);
@@ -239,7 +232,7 @@ public final class GamingOverlayService extends Service {
 
         TextView closeIcon = new TextView(this);
         closeIcon.setText("✕");
-        closeIcon.setTextColor(0xFFE3E2E6);
+        closeIcon.setTextColor(mColorText);
         closeIcon.setTextSize(11f);
         closeIcon.setGravity(Gravity.CENTER);
         closeBtn.addView(closeIcon, new FrameLayout.LayoutParams(
@@ -488,10 +481,8 @@ public final class GamingOverlayService extends Service {
             Rect bounds = mWindowManager.getCurrentWindowMetrics().getBounds();
             int screenWidth = bounds.width();
             int screenHeight = bounds.height();
-            int viewWidth = mParams.width > 0 ? mParams.width : dpToPx(340);
-            int halfRemainingX = Math.max(0, (screenWidth - viewWidth) / 2);
-            mParams.x = Math.max(-halfRemainingX, Math.min(mParams.x, halfRemainingX));
-            mParams.y = Math.max(dpToPx(8), Math.min(mParams.y, screenHeight - dpToPx(120)));
+            mParams.x = 0;
+            mParams.y = dpToPx(12);
             mWindowManager.updateViewLayout(mRootView, mParams);
         }
     }

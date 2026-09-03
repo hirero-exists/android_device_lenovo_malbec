@@ -159,85 +159,7 @@ public final class AppPickerActivity extends Activity {
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1.0f);
         root.addView(grid, gridLp);
 
-        LinearLayout actionsRow = new LinearLayout(this);
-        actionsRow.setOrientation(LinearLayout.HORIZONTAL);
-        actionsRow.setGravity(Gravity.CENTER);
-        actionsRow.setPadding(0, dpToPx(14), 0, dpToPx(4));
-
-        LinearLayout splitBtn = createSquircleAction(
-                0xFFE8DEF8, 0xFF65558F, "◫", getString(R.string.window_control_split),
-                v -> {
-                    injectSplitKey();
-                    finish();
-                });
-        actionsRow.addView(splitBtn);
-
-        LinearLayout fullBtn = createSquircleAction(
-                0xFFDCEBD8, 0xFF3B6939, "□", getString(R.string.window_control_fullscreen),
-                v -> finish());
-        actionsRow.addView(fullBtn);
-
-        LinearLayout closeBtn = createSquircleAction(
-                0xFFFFD8D8, 0xFFBA1A1A, "✕", getString(R.string.window_control_close),
-                v -> finish());
-        actionsRow.addView(closeBtn);
-
-        root.addView(actionsRow);
-
         setContentView(root);
-    }
-
-    private LinearLayout createSquircleAction(int bgColor, int iconColor, String glyph, String title, View.OnClickListener listener) {
-        LinearLayout container = new LinearLayout(this);
-        container.setOrientation(LinearLayout.VERTICAL);
-        container.setGravity(Gravity.CENTER_HORIZONTAL);
-        container.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
-
-        FrameLayout squircle = new FrameLayout(this);
-        GradientDrawable sqBg = new GradientDrawable();
-        sqBg.setColor(bgColor);
-        sqBg.setCornerRadius(dpToPx(18));
-        squircle.setBackground(sqBg);
-        int size = dpToPx(52);
-        LinearLayout.LayoutParams sqLp = new LinearLayout.LayoutParams(size, size);
-        sqLp.gravity = Gravity.CENTER_HORIZONTAL;
-        squircle.setLayoutParams(sqLp);
-
-        TextView icon = new TextView(this);
-        icon.setText(glyph);
-        icon.setTextColor(iconColor);
-        icon.setTextSize(20f);
-        icon.setGravity(Gravity.CENTER);
-        squircle.addView(icon, new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-
-        TextView label = new TextView(this);
-        label.setText(title);
-        label.setTextColor(mColorText);
-        label.setTextSize(12f);
-        label.setGravity(Gravity.CENTER);
-        label.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-        LinearLayout.LayoutParams labelLp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        labelLp.topMargin = dpToPx(6);
-        labelLp.gravity = Gravity.CENTER_HORIZONTAL;
-
-        container.addView(squircle);
-        container.addView(label, labelLp);
-        container.setOnClickListener(listener);
-        return container;
-    }
-
-    private void injectSplitKey() {
-        InputManager im = getSystemService(InputManager.class);
-        if (im == null) return;
-        long now = SystemClock.uptimeMillis();
-        int flags = KeyEvent.FLAG_FROM_SYSTEM | KeyEvent.FLAG_VIRTUAL_HARD_KEY;
-        KeyEvent down = new KeyEvent(now, now, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_WINDOW, 0, 0,
-                KeyCharacterMap.VIRTUAL_KEYBOARD, 0, flags, InputDevice.SOURCE_KEYBOARD);
-        KeyEvent up = KeyEvent.changeAction(down, KeyEvent.ACTION_UP);
-        im.injectInputEvent(down, InputManager.INJECT_INPUT_EVENT_MODE_ASYNC);
-        im.injectInputEvent(up, InputManager.INJECT_INPUT_EVENT_MODE_ASYNC);
     }
 
     private void resolveThemeColors() {
@@ -280,7 +202,6 @@ public final class AppPickerActivity extends Activity {
             Settings.Global.putInt(getContentResolver(), "enable_freeform_support", 1);
             Settings.Global.putInt(getContentResolver(), "development_enable_freeform_windows_support", 1);
             Settings.Global.putInt(getContentResolver(), "force_resizable_activities", 1);
-            Settings.Global.putInt(getContentResolver(), "development_override_desktop_mode_features", 1);
         } catch (Exception ignored) {
         }
 

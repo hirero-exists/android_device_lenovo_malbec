@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="BorderSettingsUnfocusedLight">
+        <item name="borderStrokeWidth">1dp</item>
+        <item name="borderColor">#40000000</item>
+    </style>
+    <style name="BorderSettingsFocusedLight">
+        <item name="borderStrokeWidth">1.5dp</item>
+        <item name="borderColor">#80000000</item>
+    </style>
+    <style name="BorderSettingsUnfocusedDark">
+        <item name="borderStrokeWidth">1dp</item>
+        <item name="borderColor">#40FFFFFF</item>
+    </style>
+    <style name="BorderSettingsFocusedDark">
+        <item name="borderStrokeWidth">1.5dp</item>
+        <item name="borderColor">#80FFFFFF</item>
+    </style>
+</resources>
