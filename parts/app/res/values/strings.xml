@@ -65,10 +65,10 @@
     <string name="window_control_fullscreen">Full screen</string>
     <string name="window_control_split">Split screen</string>
     <string name="window_control_close">Close</string>
-    <string name="category_gaming_overlay_title">Gaming overlay</string>
-    <string name="gaming_overlay_title">Performance island</string>
+    <string name="category_gaming_overlay_title">Device metrics</string>
+    <string name="gaming_overlay_title">Device metrics</string>
     <string name="gaming_overlay_summary">Top-center HUD displaying CPU/GPU stats, temps, and power</string>
-    <string name="gaming_overlay_settings_title">Island settings</string>
+    <string name="gaming_overlay_settings_title">Metrics settings</string>
     <string name="gaming_overlay_settings_summary">Configure displayed metrics, layout, and opacity</string>
     <string name="gaming_overlay_show_cpu_usage">CPU usage (%)</string>
     <string name="gaming_overlay_show_cpu_freq">CPU frequency (MHz)</string>

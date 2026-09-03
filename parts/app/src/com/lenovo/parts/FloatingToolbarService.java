@@ -164,8 +164,25 @@ public final class FloatingToolbarService extends Service {
         filter.addAction(Intent.ACTION_USER_PRESENT);
         registerReceiver(mScreenReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
 
+        IntentFilter penFilter = new IntentFilter("com.lenovo.parts.PEN_BUTTON_ACTION");
+        registerReceiver(mPenActionReceiver, penFilter, Context.RECEIVER_EXPORTED);
+
         resetIdleTimer();
     }
+
+    private final BroadcastReceiver mPenActionReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if ("com.lenovo.parts.PEN_BUTTON_ACTION".equals(intent.getAction())) {
+                int action = intent.getIntExtra("action", 0);
+                if (action == 1) {
+                    toggleMenu();
+                } else if (action == 2) {
+                    dispatchPlayPause();
+                }
+            }
+        }
+    };
 
     private void createNotificationChannel() {
         NotificationChannel channel = new NotificationChannel(
@@ -338,8 +355,10 @@ public final class FloatingToolbarService extends Service {
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                        | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
+                        | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
+                        | WindowManager.LayoutParams.FLAG_BLUR_BEHIND,
                 PixelFormat.TRANSLUCENT);
+        mMenuParams.setBlurBehindRadius(dpToPx(24));
         mMenuParams.gravity = Gravity.TOP | Gravity.START;
 
         mMenuView = new LinearLayout(this);
@@ -349,10 +368,10 @@ public final class FloatingToolbarService extends Service {
 
         GradientDrawable bg = new GradientDrawable();
         bg.setCornerRadius(dpToPx(24));
-        bg.setColor(applyAlpha(mColorSurface, 235));
-        bg.setStroke(dpToPx(1), applyAlpha(mColorAccent, 75));
+        bg.setColor(applyAlpha(mColorSurface, 200));
+        bg.setStroke(dpToPx(1), applyAlpha(mColorAccent, 90));
         mMenuView.setBackground(bg);
-        mMenuView.setElevation(dpToPx(10));
+        mMenuView.setElevation(dpToPx(12));
 
         addMenuItem(getString(R.string.quick_note_title), () -> {
             closeMenu();
@@ -402,11 +421,17 @@ public final class FloatingToolbarService extends Service {
         item.setTextSize(13f);
         item.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         item.setPadding(dpToPx(16), dpToPx(11), dpToPx(16), dpToPx(11));
-        android.util.TypedValue value = new android.util.TypedValue();
-        getTheme().resolveAttribute(android.R.attr.selectableItemBackground, value, true);
-        if (value.resourceId != 0) {
-            item.setBackgroundResource(value.resourceId);
-        }
+
+        GradientDrawable itemBg = new GradientDrawable();
+        itemBg.setColor(applyAlpha(mColorSurface, 120));
+        itemBg.setCornerRadius(dpToPx(14));
+        item.setBackground(itemBg);
+
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.setMargins(0, dpToPx(2), 0, dpToPx(2));
+        item.setLayoutParams(lp);
+
         item.setOnClickListener(v -> action.run());
         mMenuView.addView(item);
     }
@@ -610,7 +635,7 @@ public final class FloatingToolbarService extends Service {
         clearBtn.setOnClickListener(v -> canvasView.clear());
         topBar.addView(clearBtn);
 
-        TextView saveBtn = createToolButton(0xFF4CAF50, 0xFFFFFFFF);
+        TextView saveBtn = createToolButton(mColorAccent, onColor(mColorAccent));
         saveBtn.setText(R.string.quick_note_save);
         saveBtn.setOnClickListener(v -> {
             if (saveCanvasBitmap(canvasView.getBitmap())) {
@@ -629,6 +654,8 @@ public final class FloatingToolbarService extends Service {
         barLp.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
         barLp.topMargin = dpToPx(16);
         mQuickNoteOverlay.addView(topBar, barLp);
+        topBar.bringToFront();
+        canvasView.setTopBar(topBar);
 
         mWindowManager.addView(mQuickNoteOverlay, overlayParams);
     }
@@ -787,8 +814,24 @@ public final class FloatingToolbarService extends Service {
             }
         }
 
+        private View mTopBar;
+
+        void setTopBar(View topBar) {
+            mTopBar = topBar;
+        }
+
         @Override
         public boolean onTouchEvent(MotionEvent event) {
+            if (mTopBar != null && mTopBar.getVisibility() == View.VISIBLE) {
+                int[] loc = new int[2];
+                mTopBar.getLocationOnScreen(loc);
+                float rx = event.getRawX();
+                float ry = event.getRawY();
+                if (rx >= loc[0] && rx <= loc[0] + mTopBar.getWidth()
+                        && ry >= loc[1] && ry <= loc[1] + mTopBar.getHeight()) {
+                    return false;
+                }
+            }
             float x = event.getX();
             float y = event.getY();
 
@@ -935,6 +978,10 @@ public final class FloatingToolbarService extends Service {
         super.onDestroy();
         sInstance = null;
         unregisterReceiver(mScreenReceiver);
+        try {
+            unregisterReceiver(mPenActionReceiver);
+        } catch (Exception ignored) {
+        }
         closeQuickNoteCanvas();
         closeMenu();
         if (mBubbleView != null && mBubbleView.isAttachedToWindow()) {

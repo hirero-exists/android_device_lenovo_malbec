@@ -126,13 +126,16 @@ bool ConfigureUinput(int fd) {
     if (ioctl(fd, UI_SET_EVBIT, EV_SW) < 0 || ioctl(fd, UI_SET_SWBIT, SW_LID) < 0) {
         return false;
     }
+    ioctl(fd, UI_SET_EVBIT, EV_KEY);
+    ioctl(fd, UI_SET_KEYBIT, KEY_PLAYPAUSE);
+    ioctl(fd, UI_SET_KEYBIT, KEY_SYSRQ);
 
     uinput_setup setup = {};
     setup.id.bustype = BUS_HOST;
     setup.id.vendor = 0x17ef;
     setup.id.product = 0x35;
     setup.id.version = 1;
-    std::strncpy(setup.name, "Lenovo Folio", UINPUT_MAX_NAME_SIZE - 1);
+    std::strncpy(setup.name, "Lenovo Folio and Pen", UINPUT_MAX_NAME_SIZE - 1);
     return ioctl(fd, UI_DEV_SETUP, &setup) >= 0 && ioctl(fd, UI_DEV_CREATE) >= 0;
 }
 
@@ -144,6 +147,31 @@ bool EmitLidState(int fd, bool closed) {
     events[1].type = EV_SYN;
     events[1].code = SYN_REPORT;
     return write(fd, events, sizeof(events)) == sizeof(events);
+}
+
+bool EmitKey(int fd, int key_code) {
+    input_event events[4] = {};
+    events[0].type = EV_KEY;
+    events[0].code = key_code;
+    events[0].value = 1;
+    events[1].type = EV_SYN;
+    events[1].code = SYN_REPORT;
+    events[2].type = EV_KEY;
+    events[2].code = key_code;
+    events[2].value = 0;
+    events[3].type = EV_SYN;
+    events[3].code = SYN_REPORT;
+    return write(fd, events, sizeof(events)) == sizeof(events);
+}
+
+void DispatchPenAction(int uinput_fd, int action) {
+    android::base::SetProperty("sys.malbec.pen.button_action", std::to_string(action));
+    if (action == 1) {
+        system("/system/bin/am broadcast -a com.lenovo.parts.PEN_BUTTON_ACTION --ei action 1 >/dev/null 2>&1 &");
+    } else if (action == 2) {
+        EmitKey(uinput_fd, KEY_PLAYPAUSE);
+        system("/system/bin/am broadcast -a com.lenovo.parts.PEN_BUTTON_ACTION --ei action 2 >/dev/null 2>&1 &");
+    }
 }
 
 bool WriteMode(const char* path, bool enabled) {
@@ -389,7 +417,7 @@ void SetBypassState(bool active, int state) {
     SetIntProperty(kBypassStateProperty, state);
 }
 
-int OpenHallInput() {
+int OpenNamedInput(const char* target_name) {
     DIR* directory = opendir("/dev/input");
     if (directory == nullptr) {
         return -1;
@@ -411,7 +439,7 @@ int OpenHallInput() {
 
         char name[256] = {};
         if (ioctl(fd, EVIOCGNAME(sizeof(name)), name) >= 0
-                && std::strcmp(name, kHallInputName) == 0) {
+                && std::strstr(name, target_name) != nullptr) {
             result = fd;
             break;
         }
@@ -421,12 +449,26 @@ int OpenHallInput() {
     return result;
 }
 
+int OpenHallInput() {
+    return OpenNamedInput(kHallInputName);
+}
+
 }
 
 int main() {
     int hall_input = OpenHallInput();
     if (hall_input >= 0) {
         LOG(INFO) << "Opened hall input device";
+    }
+
+    int pen_cap_input = OpenNamedInput("NVTCapacitivePen");
+    if (pen_cap_input >= 0) {
+        LOG(INFO) << "Opened capacitive pen input device";
+    }
+
+    int pen_bt_input = OpenNamedInput("moto pen pro");
+    if (pen_bt_input >= 0) {
+        LOG(INFO) << "Opened bluetooth pen input device";
     }
 
     int uinput = open("/dev/uinput", O_WRONLY | O_NONBLOCK | O_CLOEXEC);
@@ -448,22 +490,31 @@ int main() {
     int emitted_state = 0;
     int hall_retry = 0;
     int hardware_tick = 4;
+    int64_t last_down_ms = 0;
+    int64_t last_click_ms = 0;
 
     while (true) {
-        if (hall_input < 0 && hall_retry-- <= 0) {
-            hall_input = OpenHallInput();
+        if (hall_retry-- <= 0) {
             hall_retry = 4;
-            if (hall_input >= 0) {
-                LOG(INFO) << "Opened hall input device";
+            if (hall_input < 0) {
+                hall_input = OpenHallInput();
+            }
+            if (pen_cap_input < 0) {
+                pen_cap_input = OpenNamedInput("NVTCapacitivePen");
+            }
+            if (pen_bt_input < 0) {
+                pen_bt_input = OpenNamedInput("moto pen pro");
             }
         }
 
-        pollfd fds[1] = {
+        pollfd fds[3] = {
                 {hall_input, POLLIN, 0},
+                {pen_cap_input, POLLIN, 0},
+                {pen_bt_input, POLLIN, 0},
         };
-        int result = poll(fds, hall_input >= 0 ? 1 : 0, 250);
+        int result = poll(fds, 3, 250);
         if (result < 0 && errno != EINTR) {
-            PLOG(ERROR) << "Folio input poll failed";
+            PLOG(ERROR) << "Input poll failed";
             return 1;
         }
 
@@ -494,6 +545,37 @@ int main() {
             }
         }
 
+        for (int p = 1; p <= 2; ++p) {
+            if (fds[p].fd >= 0 && (fds[p].revents & POLLIN) != 0) {
+                input_event events[16];
+                ssize_t length;
+                while ((length = read(fds[p].fd, events, sizeof(events))) > 0) {
+                    size_t count = static_cast<size_t>(length) / sizeof(input_event);
+                    for (size_t index = 0; index < count; ++index) {
+                        if (events[index].type == EV_KEY) {
+                            timespec ts = {};
+                            clock_gettime(CLOCK_MONOTONIC, &ts);
+                            int64_t now_ms = static_cast<int64_t>(ts.tv_sec) * 1000 + ts.tv_nsec / 1000000;
+                            if (events[index].value == 1) {
+                                last_down_ms = now_ms;
+                            } else if (events[index].value == 0) {
+                                int64_t duration = now_ms - last_down_ms;
+                                if (duration < 600) {
+                                    if (events[index].code == BTN_STYLUS2 || (now_ms - last_click_ms < 380)) {
+                                        DispatchPenAction(uinput, 2);
+                                        last_click_ms = 0;
+                                    } else {
+                                        last_click_ms = now_ms;
+                                        DispatchPenAction(uinput, 1);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         bool new_folio_enabled =
                 android::base::GetBoolProperty(kFolioEnabledProperty, true);
 
@@ -515,7 +597,7 @@ int main() {
         bool new_high_report =
                 android::base::GetBoolProperty(kHighReportRateProperty, false);
         bool new_game_edge =
-                android::base::GetBoolProperty(kGameEdgeProperty, false);
+                android::base::GetBoolProperty(kGameEdgeProperty, true);
 
         if (++hardware_tick >= 4) {
             hardware_tick = 0;
@@ -528,7 +610,7 @@ int main() {
                     kGameEdgeAppliedProperty);
 
             std::string new_edge_grid =
-                    android::base::GetProperty(kEdgeGridZoneProperty, "");
+                    android::base::GetProperty(kEdgeGridZoneProperty, "16,16,500,500");
             if (!new_edge_grid.empty() && new_edge_grid != edge_grid_zone_applied) {
                 if (android::base::WriteStringToFile(new_edge_grid, kEdgeGridZonePath)) {
                     edge_grid_zone_applied = new_edge_grid;
