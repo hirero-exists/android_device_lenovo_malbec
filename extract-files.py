@@ -3,6 +3,7 @@
 # SPDX-FileCopyrightText: 2026 The LineageOS Project
 # SPDX-License-Identifier: Apache-2.0
 #
+import zipfile
 
 from extract_utils.fixups_blob import (
     BlobFixupCtx,
@@ -38,8 +39,25 @@ def lib_fixup_vendor_suffix(lib: str, partition: str, *args, **kwargs):
 
 lib_fixups: lib_fixups_user_type = {
     **lib_fixups,
-    # Add malbec-specific -V*-ndk vendor-suffix fixups here as needed.
 }
+
+
+def fix_zui_notes(ctx: BlobFixupCtx, file: File, file_path: str, *args, **kwargs):
+    with zipfile.ZipFile(file_path, 'r') as zin:
+        items = []
+        for info in zin.infolist():
+            data = zin.read(info.filename)
+            if info.filename == 'AndroidManifest.xml':
+                data = data.replace(
+                    b'\x08\x00\x00\x10\x23\x00\x00\x00',
+                    b'\x08\x00\x00\x10\x21\x00\x00\x00',
+                )
+            items.append((info, data))
+
+    with zipfile.ZipFile(file_path, 'w') as zout:
+        for info, data in items:
+            zout.writestr(info, data)
+
 
 blob_fixups: blob_fixups_user_type = {
     (
@@ -148,7 +166,9 @@ blob_fixups: blob_fixups_user_type = {
     'vendor/lib64/libaudioserviceexampleimpl.so': blob_fixup()
         .add_needed('libaudioutils_shim.so'),
 
-    # Add more malbec blob fixups here as the build surfaces them.
+    'product/app/ZuiNotes/ZuiNotes.apk': blob_fixup()
+        .call(fix_zui_notes)
+        .stripzip(),
 }  # fmt: skip
 
 module = ExtractUtilsModule(

@@ -73,7 +73,7 @@ public final class GamingOverlayService extends Service {
 
     private WindowManager mWindowManager;
     private WindowManager.LayoutParams mParams;
-    private LinearLayout mRootView;
+    private FrameLayout mRootView;
     private TextView mCpuText;
     private TextView mGpuText;
     private TextView mFpsRamText;
@@ -182,38 +182,54 @@ public final class GamingOverlayService extends Service {
         mParams.x = 0;
         mParams.y = dpToPx(12);
 
-        mRootView = new LinearLayout(this);
-        mRootView.setOrientation(LinearLayout.VERTICAL);
-        mRootView.setPadding(dpToPx(14), dpToPx(10), dpToPx(14), dpToPx(10));
+        mRootView = new FrameLayout(this);
+        mRootView.setClipChildren(false);
+        mRootView.setClipToPadding(false);
+
+        LinearLayout pill = new LinearLayout(this);
+        pill.setOrientation(LinearLayout.VERTICAL);
+        pill.setPadding(dpToPx(14), dpToPx(10), dpToPx(14), dpToPx(10));
 
         GradientDrawable bg = new GradientDrawable();
         bg.setColor(0xEE121214);
         bg.setCornerRadius(dpToPx(18));
         bg.setStroke(dpToPx(1), 0x33FFFFFF);
-        mRootView.setBackground(bg);
-        mRootView.setElevation(dpToPx(8));
+        pill.setBackground(bg);
+        pill.setElevation(dpToPx(8));
 
-        LinearLayout header = new LinearLayout(this);
-        header.setOrientation(LinearLayout.HORIZONTAL);
-        header.setGravity(Gravity.CENTER_VERTICAL);
-        header.setPadding(0, 0, 0, dpToPx(6));
+        FrameLayout.LayoutParams pillLp = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        pillLp.setMargins(0, dpToPx(8), dpToPx(8), 0);
+        pill.setLayoutParams(pillLp);
 
-        View dragHandle = new View(this);
-        GradientDrawable handleBg = new GradientDrawable();
-        handleBg.setColor(0x4DFFFFFF);
-        handleBg.setCornerRadius(dpToPx(3));
-        dragHandle.setBackground(handleBg);
-        LinearLayout.LayoutParams handleLp = new LinearLayout.LayoutParams(0, dpToPx(4), 1.0f);
-        handleLp.setMargins(0, 0, dpToPx(8), 0);
-        header.addView(dragHandle, handleLp);
+        LinearLayout statsBox = new LinearLayout(this);
+        statsBox.setOrientation(LinearLayout.VERTICAL);
+
+        mCpuText = createMetricRow();
+        statsBox.addView(mCpuText);
+
+        mGpuText = createMetricRow();
+        statsBox.addView(mGpuText);
+
+        mFpsRamText = createMetricRow();
+        statsBox.addView(mFpsRamText);
+
+        mPowerText = createMetricRow();
+        statsBox.addView(mPowerText);
+
+        pill.addView(statsBox);
+        mRootView.addView(pill);
 
         FrameLayout closeBtn = new FrameLayout(this);
         GradientDrawable closeBg = new GradientDrawable();
         closeBg.setShape(GradientDrawable.OVAL);
-        closeBg.setColor(0x33FFFFFF);
+        closeBg.setColor(0xEE2A2A2E);
+        closeBg.setStroke(dpToPx(1), 0x4DFFFFFF);
         closeBtn.setBackground(closeBg);
+        closeBtn.setElevation(dpToPx(10));
         int btnSize = dpToPx(24);
-        LinearLayout.LayoutParams closeLp = new LinearLayout.LayoutParams(btnSize, btnSize);
+        FrameLayout.LayoutParams closeLp = new FrameLayout.LayoutParams(btnSize, btnSize);
+        closeLp.gravity = Gravity.TOP | Gravity.END;
         closeBtn.setLayoutParams(closeLp);
 
         TextView closeIcon = new TextView(this);
@@ -231,25 +247,7 @@ public final class GamingOverlayService extends Service {
             }
             stopOverlay(GamingOverlayService.this);
         });
-        header.addView(closeBtn);
-        mRootView.addView(header);
-
-        LinearLayout statsBox = new LinearLayout(this);
-        statsBox.setOrientation(LinearLayout.VERTICAL);
-
-        mCpuText = createMetricRow();
-        statsBox.addView(mCpuText);
-
-        mGpuText = createMetricRow();
-        statsBox.addView(mGpuText);
-
-        mFpsRamText = createMetricRow();
-        statsBox.addView(mFpsRamText);
-
-        mPowerText = createMetricRow();
-        statsBox.addView(mPowerText);
-
-        mRootView.addView(statsBox);
+        mRootView.addView(closeBtn);
 
         final int touchSlop = ViewConfiguration.get(this).getScaledTouchSlop();
         final Rect closeHitRect = new Rect();

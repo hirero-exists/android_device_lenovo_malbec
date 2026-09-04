@@ -962,4 +962,6 @@
         <item>@*android:string/status_bar_battery</item>
         <item>@*android:string/status_bar_sensors_off</item>
     </string-array>
+    <bool name="config_isDesktopModeSupported">true</bool>
+    <bool name="config_canInternalDisplayHostDesktops">true</bool>
 </resources>
