@@ -11,11 +11,13 @@
 
 package com.lenovo.parts;
 
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.Settings;
 import android.widget.Toast;
 
 import androidx.preference.ListPreference;
@@ -35,7 +37,6 @@ public final class LenovoPartsFragment extends SettingsBasePreferenceFragment
     private static final String KEY_PEN_LONG_ACTION = "pen_long_action";
     private static final String KEY_REFRESH_RATE = "refresh_rate";
     private static final String KEY_HIGH_REPORT_RATE = "high_report_rate";
-    private static final String KEY_GAME_EDGE = "game_edge";
     private static final String KEY_GAMING_BYPASS = "gaming_bypass";
     private static final String KEY_GAMING_OVERLAY = "gaming_overlay";
     private static final String KEY_GAMING_OVERLAY_SETTINGS = "gaming_overlay_settings";
@@ -58,7 +59,6 @@ public final class LenovoPartsFragment extends SettingsBasePreferenceFragment
         setupPreference(KEY_PEN_LONG_ACTION);
         setupPreference(KEY_REFRESH_RATE);
         setupPreference(KEY_HIGH_REPORT_RATE);
-        setupPreference(KEY_GAME_EDGE);
         setupPreference(KEY_GAMING_BYPASS);
         setupPreference(KEY_GAMING_OVERLAY);
         setupPreference(KEY_GAMING_OVERLAY_SETTINGS);
@@ -126,11 +126,6 @@ public final class LenovoPartsFragment extends SettingsBasePreferenceFragment
         TwoStatePreference highReport = findPreference(KEY_HIGH_REPORT_RATE);
         if (highReport != null) {
             highReport.setChecked(DisplayTouchMode.isHighReportRateEnabled());
-        }
-
-        TwoStatePreference gameEdge = findPreference(KEY_GAME_EDGE);
-        if (gameEdge != null) {
-            gameEdge.setChecked(DisplayTouchMode.isGameEdgeEnabled());
         }
 
         TwoStatePreference bypass = findPreference(KEY_GAMING_BYPASS);
@@ -255,13 +250,39 @@ public final class LenovoPartsFragment extends SettingsBasePreferenceFragment
             int rate = Integer.parseInt((String) newValue);
             return DisplayTouchMode.setRefreshRate(context.getContentResolver(), rate);
         } else if (KEY_HIGH_REPORT_RATE.equals(key)) {
-            boolean success = DisplayTouchMode.setHighReportRateEnabled((Boolean) newValue);
-            if (success) {
-                mHandler.postDelayed(this::refreshPreferences, 1200);
+            boolean enable = (Boolean) newValue;
+            if (!enable) {
+                boolean success = DisplayTouchMode.setHighReportRateEnabled(false);
+                if (success) {
+                    mHandler.postDelayed(this::refreshPreferences, 1200);
+                }
+                return success;
             }
-            return success;
-        } else if (KEY_GAME_EDGE.equals(key)) {
-            boolean success = DisplayTouchMode.setGameEdgeEnabled((Boolean) newValue);
+            float peak = Settings.System.getFloat(context.getContentResolver(),
+                    Settings.System.PEAK_REFRESH_RATE, 144.0f);
+            int currentRate = DisplayTouchMode.getRefreshRate(context.getContentResolver());
+            if (currentRate == 144 || peak > 120.0f) {
+                new AlertDialog.Builder(context)
+                        .setTitle(R.string.high_report_rate_dialog_title)
+                        .setMessage(R.string.high_report_rate_dialog_message)
+                        .setPositiveButton(R.string.high_report_rate_option_force_120, (d, w) -> {
+                            DisplayTouchMode.setRefreshRate(context.getContentResolver(), 120);
+                            DisplayTouchMode.setHighReportRateEnabled(true);
+                            mHandler.postDelayed(this::refreshPreferences, 1200);
+                        })
+                        .setNeutralButton(R.string.high_report_rate_option_dynamic_120, (d, w) -> {
+                            Settings.System.putFloat(context.getContentResolver(),
+                                    Settings.System.MIN_REFRESH_RATE, 60.0f);
+                            Settings.System.putFloat(context.getContentResolver(),
+                                    Settings.System.PEAK_REFRESH_RATE, 120.0f);
+                            DisplayTouchMode.setHighReportRateEnabled(true);
+                            mHandler.postDelayed(this::refreshPreferences, 1200);
+                        })
+                        .setNegativeButton(android.R.string.cancel, null)
+                        .show();
+                return false;
+            }
+            boolean success = DisplayTouchMode.setHighReportRateEnabled(true);
             if (success) {
                 mHandler.postDelayed(this::refreshPreferences, 1200);
             }

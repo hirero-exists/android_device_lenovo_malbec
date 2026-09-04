@@ -345,7 +345,7 @@ public final class FloatingToolbarService extends Service {
 
     private void createMenuView() {
         mMenuParams = new WindowManager.LayoutParams(
-                dpToPx(230),
+                dpToPx(220),
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
@@ -357,11 +357,11 @@ public final class FloatingToolbarService extends Service {
 
         mMenuView = new LinearLayout(this);
         mMenuView.setOrientation(LinearLayout.VERTICAL);
-        int pad = dpToPx(10);
+        int pad = dpToPx(8);
         mMenuView.setPadding(pad, pad, pad, pad);
 
         GradientDrawable bg = new GradientDrawable();
-        bg.setCornerRadius(dpToPx(24));
+        bg.setCornerRadius(dpToPx(18));
         bg.setColor(applyAlpha(mColorSurface, 200));
         bg.setStroke(dpToPx(1), applyAlpha(mColorAccent, 90));
         mMenuView.setBackground(bg);
@@ -411,15 +411,18 @@ public final class FloatingToolbarService extends Service {
         item.setTextColor(mColorText);
         item.setTextSize(13f);
         item.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-        item.setPadding(dpToPx(16), dpToPx(11), dpToPx(16), dpToPx(11));
+        item.setGravity(Gravity.CENTER_VERTICAL);
+        item.setPadding(dpToPx(16), 0, dpToPx(16), 0);
+        item.setMinHeight(dpToPx(42));
+        item.setMinimumHeight(dpToPx(42));
 
         GradientDrawable itemBg = new GradientDrawable();
         itemBg.setColor(applyAlpha(mColorSurface, 120));
-        itemBg.setCornerRadius(dpToPx(14));
+        itemBg.setCornerRadius(dpToPx(12));
         item.setBackground(itemBg);
 
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                ViewGroup.LayoutParams.MATCH_PARENT, dpToPx(42));
         lp.setMargins(0, dpToPx(2), 0, dpToPx(2));
         item.setLayoutParams(lp);
 
@@ -552,11 +555,12 @@ public final class FloatingToolbarService extends Service {
     }
 
     private void toggleDesktopMode() {
+        boolean enabled = Settings.Global.getInt(
+                getContentResolver(), "override_desktop_mode_features", 0) == 1;
         Settings.Global.putInt(
-                getContentResolver(), "override_desktop_mode_features", 1);
-        PenShortcuts.injectKeyWithMeta(this, KeyEvent.KEYCODE_DPAD_DOWN,
-                KeyEvent.META_META_ON | KeyEvent.META_CTRL_ON);
-        Toast.makeText(this, R.string.desktop_mode_enabled, Toast.LENGTH_SHORT).show();
+                getContentResolver(), "override_desktop_mode_features", enabled ? 0 : 1);
+        Toast.makeText(this, enabled ? R.string.desktop_mode_disabled : R.string.desktop_mode_enabled,
+                Toast.LENGTH_SHORT).show();
     }
 
     private void restoreBubblePosition() {

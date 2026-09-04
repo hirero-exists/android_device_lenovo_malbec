@@ -4,8 +4,8 @@ persist.sys.gaming.soc_power_mode u:object_r:malbec_parts_prop:s0 exact int
 persist.sys.pen.enabled u:object_r:malbec_parts_prop:s0 exact bool
 persist.sys.pen.wakeup u:object_r:malbec_parts_prop:s0 exact bool
 persist.sys.pen.toolbar u:object_r:malbec_parts_prop:s0 exact bool
-persist.sys.touch.edge_grid_zone u:object_r:malbec_parts_prop:s0 exact string
-persist.sys.touch.game_edge u:object_r:malbec_parts_prop:s0 exact bool
+persist.sys.pen.gestures_disabled u:object_r:malbec_parts_prop:s0 exact bool
+persist.sys.pen.gestures_fingers_only u:object_r:malbec_parts_prop:s0 exact bool
 persist.sys.touch.high_report_rate u:object_r:malbec_parts_prop:s0 exact bool
 sys.malbec.bypass.active u:object_r:malbec_parts_prop:s0 exact bool
 sys.malbec.bypass.heartbeat u:object_r:malbec_parts_prop:s0 exact int
@@ -36,6 +36,6 @@ sys.malbec.power.usb_online u:object_r:malbec_parts_prop:s0 exact bool
 sys.malbec.power.usb_type u:object_r:malbec_parts_prop:s0 exact string
 sys.malbec.power.usb_voltage_max_uv u:object_r:malbec_parts_prop:s0 exact int
 sys.malbec.power.usb_voltage_uv u:object_r:malbec_parts_prop:s0 exact int
-sys.malbec.touch.edge_grid_zone_applied u:object_r:malbec_parts_prop:s0 exact bool
-sys.malbec.touch.game_edge_applied u:object_r:malbec_parts_prop:s0 exact bool
+sys.malbec.display.rotation u:object_r:malbec_parts_prop:s0 exact int
+sys.malbec.pen.button_action u:object_r:malbec_parts_prop:s0 exact int
 sys.malbec.touch.high_report_rate_applied u:object_r:malbec_parts_prop:s0 exact bool

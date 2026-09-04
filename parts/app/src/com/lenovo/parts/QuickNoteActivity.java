@@ -1,14 +1,3 @@
-/*
- * Copyright (C) 2026 hirero-exists <hirerokazuoa@gmail.com>
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- *
- * Compatible with GNU General Public License, Version 2.0 (GPLv2) or later
- * pursuant to Section 3.3 of the Mozilla Public License, v. 2.0.
- */
-
 package com.lenovo.parts;
 
 import android.app.Activity;
@@ -17,19 +6,19 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
+import android.graphics.Rect;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.util.AttributeSet;
+import android.util.Log;
 import android.util.TypedValue;
+import android.view.Display;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
@@ -37,14 +26,12 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowInsets;
 import android.view.WindowManager;
-import android.widget.Button;
+import android.view.WindowManagerGlobal;
 import android.widget.FrameLayout;
-import android.widget.HorizontalScrollView;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 import android.widget.Toast;
+import android.window.ScreenCaptureInternal;
 
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
@@ -54,15 +41,18 @@ import java.util.List;
 import java.util.Locale;
 
 public final class QuickNoteActivity extends Activity {
+    private static final String TAG = "QuickNoteActivity";
+
     private static final int TOOL_PEN = 0;
     private static final int TOOL_HIGHLIGHTER = 1;
     private static final int TOOL_ERASER = 2;
 
     private NoteCanvas mCanvasView;
     private int mCurrentTool = TOOL_PEN;
-    private Button mBtnPen;
-    private Button mBtnHighlighter;
-    private Button mBtnEraser;
+    private ImageView mBtnPen;
+    private ImageView mBtnHighlighter;
+    private ImageView mBtnEraser;
+    private ImageView mBtnBg;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,12 +67,15 @@ public final class QuickNoteActivity extends Activity {
             window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
         }
 
+        Bitmap screenCapture = captureScreen();
+
         FrameLayout root = new FrameLayout(this);
         root.setLayoutParams(new ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         root.setBackgroundColor(0x00000000);
 
         mCanvasView = new NoteCanvas(this);
+        mCanvasView.setBackgroundBitmap(screenCapture);
         FrameLayout.LayoutParams canvasLp = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
         mCanvasView.setLayoutParams(canvasLp);
@@ -90,13 +83,13 @@ public final class QuickNoteActivity extends Activity {
 
         LinearLayout topBar = new LinearLayout(this);
         FrameLayout.LayoutParams barLp = new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, dp(50));
+                ViewGroup.LayoutParams.WRAP_CONTENT, dp(44));
         barLp.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
         barLp.topMargin = dp(40);
         topBar.setLayoutParams(barLp);
         topBar.setOrientation(LinearLayout.HORIZONTAL);
         topBar.setGravity(Gravity.CENTER_VERTICAL);
-        topBar.setPadding(dp(16), 0, dp(16), 0);
+        topBar.setPadding(dp(8), dp(4), dp(8), dp(4));
 
         root.setOnApplyWindowInsetsListener((v, insets) -> {
             int topInset = insets.getInsets(WindowInsets.Type.statusBars() | WindowInsets.Type.displayCutout()).top;
@@ -107,34 +100,44 @@ public final class QuickNoteActivity extends Activity {
 
         GradientDrawable barBg = new GradientDrawable();
         barBg.setShape(GradientDrawable.RECTANGLE);
-        barBg.setCornerRadius(dp(25));
+        barBg.setCornerRadius(dp(22));
         barBg.setColor(0xE61E1E22);
         barBg.setStroke(dp(1), 0x33FFFFFF);
         topBar.setBackground(barBg);
         topBar.setElevation(dp(12));
 
-        TextView title = new TextView(this);
-        title.setText("Quick Note");
-        title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
-        title.setTextColor(0xFFFFFFFF);
-        title.setTypeface(null, android.graphics.Typeface.BOLD);
-        LinearLayout.LayoutParams titleLp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        titleLp.setMarginEnd(dp(12));
-        topBar.addView(title, titleLp);
+        mBtnPen = createToolChip(R.drawable.ic_tool_pen, true, () -> selectTool(TOOL_PEN));
+        mBtnHighlighter = createToolChip(R.drawable.ic_tool_highlighter, false, () -> selectTool(TOOL_HIGHLIGHTER));
+        mBtnEraser = createToolChip(R.drawable.ic_tool_eraser, false, () -> selectTool(TOOL_ERASER));
 
-        mBtnPen = createToolButton("Pen", true, () -> selectTool(TOOL_PEN));
-        mBtnHighlighter = createToolButton("Highlighter", false, () -> selectTool(TOOL_HIGHLIGHTER));
-        mBtnEraser = createToolButton("Eraser", false, () -> selectTool(TOOL_ERASER));
+        mBtnBg = createActionChip(R.drawable.ic_tool_bg, () -> {
+            boolean showingBg = mCanvasView.toggleBackground();
+            mBtnBg.setAlpha(showingBg ? 1.0f : 0.45f);
+            Toast.makeText(this, showingBg ? R.string.quick_note_background_screen : R.string.quick_note_background_canvas, Toast.LENGTH_SHORT).show();
+        });
+        if (screenCapture == null) {
+            mBtnBg.setVisibility(View.GONE);
+        }
 
-        Button btnClear = createActionButton("Clear", 0xFFAAAAAA, () -> mCanvasView.clear());
-        Button btnSave = createActionButton("Save", getColor(android.R.color.system_accent1_300), this::saveNote);
-        Button btnClose = createActionButton("✕", 0xFFFFFFFF, this::finish);
+        ImageView btnUndo = createActionChip(R.drawable.ic_tool_undo, () -> mCanvasView.undo());
+        ImageView btnClear = createActionChip(R.drawable.ic_tool_clear, () -> mCanvasView.clear());
+        ImageView btnSave = createActionChip(R.drawable.ic_tool_save, this::saveNote);
+        ImageView btnClose = createActionChip(R.drawable.ic_tool_close, this::finish);
 
         topBar.addView(mBtnPen);
         topBar.addView(mBtnHighlighter);
         topBar.addView(mBtnEraser);
+
+        View divider1 = createDivider();
+        topBar.addView(divider1);
+
+        topBar.addView(mBtnBg);
+        topBar.addView(btnUndo);
         topBar.addView(btnClear);
+
+        View divider2 = createDivider();
+        topBar.addView(divider2);
+
         topBar.addView(btnSave);
         topBar.addView(btnClose);
 
@@ -142,55 +145,87 @@ public final class QuickNoteActivity extends Activity {
         setContentView(root);
     }
 
-    private Button createToolButton(String label, boolean selected, Runnable onClick) {
-        Button btn = new Button(this, null, android.R.attr.borderlessButtonStyle);
-        btn.setText(label);
-        btn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
-        btn.setAllCaps(false);
-        int padH = dp(12);
-        btn.setPadding(padH, 0, padH, 0);
-        btn.setMinHeight(dp(40));
-        btn.setMinimumHeight(dp(40));
-        updateToolButtonState(btn, selected);
-        btn.setOnClickListener(v -> onClick.run());
-        return btn;
+    private View createDivider() {
+        View v = new View(this);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(1), dp(20));
+        lp.setMargins(dp(6), 0, dp(6), 0);
+        v.setLayoutParams(lp);
+        v.setBackgroundColor(0x33FFFFFF);
+        return v;
     }
 
-    private void updateToolButtonState(Button btn, boolean selected) {
+    private ImageView createToolChip(int resId, boolean selected, Runnable onClick) {
+        ImageView iv = new ImageView(this);
+        int size = dp(36);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(size, size);
+        lp.setMargins(dp(2), 0, dp(2), 0);
+        iv.setLayoutParams(lp);
+        iv.setImageResource(resId);
+        int pad = dp(8);
+        iv.setPadding(pad, pad, pad, pad);
+        updateToolChipState(iv, selected);
+        iv.setOnClickListener(v -> onClick.run());
+        return iv;
+    }
+
+    private void updateToolChipState(ImageView iv, boolean selected) {
         GradientDrawable bg = new GradientDrawable();
         bg.setShape(GradientDrawable.RECTANGLE);
-        bg.setCornerRadius(dp(12));
+        bg.setCornerRadius(dp(18));
         if (selected) {
             bg.setColor(getColor(android.R.color.system_accent1_600));
-            btn.setTextColor(0xFFFFFFFF);
+            iv.setColorFilter(0xFFFFFFFF);
         } else {
             bg.setColor(0x00000000);
-            btn.setTextColor(0xFFAAAAAA);
+            iv.setColorFilter(0xFFAAAAAA);
         }
-        btn.setBackground(bg);
+        iv.setBackground(bg);
     }
 
-    private Button createActionButton(String label, int textColor, Runnable onClick) {
-        Button btn = new Button(this, null, android.R.attr.borderlessButtonStyle);
-        btn.setText(label);
-        btn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
-        btn.setAllCaps(false);
-        btn.setTextColor(textColor);
-        btn.setTypeface(null, android.graphics.Typeface.BOLD);
-        int padH = dp(12);
-        btn.setPadding(padH, 0, padH, 0);
-        btn.setMinHeight(dp(40));
-        btn.setMinimumHeight(dp(40));
-        btn.setOnClickListener(v -> onClick.run());
-        return btn;
+    private ImageView createActionChip(int resId, Runnable onClick) {
+        ImageView iv = new ImageView(this);
+        int size = dp(36);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(size, size);
+        lp.setMargins(dp(2), 0, dp(2), 0);
+        iv.setLayoutParams(lp);
+        iv.setImageResource(resId);
+        iv.setColorFilter(0xFFE0E0E0);
+        int pad = dp(8);
+        iv.setPadding(pad, pad, pad, pad);
+        GradientDrawable bg = new GradientDrawable();
+        bg.setShape(GradientDrawable.RECTANGLE);
+        bg.setCornerRadius(dp(18));
+        bg.setColor(0x00000000);
+        iv.setBackground(bg);
+        iv.setOnClickListener(v -> onClick.run());
+        return iv;
     }
 
     private void selectTool(int tool) {
         mCurrentTool = tool;
-        updateToolButtonState(mBtnPen, tool == TOOL_PEN);
-        updateToolButtonState(mBtnHighlighter, tool == TOOL_HIGHLIGHTER);
-        updateToolButtonState(mBtnEraser, tool == TOOL_ERASER);
+        updateToolChipState(mBtnPen, tool == TOOL_PEN);
+        updateToolChipState(mBtnHighlighter, tool == TOOL_HIGHLIGHTER);
+        updateToolChipState(mBtnEraser, tool == TOOL_ERASER);
         mCanvasView.setTool(tool);
+    }
+
+    private Bitmap captureScreen() {
+        try {
+            ScreenCaptureInternal.SynchronousScreenCaptureListener syncScreenCapture =
+                    ScreenCaptureInternal.createSyncCaptureListener();
+            WindowManagerGlobal.getWindowManagerService().captureDisplay(
+                    Display.DEFAULT_DISPLAY, null, syncScreenCapture);
+            ScreenCaptureInternal.ScreenshotHardwareBuffer buffer = syncScreenCapture.getBuffer();
+            if (buffer != null) {
+                Bitmap b = buffer.asBitmap();
+                if (b != null) {
+                    return b.copy(Bitmap.Config.ARGB_8888, false);
+                }
+            }
+        } catch (Throwable t) {
+            Log.e(TAG, "captureScreen error", t);
+        }
+        return null;
     }
 
     private void saveNote() {
@@ -214,10 +249,10 @@ public final class QuickNoteActivity extends Activity {
         if (uri != null) {
             try (OutputStream out = resolver.openOutputStream(uri)) {
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
-                Toast.makeText(this, "Note saved to Pictures/QuickNotes", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.quick_note_saved, Toast.LENGTH_SHORT).show();
                 finish();
             } catch (Exception e) {
-                Toast.makeText(this, "Failed to save note", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.quick_note_save_error, Toast.LENGTH_SHORT).show();
             }
         }
     }
@@ -236,6 +271,8 @@ public final class QuickNoteActivity extends Activity {
         private final List<Stroke> mStrokes = new ArrayList<>();
         private Stroke mCurrentStroke;
         private int mTool = TOOL_PEN;
+        private Bitmap mBackgroundBitmap;
+        private boolean mShowBackground = true;
 
         private static class Stroke {
             Path path = new Path();
@@ -250,8 +287,30 @@ public final class QuickNoteActivity extends Activity {
             setLayerType(View.LAYER_TYPE_HARDWARE, null);
         }
 
+        void setBackgroundBitmap(Bitmap bitmap) {
+            mBackgroundBitmap = bitmap;
+            mShowBackground = bitmap != null;
+            invalidate();
+        }
+
+        boolean toggleBackground() {
+            if (mBackgroundBitmap == null) {
+                return false;
+            }
+            mShowBackground = !mShowBackground;
+            invalidate();
+            return mShowBackground;
+        }
+
         void setTool(int tool) {
             mTool = tool;
+        }
+
+        void undo() {
+            if (!mStrokes.isEmpty()) {
+                mStrokes.remove(mStrokes.size() - 1);
+                invalidate();
+            }
         }
 
         void clear() {
@@ -263,6 +322,22 @@ public final class QuickNoteActivity extends Activity {
         @Override
         protected void onDraw(Canvas canvas) {
             super.onDraw(canvas);
+
+            int width = getWidth();
+            int height = getHeight();
+            if (width <= 0 || height <= 0) {
+                return;
+            }
+
+            if (mBackgroundBitmap != null && mShowBackground) {
+                Rect src = new Rect(0, 0, mBackgroundBitmap.getWidth(), mBackgroundBitmap.getHeight());
+                Rect dst = new Rect(0, 0, width, height);
+                canvas.drawBitmap(mBackgroundBitmap, src, dst, null);
+            } else {
+                canvas.drawColor(0xE6141416);
+            }
+
+            int layer = canvas.saveLayer(0, 0, width, height, null);
 
             Paint paint = new Paint();
             paint.setAntiAlias(true);
@@ -276,6 +351,8 @@ public final class QuickNoteActivity extends Activity {
             if (mCurrentStroke != null) {
                 drawStroke(canvas, paint, mCurrentStroke);
             }
+
+            canvas.restoreToCount(layer);
         }
 
         private void drawStroke(Canvas canvas, Paint paint, Stroke s) {
@@ -337,10 +414,35 @@ public final class QuickNoteActivity extends Activity {
         }
 
         Bitmap exportBitmap() {
-            if (getWidth() <= 0 || getHeight() <= 0) return null;
-            Bitmap bitmap = Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.ARGB_8888);
+            int width = getWidth();
+            int height = getHeight();
+            if (width <= 0 || height <= 0) {
+                return null;
+            }
+            Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
             Canvas canvas = new Canvas(bitmap);
-            draw(canvas);
+
+            if (mBackgroundBitmap != null && mShowBackground) {
+                Rect src = new Rect(0, 0, mBackgroundBitmap.getWidth(), mBackgroundBitmap.getHeight());
+                Rect dst = new Rect(0, 0, width, height);
+                canvas.drawBitmap(mBackgroundBitmap, src, dst, null);
+            } else {
+                canvas.drawColor(0xFF141416);
+            }
+
+            int layer = canvas.saveLayer(0, 0, width, height, null);
+
+            Paint paint = new Paint();
+            paint.setAntiAlias(true);
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeCap(Paint.Cap.ROUND);
+            paint.setStrokeJoin(Paint.Join.ROUND);
+
+            for (Stroke s : mStrokes) {
+                drawStroke(canvas, paint, s);
+            }
+
+            canvas.restoreToCount(layer);
             return bitmap;
         }
     }
