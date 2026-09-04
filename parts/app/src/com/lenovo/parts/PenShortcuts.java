@@ -35,6 +35,7 @@ final class PenShortcuts {
     static final int ACTION_SCREENSHOT = 2;
     static final int ACTION_RECENTS = 3;
     static final int ACTION_HOME = 4;
+    static final int ACTION_TOOLBAR = 6;
 
     private static final String TAG = "PenShortcuts";
 
@@ -66,6 +67,9 @@ final class PenShortcuts {
                 break;
             case ACTION_HOME:
                 injectKey(context, KeyEvent.KEYCODE_HOME);
+                break;
+            case ACTION_TOOLBAR:
+                FloatingToolbarService.toggleMenu(context);
                 break;
             default:
                 break;
@@ -169,6 +173,12 @@ final class PenShortcuts {
                 break;
             case ACTION_HOME:
                 builder.setKeyGestureType(KeyGestureEvent.KEY_GESTURE_TYPE_HOME);
+                break;
+            case ACTION_TOOLBAR:
+                builder.setKeyGestureType(KeyGestureEvent.KEY_GESTURE_TYPE_LAUNCH_APPLICATION)
+                        .setAppLaunchData(AppLaunchData.createLaunchDataForComponent(
+                                context.getPackageName(),
+                                ToolbarTrampolineActivity.class.getName()));
                 break;
             default:
                 return;

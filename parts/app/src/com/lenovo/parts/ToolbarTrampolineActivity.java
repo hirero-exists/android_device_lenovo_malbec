@@ -18,7 +18,7 @@ public final class ToolbarTrampolineActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        FloatingToolbarService.showToolbar(this);
+        FloatingToolbarService.toggleMenu(this);
         finish();
         overridePendingTransition(0, 0);
     }

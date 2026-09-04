@@ -36,20 +36,14 @@ namespace {
 constexpr char kFolioEnabledProperty[] = "persist.sys.folio.enabled";
 constexpr char kFolioHallStateProperty[] = "sys.malbec.folio.closed";
 constexpr char kPenEnabledProperty[] = "persist.sys.pen.enabled";
-constexpr char kPenWakeProperty[] = "persist.sys.pen.wakeup";
 constexpr char kHighReportRateProperty[] = "persist.sys.touch.high_report_rate";
-constexpr char kGameEdgeProperty[] = "persist.sys.touch.game_edge";
 constexpr char kHighReportRateAppliedProperty[] =
         "sys.malbec.touch.high_report_rate_applied";
-constexpr char kGameEdgeAppliedProperty[] = "sys.malbec.touch.game_edge_applied";
 constexpr char kBypassRequestProperty[] = "sys.malbec.bypass.requested";
 constexpr char kBypassHeartbeatProperty[] = "sys.malbec.bypass.heartbeat";
 constexpr char kBypassActiveProperty[] = "sys.malbec.bypass.active";
 constexpr char kBypassStateProperty[] = "sys.malbec.bypass.state";
 
-constexpr char kEdgeGridZoneProperty[] = "persist.sys.touch.edge_grid_zone";
-constexpr char kEdgeGridZoneAppliedProperty[] =
-        "sys.malbec.touch.edge_grid_zone_applied";
 constexpr char kPerfOverlayActiveProperty[] = "sys.malbec.perf.overlay_active";
 constexpr char kPerfCpuUsageProperty[] = "sys.malbec.perf.cpu_usage";
 constexpr char kPerfCpuFreqProperty[] = "sys.malbec.perf.cpu_freq_mhz";
@@ -67,9 +61,7 @@ constexpr char kFolioModePath[] = "/proc/folio_case_mode";
 constexpr char kPenModePath[] = "/proc/pen_type";
 constexpr char kPenWakePath[] = "/proc/pen_wakeup_mode";
 constexpr char kHighReportRatePath[] = "/proc/HighReportRate";
-constexpr char kGameEdgePath[] = "/proc/game_edge";
 constexpr char kGameModePath[] = "/proc/game_mode";
-constexpr char kEdgeGridZonePath[] = "/proc/edge_grid_zone";
 constexpr char kPanelDirectionPath[] = "/proc/panel_direction";
 constexpr char kDisplayRotationProperty[] = "sys.malbec.display.rotation";
 constexpr char kGpuLoadPath[] = "/sys/class/kgsl/kgsl-3d0/devfreq/gpu_load";
@@ -132,6 +124,8 @@ bool ConfigureUinput(int fd) {
     ioctl(fd, UI_SET_EVBIT, EV_KEY);
     ioctl(fd, UI_SET_KEYBIT, KEY_PLAYPAUSE);
     ioctl(fd, UI_SET_KEYBIT, KEY_SYSRQ);
+    ioctl(fd, UI_SET_KEYBIT, BTN_0);
+    ioctl(fd, UI_SET_KEYBIT, BTN_1);
 
     uinput_setup setup = {};
     setup.id.bustype = BUS_HOST;
@@ -170,10 +164,9 @@ bool EmitKey(int fd, int key_code) {
 void DispatchPenAction(int uinput_fd, int action) {
     android::base::SetProperty("sys.malbec.pen.button_action", std::to_string(action));
     if (action == 1) {
-        system("/system/bin/am broadcast -a com.lenovo.parts.PEN_BUTTON_ACTION --ei action 1 >/dev/null 2>&1 &");
+        EmitKey(uinput_fd, BTN_0);
     } else if (action == 2) {
-        EmitKey(uinput_fd, KEY_PLAYPAUSE);
-        system("/system/bin/am broadcast -a com.lenovo.parts.PEN_BUTTON_ACTION --ei action 2 >/dev/null 2>&1 &");
+        EmitKey(uinput_fd, BTN_1);
     }
 }
 
@@ -485,17 +478,14 @@ int main() {
     int pen_applied = -1;
     int pen_wakeup_applied = -1;
     int high_report_applied = -1;
-    int game_edge_applied = -1;
     int game_mode_applied = -1;
     int rotation_applied = -1;
-    std::string edge_grid_zone_applied;
     bool bypass_active = android::base::GetBoolProperty(kBypassActiveProperty, false);
 
     int input_state = -1;
     int emitted_state = 0;
     int hall_retry = 0;
     int hardware_tick = 4;
-    int64_t last_down_ms = 0;
     int64_t last_click_ms = 0;
 
     while (true) {
@@ -562,17 +552,12 @@ int main() {
                             clock_gettime(CLOCK_MONOTONIC, &ts);
                             int64_t now_ms = static_cast<int64_t>(ts.tv_sec) * 1000 + ts.tv_nsec / 1000000;
                             if (events[index].value == 1) {
-                                last_down_ms = now_ms;
-                            } else if (events[index].value == 0) {
-                                int64_t duration = now_ms - last_down_ms;
-                                if (duration < 600) {
-                                    if (events[index].code == BTN_STYLUS2 || (now_ms - last_click_ms < 380)) {
-                                        DispatchPenAction(uinput, 2);
-                                        last_click_ms = 0;
-                                    } else {
-                                        last_click_ms = now_ms;
-                                        DispatchPenAction(uinput, 1);
-                                    }
+                                if (events[index].code == BTN_STYLUS2 || (now_ms - last_click_ms < 380)) {
+                                    DispatchPenAction(uinput, 2);
+                                    last_click_ms = 0;
+                                } else {
+                                    last_click_ms = now_ms;
+                                    DispatchPenAction(uinput, 1);
                                 }
                             }
                         }
@@ -601,8 +586,6 @@ int main() {
         bool new_pen_enabled = android::base::GetBoolProperty(kPenEnabledProperty, true);
         bool new_high_report =
                 android::base::GetBoolProperty(kHighReportRateProperty, false);
-        bool new_game_edge =
-                android::base::GetBoolProperty(kGameEdgeProperty, true);
 
         if (++hardware_tick >= 4) {
             hardware_tick = 0;
@@ -611,10 +594,8 @@ int main() {
             ApplyMode(kPenWakePath, true, &pen_wakeup_applied, nullptr);
             ApplyMode(kHighReportRatePath, new_high_report, &high_report_applied,
                     kHighReportRateAppliedProperty);
-            ApplyMode(kGameModePath, new_game_edge || new_pen_enabled, &game_mode_applied,
+            ApplyMode(kGameModePath, new_pen_enabled, &game_mode_applied,
                     nullptr);
-            ApplyMode(kGameEdgePath, new_game_edge, &game_edge_applied,
-                    kGameEdgeAppliedProperty);
 
             int new_rotation = android::base::GetIntProperty(kDisplayRotationProperty, 0);
             if (new_rotation != rotation_applied) {
@@ -622,17 +603,6 @@ int main() {
                     rotation_applied = new_rotation;
                 }
             }
-
-            std::string target_edge_grid = new_game_edge
-                    ? (std::to_string(new_rotation + 1) + ",2,0,3200")
-                    : "0,0,0,0";
-            if (target_edge_grid != edge_grid_zone_applied) {
-                if (android::base::WriteStringToFile(target_edge_grid, kEdgeGridZonePath)) {
-                    edge_grid_zone_applied = target_edge_grid;
-                    android::base::SetProperty(kEdgeGridZoneAppliedProperty, new_game_edge ? "1" : "0");
-                }
-            }
-
 
             PublishPowerTelemetry();
             bool bypass_requested =

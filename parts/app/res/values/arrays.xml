@@ -19,6 +19,7 @@
         <item>Take screenshot</item>
         <item>Recent apps</item>
         <item>Home</item>
+        <item>Toggle pen toolbar</item>
     </string-array>
     <string-array name="pen_action_values">
         <item>0</item>
@@ -26,6 +27,7 @@
         <item>2</item>
         <item>3</item>
         <item>4</item>
+        <item>6</item>
     </string-array>
     <string-array name="refresh_rate_entries">
         <item>Highest refresh rate (144 Hz) (Pen disabled)</item>

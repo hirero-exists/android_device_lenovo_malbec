@@ -20,9 +20,13 @@
     <string name="refresh_rate_title">Refresh rate</string>
     <string name="refresh_rate_summary">Force refresh rate across all apps, overriding system display settings</string>
     <string name="high_report_rate_title">High touch sampling rate</string>
-    <string name="high_report_rate_summary">Boost the hardware touch scan rate. Motion-event test apps may still report the display delivery rate.</string>
-    <string name="game_edge_title">Edge rejection</string>
-    <string name="game_edge_summary">Prevent accidental touches near the screen edges with a tuned default rejection zone covering all four edges</string>
+    <string name="high_report_rate_summary">Boost the hardware touch scan rate to 360 Hz. Active at display refresh rates ≤120 Hz (inert at 144 Hz).</string>
+    <string name="high_report_rate_dialog_title">High touch sampling rate</string>
+    <string name="high_report_rate_dialog_message">High touch sampling rate (360 Hz) requires switching the display refresh rate to 120 Hz.</string>
+    <string name="high_report_rate_option_force_120">Force 120 Hz</string>
+    <string name="high_report_rate_option_dynamic_120">Dynamic (60-120 Hz)</string>
+    <string name="desktop_mode_title">Desktop mode</string>
+    <string name="pen_action_toolbar">Toggle pen toolbar</string>
     <string name="gaming_bypass_title">Bypass charging</string>
     <string name="gaming_bypass_summary">Stops battery charging while USB-PD remains online. WARNING: Powers tablet directly from connected charger without charging battery. Use at your own risk. Disconnecting the cable or turning this off restores normal charging.</string>
     <string name="gaming_bypass_connect_charger">Connect a USB-PD charger first</string>
@@ -90,6 +94,8 @@
     <string name="toolbar_desktop_mode">Desktop mode</string>
     <string name="desktop_mode_enabled">Desktop mode enabled</string>
     <string name="desktop_mode_disabled">Desktop mode disabled</string>
+    <string name="desktop_mode_on">On</string>
+    <string name="desktop_mode_off">Off</string>
     <string name="quick_note_background_canvas">Blank canvas</string>
     <string name="quick_note_background_screen">Screen background</string>
 </resources>

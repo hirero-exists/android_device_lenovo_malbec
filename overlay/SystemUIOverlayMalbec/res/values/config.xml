@@ -24,5 +24,6 @@
 
     <!-- FPSInfoService FPS node file path -->
     <string name="config_fpsInfoSysNode" translatable="false">/sys/class/drm/card0/card0-sde-crtc-0/measured_fps</string>
-
+    <string name="quick_settings_tiles_default" translatable="false">internet,bt,flashlight,dnd,alarm,airplane,controls,wallet,rotation,battery,cast,screenrecord,mictoggle,cameratoggle,custom(com.android.permissioncontroller/.permission.service.v33.SafetyCenterQsTileService),custom(com.lenovo.parts/.DesktopModeTile)</string>
+    <string name="quick_settings_tiles_new_default" translatable="false">internet,bt,dnd,cast,flashlight,airplane,rotation,wallet,alarm,controls,screenrecord,battery,custom(com.lenovo.parts/.DesktopModeTile)</string>
 </resources>
