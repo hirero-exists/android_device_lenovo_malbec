@@ -486,7 +486,6 @@ int main() {
     int emitted_state = 0;
     int hall_retry = 0;
     int hardware_tick = 4;
-    int64_t last_click_ms = 0;
 
     while (true) {
         if (hall_retry-- <= 0) {
@@ -547,18 +546,12 @@ int main() {
                 while ((length = read(fds[p].fd, events, sizeof(events))) > 0) {
                     size_t count = static_cast<size_t>(length) / sizeof(input_event);
                     for (size_t index = 0; index < count; ++index) {
-                        if (events[index].type == EV_KEY) {
-                            timespec ts = {};
-                            clock_gettime(CLOCK_MONOTONIC, &ts);
-                            int64_t now_ms = static_cast<int64_t>(ts.tv_sec) * 1000 + ts.tv_nsec / 1000000;
-                            if (events[index].value == 1) {
-                                if (events[index].code == BTN_STYLUS2 || (now_ms - last_click_ms < 380)) {
-                                    DispatchPenAction(uinput, 2);
-                                    last_click_ms = 0;
-                                } else {
-                                    last_click_ms = now_ms;
-                                    DispatchPenAction(uinput, 1);
-                                }
+                        if (events[index].type == EV_KEY && events[index].value == 1
+                                && android::base::GetBoolProperty(kPenEnabledProperty, true)) {
+                            if (events[index].code == BTN_STYLUS) {
+                                DispatchPenAction(uinput, 1);
+                            } else if (events[index].code == BTN_STYLUS2) {
+                                DispatchPenAction(uinput, 2);
                             }
                         }
                     }

@@ -53,11 +53,16 @@ final class PenGattService {
             UUID.fromString("00002a4d-0000-1000-8000-00805f9b34fb");
     private static final UUID CCCD_UUID =
             UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
+    private static final UUID REPORT_REFERENCE_UUID =
+            UUID.fromString("00002908-0000-1000-8000-00805f9b34fb");
 
     private final Context mContext;
     private final Handler mHandler = new Handler(Looper.getMainLooper());
     private final NotificationManager mNotificationManager;
     private final Queue<BluetoothGattDescriptor> mDescriptorWriteQueue = new LinkedList<>();
+    private final Queue<BluetoothGattDescriptor> mReportReferences = new LinkedList<>();
+    private final Set<Integer> mGestureReports = new java.util.HashSet<>();
+    private int mLastMask;
 
     private BluetoothGatt mGatt;
     private BluetoothDevice mTargetDevice;
@@ -103,20 +108,34 @@ final class PenGattService {
 
             synchronized (PenGattService.this) {
                 mDescriptorWriteQueue.clear();
+                mReportReferences.clear();
+                mGestureReports.clear();
+                mLastMask = 0;
                 mWritingDescriptor = false;
 
                 for (BluetoothGattCharacteristic characteristic : hidService.getCharacteristics()) {
                     if (REPORT_CHAR_UUID.equals(characteristic.getUuid())
-                            || (characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) != 0) {
-                        gatt.setCharacteristicNotification(characteristic, true);
-                        BluetoothGattDescriptor cccd = characteristic.getDescriptor(CCCD_UUID);
-                        if (cccd != null) {
-                            mDescriptorWriteQueue.add(cccd);
+                            && (characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) != 0) {
+                        BluetoothGattDescriptor reference = characteristic.getDescriptor(REPORT_REFERENCE_UUID);
+                        if (reference != null) {
+                            mReportReferences.add(reference);
                         }
                     }
                 }
-                processNextDescriptorWrite(gatt);
+                readNextReportReference(gatt);
             }
+        }
+
+        @Override
+        public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor,
+                int status, byte[] value) {
+            acceptReportReference(gatt, descriptor, status, value);
+        }
+
+        @Override
+        public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor,
+                int status) {
+            acceptReportReference(gatt, descriptor, status, descriptor.getValue());
         }
 
         @Override
@@ -138,15 +157,52 @@ final class PenGattService {
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt,
                 BluetoothGattCharacteristic characteristic) {
-            handleReportData(characteristic != null ? characteristic.getValue() : null);
+            acceptReport(gatt, characteristic, characteristic != null ? characteristic.getValue() : null);
         }
 
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt,
                 BluetoothGattCharacteristic characteristic, byte[] value) {
-            handleReportData(value);
+            acceptReport(gatt, characteristic, value);
         }
     };
+
+    private synchronized void readNextReportReference(BluetoothGatt gatt) {
+        while (!mReportReferences.isEmpty()) {
+            if (gatt.readDescriptor(mReportReferences.peek())) {
+                return;
+            }
+            mReportReferences.remove();
+        }
+        processNextDescriptorWrite(gatt);
+    }
+
+    private synchronized void acceptReportReference(BluetoothGatt gatt,
+            BluetoothGattDescriptor descriptor, int status, byte[] value) {
+        if (gatt != mGatt || descriptor != mReportReferences.peek()) {
+            return;
+        }
+        mReportReferences.remove();
+        if (status == BluetoothGatt.GATT_SUCCESS && value != null && value.length == 2
+                && value[0] == 2 && value[1] == 1) {
+            BluetoothGattCharacteristic characteristic = descriptor.getCharacteristic();
+            BluetoothGattDescriptor cccd = characteristic.getDescriptor(CCCD_UUID);
+            if (cccd != null && gatt.setCharacteristicNotification(characteristic, true)) {
+                mGestureReports.add(characteristic.getInstanceId());
+                mDescriptorWriteQueue.add(cccd);
+            }
+        }
+        readNextReportReference(gatt);
+    }
+
+    private synchronized void acceptReport(BluetoothGatt gatt,
+            BluetoothGattCharacteristic characteristic, byte[] value) {
+        if (gatt == mGatt && characteristic != null
+                && REPORT_CHAR_UUID.equals(characteristic.getUuid())
+                && mGestureReports.contains(characteristic.getInstanceId())) {
+            handleReportData(value);
+        }
+    }
 
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
         @Override
@@ -270,13 +326,20 @@ final class PenGattService {
             return;
         }
         int mask = 0;
-        if (data.length >= 2 && data[0] == 0x02) {
+        if (data.length == 2 && data[0] == 0x02) {
             mask = data[1] & 0xff;
         } else if (data.length == 1) {
             mask = data[0] & 0xff;
         } else {
-            mask = (data[0] & 0xff) | ((data[1] & 0xff) << 8);
+            return;
         }
+        if (mask != 0 && mask != 1 && mask != 2 && mask != 4 && mask != 8 && mask != 16) {
+            return;
+        }
+        if (mask == mLastMask) {
+            return;
+        }
+        mLastMask = mask;
         Log.i(TAG, "Received pen report raw data: " + bytesToHex(data) + " mask=" + mask);
         if (mask != 0) {
             int action = PenShortcuts.ACTION_NONE;
@@ -330,6 +393,9 @@ final class PenGattService {
         }
         mTargetDevice = null;
         mDescriptorWriteQueue.clear();
+        mReportReferences.clear();
+        mGestureReports.clear();
+        mLastMask = 0;
         mWritingDescriptor = false;
     }
 }

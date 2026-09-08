@@ -97,5 +97,5 @@
     <string name="desktop_mode_on">On</string>
     <string name="desktop_mode_off">Off</string>
     <string name="quick_note_background_canvas">Blank canvas</string>
-    <string name="quick_note_background_screen">Screen background</string>
+    <string name="quick_note_background_screen">Live screen</string>
 </resources>

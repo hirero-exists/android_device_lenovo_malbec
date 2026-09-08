@@ -1,37 +1,38 @@
 package com.lenovo.parts;
 
-import android.app.Activity;
+import android.app.Service;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
+import android.content.BroadcastReceiver;
+import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
-import android.graphics.Rect;
+import android.graphics.PixelFormat;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
-import android.os.Bundle;
+import android.os.IBinder;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.util.Log;
 import android.util.TypedValue;
-import android.view.Display;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
 import android.view.WindowInsets;
 import android.view.WindowManager;
-import android.view.WindowManagerGlobal;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
-import android.window.ScreenCaptureInternal;
 
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
@@ -40,8 +41,16 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
-public final class QuickNoteActivity extends Activity {
-    private static final String TAG = "QuickNoteActivity";
+public final class QuickNoteService extends Service {
+    private static final String CHANNEL_ID = "quick_note";
+    private WindowManager mWindowManager;
+    private FrameLayout mRoot;
+    private final BroadcastReceiver mScreenReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            stopSelf();
+        }
+    };
 
     private static final int TOOL_PEN = 0;
     private static final int TOOL_HIGHLIGHTER = 1;
@@ -55,27 +64,26 @@ public final class QuickNoteActivity extends Activity {
     private ImageView mBtnBg;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
-        Window window = getWindow();
-        if (window != null) {
-            window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-            window.setBackgroundDrawableResource(android.R.color.transparent);
-            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-            window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
-        }
-
-        Bitmap screenCapture = captureScreen();
+    public void onCreate() {
+        super.onCreate();
+        NotificationManager notifications = getSystemService(NotificationManager.class);
+        notifications.createNotificationChannel(new NotificationChannel(CHANNEL_ID,
+                getString(R.string.quick_note_title), NotificationManager.IMPORTANCE_LOW));
+        startForeground(1005, new Notification.Builder(this, CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_lenovo_parts)
+                .setContentTitle(getString(R.string.quick_note_title))
+                .setOngoing(true).build());
+        registerReceiver(mScreenReceiver, new IntentFilter(Intent.ACTION_SCREEN_OFF),
+                Context.RECEIVER_NOT_EXPORTED);
+        mWindowManager = getSystemService(WindowManager.class);
 
         FrameLayout root = new FrameLayout(this);
+        mRoot = root;
         root.setLayoutParams(new ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         root.setBackgroundColor(0x00000000);
 
         mCanvasView = new NoteCanvas(this);
-        mCanvasView.setBackgroundBitmap(screenCapture);
         FrameLayout.LayoutParams canvasLp = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
         mCanvasView.setLayoutParams(canvasLp);
@@ -115,14 +123,11 @@ public final class QuickNoteActivity extends Activity {
             mBtnBg.setAlpha(showingBg ? 1.0f : 0.45f);
             Toast.makeText(this, showingBg ? R.string.quick_note_background_screen : R.string.quick_note_background_canvas, Toast.LENGTH_SHORT).show();
         });
-        if (screenCapture == null) {
-            mBtnBg.setVisibility(View.GONE);
-        }
 
         ImageView btnUndo = createActionChip(R.drawable.ic_tool_undo, () -> mCanvasView.undo());
         ImageView btnClear = createActionChip(R.drawable.ic_tool_clear, () -> mCanvasView.clear());
         ImageView btnSave = createActionChip(R.drawable.ic_tool_save, this::saveNote);
-        ImageView btnClose = createActionChip(R.drawable.ic_tool_close, this::finish);
+        ImageView btnClose = createActionChip(R.drawable.ic_tool_close, this::stopSelf);
 
         topBar.addView(mBtnPen);
         topBar.addView(mBtnHighlighter);
@@ -142,7 +147,35 @@ public final class QuickNoteActivity extends Activity {
         topBar.addView(btnClose);
 
         root.addView(topBar);
-        setContentView(root);
+        WindowManager.LayoutParams params = new WindowManager.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                        | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                PixelFormat.TRANSLUCENT);
+        params.gravity = Gravity.TOP | Gravity.START;
+        params.setFitInsetsTypes(0);
+        params.setTitle("Quick Note live annotation");
+        mWindowManager.addView(root, params);
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        return START_NOT_STICKY;
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        return null;
+    }
+
+    @Override
+    public void onDestroy() {
+        unregisterReceiver(mScreenReceiver);
+        if (mRoot != null && mRoot.isAttachedToWindow()) {
+            mWindowManager.removeView(mRoot);
+        }
+        super.onDestroy();
     }
 
     private View createDivider() {
@@ -209,25 +242,6 @@ public final class QuickNoteActivity extends Activity {
         mCanvasView.setTool(tool);
     }
 
-    private Bitmap captureScreen() {
-        try {
-            ScreenCaptureInternal.SynchronousScreenCaptureListener syncScreenCapture =
-                    ScreenCaptureInternal.createSyncCaptureListener();
-            WindowManagerGlobal.getWindowManagerService().captureDisplay(
-                    Display.DEFAULT_DISPLAY, null, syncScreenCapture);
-            ScreenCaptureInternal.ScreenshotHardwareBuffer buffer = syncScreenCapture.getBuffer();
-            if (buffer != null) {
-                Bitmap b = buffer.asBitmap();
-                if (b != null) {
-                    return b.copy(Bitmap.Config.ARGB_8888, false);
-                }
-            }
-        } catch (Throwable t) {
-            Log.e(TAG, "captureScreen error", t);
-        }
-        return null;
-    }
-
     private void saveNote() {
         Bitmap bitmap = mCanvasView.exportBitmap();
         if (bitmap == null) {
@@ -250,7 +264,7 @@ public final class QuickNoteActivity extends Activity {
             try (OutputStream out = resolver.openOutputStream(uri)) {
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
                 Toast.makeText(this, R.string.quick_note_saved, Toast.LENGTH_SHORT).show();
-                finish();
+                stopSelf();
             } catch (Exception e) {
                 Toast.makeText(this, R.string.quick_note_save_error, Toast.LENGTH_SHORT).show();
             }
@@ -271,7 +285,6 @@ public final class QuickNoteActivity extends Activity {
         private final List<Stroke> mStrokes = new ArrayList<>();
         private Stroke mCurrentStroke;
         private int mTool = TOOL_PEN;
-        private Bitmap mBackgroundBitmap;
         private boolean mShowBackground = true;
 
         private static class Stroke {
@@ -287,16 +300,7 @@ public final class QuickNoteActivity extends Activity {
             setLayerType(View.LAYER_TYPE_HARDWARE, null);
         }
 
-        void setBackgroundBitmap(Bitmap bitmap) {
-            mBackgroundBitmap = bitmap;
-            mShowBackground = bitmap != null;
-            invalidate();
-        }
-
         boolean toggleBackground() {
-            if (mBackgroundBitmap == null) {
-                return false;
-            }
             mShowBackground = !mShowBackground;
             invalidate();
             return mShowBackground;
@@ -329,12 +333,8 @@ public final class QuickNoteActivity extends Activity {
                 return;
             }
 
-            if (mBackgroundBitmap != null && mShowBackground) {
-                Rect src = new Rect(0, 0, mBackgroundBitmap.getWidth(), mBackgroundBitmap.getHeight());
-                Rect dst = new Rect(0, 0, width, height);
-                canvas.drawBitmap(mBackgroundBitmap, src, dst, null);
-            } else {
-                canvas.drawColor(0xE6141416);
+            if (!mShowBackground) {
+                canvas.drawColor(0xFF141416);
             }
 
             int layer = canvas.saveLayer(0, 0, width, height, null);
@@ -422,11 +422,7 @@ public final class QuickNoteActivity extends Activity {
             Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
             Canvas canvas = new Canvas(bitmap);
 
-            if (mBackgroundBitmap != null && mShowBackground) {
-                Rect src = new Rect(0, 0, mBackgroundBitmap.getWidth(), mBackgroundBitmap.getHeight());
-                Rect dst = new Rect(0, 0, width, height);
-                canvas.drawBitmap(mBackgroundBitmap, src, dst, null);
-            } else {
+            if (!mShowBackground) {
                 canvas.drawColor(0xFF141416);
             }
 

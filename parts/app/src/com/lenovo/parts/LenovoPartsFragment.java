@@ -157,10 +157,6 @@ public final class LenovoPartsFragment extends SettingsBasePreferenceFragment
             dolbyIcon.setChecked(DolbyMode.isIconEnabled(context.getContentResolver()));
         }
 
-        TwoStatePreference overlayPref = findPreference(KEY_GAMING_OVERLAY);
-        if (overlayPref != null) {
-            overlayPref.setChecked(android.os.SystemProperties.getBoolean("persist.sys.gaming.overlay", false));
-        }
     }
 
     @Override
@@ -248,7 +244,9 @@ public final class LenovoPartsFragment extends SettingsBasePreferenceFragment
                     Integer.parseInt((String) newValue));
         } else if (KEY_REFRESH_RATE.equals(key)) {
             int rate = Integer.parseInt((String) newValue);
-            return DisplayTouchMode.setRefreshRate(context.getContentResolver(), rate);
+            boolean success = DisplayTouchMode.setRefreshRate(context.getContentResolver(), rate);
+            mHandler.postDelayed(this::refreshPreferences, 1200);
+            return success;
         } else if (KEY_HIGH_REPORT_RATE.equals(key)) {
             boolean enable = (Boolean) newValue;
             if (!enable) {
@@ -262,7 +260,7 @@ public final class LenovoPartsFragment extends SettingsBasePreferenceFragment
                     Settings.System.PEAK_REFRESH_RATE, 144.0f);
             int currentRate = DisplayTouchMode.getRefreshRate(context.getContentResolver());
             if (currentRate == 144 || peak > 120.0f) {
-                new AlertDialog.Builder(context)
+                AlertDialog dialog = new AlertDialog.Builder(context)
                         .setTitle(R.string.high_report_rate_dialog_title)
                         .setMessage(R.string.high_report_rate_dialog_message)
                         .setPositiveButton(R.string.high_report_rate_option_force_120, (d, w) -> {
@@ -280,6 +278,17 @@ public final class LenovoPartsFragment extends SettingsBasePreferenceFragment
                         })
                         .setNegativeButton(android.R.string.cancel, null)
                         .show();
+                android.widget.Button primary = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+                android.widget.Button dynamic = dialog.getButton(AlertDialog.BUTTON_NEUTRAL);
+                android.graphics.drawable.Drawable.ConstantState background =
+                        primary.getBackground().getConstantState();
+                if (background != null) {
+                    dynamic.setBackground(background.newDrawable(context.getResources()).mutate());
+                }
+                dynamic.setBackgroundTintList(primary.getBackgroundTintList());
+                dynamic.setTextColor(primary.getTextColors());
+                dynamic.setPadding(primary.getPaddingLeft(), primary.getPaddingTop(),
+                        primary.getPaddingRight(), primary.getPaddingBottom());
                 return false;
             }
             boolean success = DisplayTouchMode.setHighReportRateEnabled(true);
@@ -304,7 +313,6 @@ public final class LenovoPartsFragment extends SettingsBasePreferenceFragment
             return success;
         } else if (KEY_GAMING_OVERLAY.equals(key)) {
             boolean enabled = (Boolean) newValue;
-            android.os.SystemProperties.set("persist.sys.gaming.overlay", enabled ? "1" : "0");
             if (enabled) {
                 GamingOverlayService.startOverlay(context);
             } else {
