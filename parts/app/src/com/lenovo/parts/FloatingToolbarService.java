@@ -369,9 +369,7 @@ public final class FloatingToolbarService extends Service {
 
         addMenuItem(getString(R.string.quick_note_title), () -> {
             closeMenu();
-            Intent intent = new Intent(this, QuickNoteActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(intent);
+            startForegroundService(new Intent(this, QuickNoteService.class));
         });
         addMenuItem(getString(R.string.toolbar_screenshot), () -> {
             takeScreenshot();

@@ -37,6 +37,7 @@ public final class LenovoPartsApplication extends Application implements SensorE
     @Override
     public void onCreate() {
         super.onCreate();
+        SystemProperties.set("persist.sys.gaming.overlay", "0");
         PenShortcuts.apply(this);
         new PenGattService(this).start();
         DolbyStatusNotification.init(this);

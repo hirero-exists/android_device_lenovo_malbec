@@ -33,6 +33,9 @@ final class DisplayTouchMode {
     }
 
     static boolean setRefreshRate(ContentResolver resolver, int rate) {
+        if (rate > 120 && !setHighReportRateEnabled(false)) {
+            return false;
+        }
         if (rate == 0) {
             boolean minRemoved = Settings.System.putString(
                     resolver, Settings.System.MIN_REFRESH_RATE, null);

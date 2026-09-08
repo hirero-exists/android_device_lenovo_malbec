@@ -52,7 +52,6 @@ public final class GamingOverlayService extends Service {
     private static final long GB = 1024L * 1024L * 1024L;
 
     private static final String PROP_OVERLAY_ACTIVE = "sys.malbec.perf.overlay_active";
-    private static final String PROP_PERSIST_OVERLAY = "persist.sys.gaming.overlay";
     private static final String PROP_CPU_USAGE = "sys.malbec.perf.cpu_usage";
     private static final String PROP_CPU_FREQ = "sys.malbec.perf.cpu_freq_mhz";
     private static final String PROP_CPU_TEMP = "sys.malbec.perf.cpu_temp_c";
@@ -240,13 +239,7 @@ public final class GamingOverlayService extends Service {
         closeBtn.addView(closeIcon, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
-        closeBtn.setOnClickListener(v -> {
-            try {
-                SystemProperties.set(PROP_PERSIST_OVERLAY, "0");
-            } catch (Exception ignored) {
-            }
-            stopOverlay(GamingOverlayService.this);
-        });
+        closeBtn.setOnClickListener(v -> stopOverlay(GamingOverlayService.this));
         mRootView.addView(closeBtn);
 
         final int touchSlop = ViewConfiguration.get(this).getScaledTouchSlop();
@@ -488,6 +481,11 @@ public final class GamingOverlayService extends Service {
         if (mRootView != null && mRootView.isAttachedToWindow()) {
             mWindowManager.removeView(mRootView);
         }
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        return START_NOT_STICKY;
     }
 
     @Override
