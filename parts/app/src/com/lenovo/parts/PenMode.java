@@ -48,18 +48,22 @@ final class PenMode {
         }
     }
 
-    static boolean isGesturesEnabled() {
+    static boolean isGesturesDisabled() {
         return SystemProperties.getBoolean(GESTURES_PROPERTY,
-                SystemProperties.getBoolean(GESTURES_LEGACY_PROPERTY, false));
+                SystemProperties.getBoolean(GESTURES_LEGACY_PROPERTY, true));
     }
 
-    static boolean setGesturesEnabled(boolean enabled) {
+    static boolean setGesturesDisabled(boolean disabled) {
         try {
-            SystemProperties.set(GESTURES_PROPERTY, enabled ? "1" : "0");
-            SystemProperties.set(GESTURES_LEGACY_PROPERTY, enabled ? "1" : "0");
+            SystemProperties.set(GESTURES_PROPERTY, disabled ? "1" : "0");
+            SystemProperties.set(GESTURES_LEGACY_PROPERTY, disabled ? "1" : "0");
             return true;
         } catch (RuntimeException e) {
             return false;
         }
+    }
+
+    static void syncGestureProperties() {
+        setGesturesDisabled(isGesturesDisabled());
     }
 }
