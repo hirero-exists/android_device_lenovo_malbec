@@ -41,6 +41,7 @@ public final class LenovoPartsApplication extends Application implements SensorE
         SystemProperties.set("sys.malbec.perf.overlay_active", "0");
         PenMode.syncGestureProperties();
         DesktopModeTile.migrateLegacyToggle(this);
+        DesktopCleanup.start(this);
         PenShortcuts.apply(this);
         new PenGattService(this).start();
         DolbyStatusNotification.init(this);
