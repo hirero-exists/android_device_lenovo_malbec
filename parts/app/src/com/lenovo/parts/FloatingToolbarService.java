@@ -369,30 +369,29 @@ public final class FloatingToolbarService extends Service {
         mMenuView.setBackground(bg);
         mMenuView.setElevation(dpToPx(12));
 
-        addMenuHeader();
-        addMenuItem(R.drawable.ic_tool_pen, getString(R.string.quick_note_title), () -> {
+        addMenuItem(getString(R.string.quick_note_title), () -> {
             closeMenu();
             startForegroundService(new Intent(this, QuickNoteService.class));
         });
-        addMenuItem(R.drawable.ic_lenovo_parts_bubble, getString(R.string.toolbar_screenshot), () -> {
+        addMenuItem(getString(R.string.toolbar_screenshot), () -> {
             takeScreenshot();
             closeMenu();
         });
-        addMenuItem(R.drawable.ic_desktop_mode, getString(R.string.toolbar_desktop_mode), () -> {
+        addMenuItem(getString(R.string.toolbar_desktop_mode), () -> {
             toggleDesktopMode();
             closeMenu();
         });
-        addMenuItem(R.drawable.ic_lenovo_parts_bubble, getString(R.string.toolbar_play_pause), () -> {
+        addMenuItem(getString(R.string.toolbar_play_pause), () -> {
             dispatchPlayPause();
             closeMenu();
         });
-        addMenuItem(R.drawable.ic_lenovo_parts, getString(R.string.app_name), () -> {
+        addMenuItem(getString(R.string.app_name), () -> {
             Intent intent = new Intent(this, LenovoPartsActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
             closeMenu();
         });
-        addMenuItem(R.drawable.ic_tool_close, getString(R.string.toolbar_close), () -> {
+        addMenuItem(getString(R.string.toolbar_close), () -> {
             PenMode.setToolbarEnabled(false);
             stopSelf();
         });
@@ -406,40 +405,7 @@ public final class FloatingToolbarService extends Service {
         });
     }
 
-    private void addMenuHeader() {
-        LinearLayout header = new LinearLayout(this);
-        header.setGravity(Gravity.CENTER_VERTICAL);
-        header.setPadding(dpToPx(10), dpToPx(8), dpToPx(10), dpToPx(10));
-
-        ImageView icon = new ImageView(this);
-        icon.setImageResource(R.drawable.ic_lenovo_parts_bubble);
-        icon.setColorFilter(mColorAccent);
-        header.addView(icon, new LinearLayout.LayoutParams(dpToPx(32), dpToPx(32)));
-
-        LinearLayout text = new LinearLayout(this);
-        text.setOrientation(LinearLayout.VERTICAL);
-        text.setPadding(dpToPx(10), 0, 0, 0);
-
-        TextView title = new TextView(this);
-        title.setText(R.string.toolbar_header_title);
-        title.setTextColor(mColorText);
-        title.setTextSize(16f);
-        title.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-        text.addView(title);
-
-        TextView summary = new TextView(this);
-        summary.setText(R.string.toolbar_header_summary);
-        summary.setTextColor(applyAlpha(mColorText, 180));
-        summary.setTextSize(12f);
-        text.addView(summary);
-
-        header.addView(text, new LinearLayout.LayoutParams(
-                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        mMenuView.addView(header, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-    }
-
-    private void addMenuItem(int iconRes, String title, Runnable action) {
+    private void addMenuItem(String title, Runnable action) {
         LinearLayout item = new LinearLayout(this);
         item.setGravity(Gravity.CENTER_VERTICAL);
         item.setPadding(dpToPx(12), 0, dpToPx(14), 0);
@@ -451,18 +417,12 @@ public final class FloatingToolbarService extends Service {
         item.setBackground(new android.graphics.drawable.RippleDrawable(
                 ColorStateList.valueOf(applyAlpha(mColorAccent, 95)), itemSurface, null));
 
-        ImageView icon = new ImageView(this);
-        icon.setImageResource(iconRes);
-        icon.setColorFilter(mColorAccent);
-        item.addView(icon, new LinearLayout.LayoutParams(dpToPx(20), dpToPx(20)));
-
         TextView label = new TextView(this);
         label.setText(title);
         label.setTextColor(mColorText);
         label.setTextSize(14f);
         label.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         label.setGravity(Gravity.CENTER_VERTICAL);
-        label.setPadding(dpToPx(12), 0, 0, 0);
         item.addView(label, new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.MATCH_PARENT, 1f));
 
