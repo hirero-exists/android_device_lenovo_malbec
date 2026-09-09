@@ -4,6 +4,7 @@
      SPDX-License-Identifier: Apache-2.0
 -->
 <resources>
+    <dimen name="status_bar_padding_start">12dp</dimen>
     <dimen name="keyguard_indication_margin_bottom">130dp</dimen>
 
     <!-- Location on the screen of the center of the physical power button. This is a reasonable

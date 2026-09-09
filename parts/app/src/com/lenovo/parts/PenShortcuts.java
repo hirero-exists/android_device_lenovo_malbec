@@ -88,6 +88,7 @@ final class PenShortcuts {
             try {
                 mediaSessionManager.dispatchMediaKeyEvent(down, false);
                 mediaSessionManager.dispatchMediaKeyEvent(up, false);
+                return;
             } catch (Exception ignored) {
             }
         }
@@ -97,6 +98,7 @@ final class PenShortcuts {
             try {
                 audioManager.dispatchMediaKeyEvent(down);
                 audioManager.dispatchMediaKeyEvent(up);
+                return;
             } catch (Exception ignored) {
             }
         }

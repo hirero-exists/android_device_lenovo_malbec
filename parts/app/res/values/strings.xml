@@ -20,9 +20,9 @@
     <string name="refresh_rate_title">Refresh rate</string>
     <string name="refresh_rate_summary">Force refresh rate across all apps, overriding system display settings</string>
     <string name="high_report_rate_title">High touch sampling rate</string>
-    <string name="high_report_rate_summary">Boost the hardware touch scan rate to 360 Hz. Active at display refresh rates ≤120 Hz (inert at 144 Hz).</string>
+    <string name="high_report_rate_summary">Boost the hardware touch scan rate to 360 Hz at display refresh rates up to 120 Hz. Pen input is unavailable while enabled; turn this off to use the pen.</string>
     <string name="high_report_rate_dialog_title">High touch sampling rate</string>
-    <string name="high_report_rate_dialog_message">High touch sampling rate (360 Hz) requires switching the display refresh rate to 120 Hz.</string>
+    <string name="high_report_rate_dialog_message">High touch sampling rate (360 Hz) requires switching the display refresh rate to 120 Hz. Pen input is unavailable while this mode is enabled.</string>
     <string name="high_report_rate_option_force_120">Force 120 Hz</string>
     <string name="high_report_rate_option_dynamic_120">Dynamic (60-120 Hz)</string>
     <string name="desktop_mode_title">Desktop mode</string>
@@ -60,8 +60,6 @@
     <string name="quick_note_saved">Saved to Pictures/QuickNotes</string>
     <string name="quick_note_save_error">Could not save Quick Note</string>
     <string name="toolbar_screenshot">Take screenshot</string>
-    <string name="toolbar_header_title">Pen tools</string>
-    <string name="toolbar_header_summary">Write, capture, and control</string>
     <string name="toolbar_open_app">Open app</string>
     <string name="toolbar_play_pause">Play / Pause</string>
     <string name="toolbar_close">Close toolbar</string>

@@ -62,7 +62,7 @@ final class PenGattService {
     private final Queue<DescriptorSubscription> mDescriptorWriteQueue = new LinkedList<>();
     private final Queue<BluetoothGattDescriptor> mReportReferences = new LinkedList<>();
     private final Set<Integer> mGestureReports = new java.util.HashSet<>();
-    private int mLastMask;
+    private final Set<Integer> mUnprefixedGestureReports = new java.util.HashSet<>();
 
     private BluetoothGatt mGatt;
     private BluetoothDevice mTargetDevice;
@@ -82,6 +82,7 @@ final class PenGattService {
     private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
+            if (gatt != mGatt) return;
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 Log.i(TAG, "GATT connected to pen, discovering services");
                 mConnectedTimestamp = SystemClock.uptimeMillis();
@@ -105,6 +106,7 @@ final class PenGattService {
 
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+            if (gatt != mGatt) return;
             Log.i(TAG, "onServicesDiscovered status=" + status);
             if (status != BluetoothGatt.GATT_SUCCESS) {
                 Log.e(TAG, "Service discovery failed: " + status);
@@ -120,7 +122,7 @@ final class PenGattService {
                 mDescriptorWriteQueue.clear();
                 mReportReferences.clear();
                 mGestureReports.clear();
-                mLastMask = 0;
+                mUnprefixedGestureReports.clear();
                 mWritingDescriptor = false;
 
                 for (BluetoothGattCharacteristic characteristic : hidService.getCharacteristics()) {
@@ -128,13 +130,25 @@ final class PenGattService {
                     if (REPORT_CHAR_UUID.equals(characteristic.getUuid())
                             && (properties & (BluetoothGattCharacteristic.PROPERTY_NOTIFY
                                     | BluetoothGattCharacteristic.PROPERTY_INDICATE)) != 0) {
+                        BluetoothGattDescriptor cccd = characteristic.getDescriptor(CCCD_UUID);
+                        if (cccd == null || !gatt.setCharacteristicNotification(characteristic, true)) {
+                            Log.w(TAG, "Unable to register HID report notifications");
+                            continue;
+                        }
+                        mGestureReports.add(characteristic.getInstanceId());
+                        byte[] subscriptionValue = (properties & BluetoothGattCharacteristic.PROPERTY_NOTIFY) != 0
+                                ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+                                : BluetoothGattDescriptor.ENABLE_INDICATION_VALUE;
+                        mDescriptorWriteQueue.add(new DescriptorSubscription(cccd, subscriptionValue));
                         BluetoothGattDescriptor reference = characteristic.getDescriptor(REPORT_REFERENCE_UUID);
                         if (reference != null) {
                             mReportReferences.add(reference);
+                        } else {
+                            Log.w(TAG, "HID report has no report-reference descriptor");
                         }
                     }
                 }
-                readNextReportReference(gatt);
+                processNextDescriptorWrite(gatt);
             }
         }
 
@@ -153,6 +167,7 @@ final class PenGattService {
         @Override
         public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor,
                 int status) {
+            if (gatt != mGatt) return;
             synchronized (PenGattService.this) {
                 mWritingDescriptor = false;
                 if (status == BluetoothGatt.GATT_SUCCESS) {
@@ -184,9 +199,9 @@ final class PenGattService {
             if (gatt.readDescriptor(mReportReferences.peek())) {
                 return;
             }
+            Log.w(TAG, "Unable to initiate HID report-reference read");
             mReportReferences.remove();
         }
-        processNextDescriptorWrite(gatt);
     }
 
     private synchronized void acceptReportReference(BluetoothGatt gatt,
@@ -199,18 +214,10 @@ final class PenGattService {
             return;
         }
         mReportReferences.remove();
+        Log.i(TAG, "HID report reference status=" + status + " value=" + bytesToHex(value));
         if (status == BluetoothGatt.GATT_SUCCESS && value != null && value.length == 2
                 && value[0] == 2 && value[1] == 1) {
-            BluetoothGattCharacteristic characteristic = descriptor.getCharacteristic();
-            BluetoothGattDescriptor cccd = characteristic.getDescriptor(CCCD_UUID);
-            if (cccd != null && gatt.setCharacteristicNotification(characteristic, true)) {
-                mGestureReports.add(characteristic.getInstanceId());
-                int properties = characteristic.getProperties();
-                byte[] subscriptionValue = (properties & BluetoothGattCharacteristic.PROPERTY_NOTIFY) != 0
-                        ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-                        : BluetoothGattDescriptor.ENABLE_INDICATION_VALUE;
-                mDescriptorWriteQueue.add(new DescriptorSubscription(cccd, subscriptionValue));
-            }
+            mUnprefixedGestureReports.add(descriptor.getCharacteristic().getInstanceId());
         }
         readNextReportReference(gatt);
     }
@@ -220,7 +227,11 @@ final class PenGattService {
         if (gatt == mGatt && characteristic != null
                 && REPORT_CHAR_UUID.equals(characteristic.getUuid())
                 && mGestureReports.contains(characteristic.getInstanceId())) {
-            handleReportData(value);
+            if (value != null && (value.length == 2 && value[0] == 2
+                    || value.length == 1
+                    && mUnprefixedGestureReports.contains(characteristic.getInstanceId()))) {
+                handleReportData(value);
+            }
         }
     }
 
@@ -322,11 +333,16 @@ final class PenGattService {
         closeGatt();
         mTargetDevice = penDevice;
         Log.i(TAG, "Connecting GATT to pen " + penDevice.getAddress());
-        mGatt = penDevice.connectGatt(mContext, false, mGattCallback, BluetoothDevice.TRANSPORT_LE);
+        mGatt = penDevice.connectGatt(mContext, false, mGattCallback,
+                BluetoothDevice.TRANSPORT_LE, BluetoothDevice.PHY_LE_1M_MASK, mHandler);
     }
 
     private synchronized void processNextDescriptorWrite(BluetoothGatt gatt) {
-        if (mWritingDescriptor || mDescriptorWriteQueue.isEmpty() || gatt == null) {
+        if (mWritingDescriptor || gatt == null) {
+            return;
+        }
+        if (mDescriptorWriteQueue.isEmpty()) {
+            readNextReportReference(gatt);
             return;
         }
         DescriptorSubscription subscription = mDescriptorWriteQueue.poll();
@@ -356,10 +372,6 @@ final class PenGattService {
         if (mask != 0 && mask != 1 && mask != 2 && mask != 4 && mask != 8 && mask != 16) {
             return;
         }
-        if (mask == mLastMask) {
-            return;
-        }
-        mLastMask = mask;
         Log.i(TAG, "Received pen report raw data: " + bytesToHex(data) + " mask=" + mask);
         if (mask != 0) {
             int action = PenShortcuts.ACTION_NONE;
@@ -415,7 +427,7 @@ final class PenGattService {
         mDescriptorWriteQueue.clear();
         mReportReferences.clear();
         mGestureReports.clear();
-        mLastMask = 0;
+        mUnprefixedGestureReports.clear();
         mWritingDescriptor = false;
     }
 }
