@@ -110,7 +110,7 @@ public final class LenovoPartsFragment extends SettingsBasePreferenceFragment
         TwoStatePreference penGestures = findPreference(KEY_PEN_GESTURES);
         if (penGestures != null) {
             penGestures.setEnabled(penEnabled);
-            penGestures.setChecked(PenMode.isGesturesEnabled());
+            penGestures.setChecked(PenMode.isGesturesDisabled());
         }
 
         refreshPenAction(KEY_PEN_SINGLE_ACTION, PenShortcuts.SINGLE_SETTING, PenShortcuts.ACTION_HOME);
@@ -211,6 +211,10 @@ public final class LenovoPartsFragment extends SettingsBasePreferenceFragment
                 if (lng != null) {
                     lng.setEnabled(enabled);
                 }
+                Preference gestures = findPreference(KEY_PEN_GESTURES);
+                if (gestures != null) {
+                    gestures.setEnabled(enabled);
+                }
                 if (!enabled) {
                     context.stopService(new Intent(context, FloatingToolbarService.class));
                 } else if (PenMode.isToolbarEnabled()) {
@@ -231,8 +235,8 @@ public final class LenovoPartsFragment extends SettingsBasePreferenceFragment
             }
             return false;
         } else if (KEY_PEN_GESTURES.equals(key)) {
-            boolean enabled = (Boolean) newValue;
-            return PenMode.setGesturesEnabled(enabled);
+            boolean disabled = (Boolean) newValue;
+            return PenMode.setGesturesDisabled(disabled);
         } else if (KEY_PEN_SINGLE_ACTION.equals(key)) {
             return PenShortcuts.setAction(context, PenShortcuts.SINGLE_SETTING,
                     Integer.parseInt((String) newValue));

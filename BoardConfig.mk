@@ -34,7 +34,7 @@ TARGET_CPU_ABI := arm64-v8a
 TARGET_CPU_VARIANT := generic
 TARGET_CPU_VARIANT_RUNTIME := oryon
 
-# Audio (sun platform - carried over unchanged)
+# Audio
 AUDIO_FEATURE_ENABLED_DLKM := true
 AUDIO_FEATURE_ENABLED_EXTENDED_COMPRESS_FORMAT := true
 AUDIO_FEATURE_ENABLED_GKI := true
@@ -53,6 +53,8 @@ BOARD_BLUETOOTH_BDROID_BUILDCFG_INCLUDE_DIR := $(DEVICE_PATH)/bluetooth/include
 
 # Bootloader
 TARGET_BOOTLOADER_BOARD_NAME := sun
+
+# Graphics
 TARGET_BOARD_PLATFORM_GPU := Adreno-825
 TARGET_USES_VULKAN := true
 
@@ -67,7 +69,7 @@ TARGET_FS_CONFIG_GEN := $(DEVICE_PATH)/configs/config.fs
 # HIDL
 DEVICE_FRAMEWORK_COMPATIBILITY_MATRIX_FILE += \
     $(DEVICE_PATH)/configs/hidl/compatibility_matrix.device.xml \
-    hardware/qcom-caf/common/vendor_framework_compatibility_matrix.xml \
+    hardware/qcom-caf/common/vendor_framework_compatibility_matrix.xml
 
 DEVICE_MATRIX_FILE := hardware/qcom-caf/common/compatibility_matrix_aidl.xml
 DEVICE_MANIFEST_FILE += \
@@ -152,7 +154,7 @@ BOARD_VENDOR_BOOTIMAGE_PARTITION_SIZE := 100663296
 
 BOARD_SUPER_PARTITION_SIZE := 23622320128
 
-BOARD_FLASH_BLOCK_SIZE := 131072 # (BOARD_KERNEL_PAGESIZE * 64)
+BOARD_FLASH_BLOCK_SIZE := 131072
 
 BOARD_USES_METADATA_PARTITION := true
 

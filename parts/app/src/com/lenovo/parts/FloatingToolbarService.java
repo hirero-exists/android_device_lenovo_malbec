@@ -21,6 +21,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -69,7 +70,8 @@ public final class FloatingToolbarService extends Service {
     private static final String TAG = "FloatingToolbarService";
     private static final String CHANNEL_ID = "pen_toolbar_channel";
     private static final int NOTIFICATION_ID = 1003;
-    private static final int BUBBLE_SIZE_DP = 48;
+    private static final int BUBBLE_SIZE_DP = 52;
+    private static final int MENU_WIDTH_DP = 264;
     private static final int IDLE_TIMEOUT_MS = 3000;
     private static final String ACTION_SHOW_TOOLBAR =
             "com.lenovo.parts.action.SHOW_TOOLBAR";
@@ -345,7 +347,7 @@ public final class FloatingToolbarService extends Service {
 
     private void createMenuView() {
         mMenuParams = new WindowManager.LayoutParams(
-                dpToPx(220),
+                dpToPx(MENU_WIDTH_DP),
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
@@ -367,29 +369,30 @@ public final class FloatingToolbarService extends Service {
         mMenuView.setBackground(bg);
         mMenuView.setElevation(dpToPx(12));
 
-        addMenuItem(getString(R.string.quick_note_title), () -> {
+        addMenuHeader();
+        addMenuItem(R.drawable.ic_tool_pen, getString(R.string.quick_note_title), () -> {
             closeMenu();
             startForegroundService(new Intent(this, QuickNoteService.class));
         });
-        addMenuItem(getString(R.string.toolbar_screenshot), () -> {
+        addMenuItem(R.drawable.ic_lenovo_parts_bubble, getString(R.string.toolbar_screenshot), () -> {
             takeScreenshot();
             closeMenu();
         });
-        addMenuItem(getString(R.string.toolbar_desktop_mode), () -> {
+        addMenuItem(R.drawable.ic_desktop_mode, getString(R.string.toolbar_desktop_mode), () -> {
             toggleDesktopMode();
             closeMenu();
         });
-        addMenuItem(getString(R.string.toolbar_play_pause), () -> {
+        addMenuItem(R.drawable.ic_lenovo_parts_bubble, getString(R.string.toolbar_play_pause), () -> {
             dispatchPlayPause();
             closeMenu();
         });
-        addMenuItem(getString(R.string.app_name), () -> {
+        addMenuItem(R.drawable.ic_lenovo_parts, getString(R.string.app_name), () -> {
             Intent intent = new Intent(this, LenovoPartsActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
             closeMenu();
         });
-        addMenuItem(getString(R.string.toolbar_close), () -> {
+        addMenuItem(R.drawable.ic_tool_close, getString(R.string.toolbar_close), () -> {
             PenMode.setToolbarEnabled(false);
             stopSelf();
         });
@@ -403,28 +406,72 @@ public final class FloatingToolbarService extends Service {
         });
     }
 
-    private void addMenuItem(String title, Runnable action) {
-        TextView item = new TextView(this);
-        item.setText(title);
-        item.setTextColor(mColorText);
-        item.setTextSize(13f);
-        item.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+    private void addMenuHeader() {
+        LinearLayout header = new LinearLayout(this);
+        header.setGravity(Gravity.CENTER_VERTICAL);
+        header.setPadding(dpToPx(10), dpToPx(8), dpToPx(10), dpToPx(10));
+
+        ImageView icon = new ImageView(this);
+        icon.setImageResource(R.drawable.ic_lenovo_parts_bubble);
+        icon.setColorFilter(mColorAccent);
+        header.addView(icon, new LinearLayout.LayoutParams(dpToPx(32), dpToPx(32)));
+
+        LinearLayout text = new LinearLayout(this);
+        text.setOrientation(LinearLayout.VERTICAL);
+        text.setPadding(dpToPx(10), 0, 0, 0);
+
+        TextView title = new TextView(this);
+        title.setText(R.string.toolbar_header_title);
+        title.setTextColor(mColorText);
+        title.setTextSize(16f);
+        title.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        text.addView(title);
+
+        TextView summary = new TextView(this);
+        summary.setText(R.string.toolbar_header_summary);
+        summary.setTextColor(applyAlpha(mColorText, 180));
+        summary.setTextSize(12f);
+        text.addView(summary);
+
+        header.addView(text, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        mMenuView.addView(header, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+    }
+
+    private void addMenuItem(int iconRes, String title, Runnable action) {
+        LinearLayout item = new LinearLayout(this);
         item.setGravity(Gravity.CENTER_VERTICAL);
-        item.setPadding(dpToPx(16), 0, dpToPx(16), 0);
-        item.setMinHeight(dpToPx(42));
-        item.setMinimumHeight(dpToPx(42));
+        item.setPadding(dpToPx(12), 0, dpToPx(14), 0);
+        item.setContentDescription(title);
 
-        GradientDrawable itemBg = new GradientDrawable();
-        itemBg.setColor(applyAlpha(mColorSurface, 120));
-        itemBg.setCornerRadius(dpToPx(12));
-        item.setBackground(itemBg);
+        GradientDrawable itemSurface = new GradientDrawable();
+        itemSurface.setColor(applyAlpha(mColorSurface, 120));
+        itemSurface.setCornerRadius(dpToPx(12));
+        item.setBackground(new android.graphics.drawable.RippleDrawable(
+                ColorStateList.valueOf(applyAlpha(mColorAccent, 95)), itemSurface, null));
 
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dpToPx(42));
-        lp.setMargins(0, dpToPx(2), 0, dpToPx(2));
-        item.setLayoutParams(lp);
+        ImageView icon = new ImageView(this);
+        icon.setImageResource(iconRes);
+        icon.setColorFilter(mColorAccent);
+        item.addView(icon, new LinearLayout.LayoutParams(dpToPx(20), dpToPx(20)));
+
+        TextView label = new TextView(this);
+        label.setText(title);
+        label.setTextColor(mColorText);
+        label.setTextSize(14f);
+        label.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        label.setGravity(Gravity.CENTER_VERTICAL);
+        label.setPadding(dpToPx(12), 0, 0, 0);
+        item.addView(label, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.MATCH_PARENT, 1f));
 
         item.setOnClickListener(v -> action.run());
+
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dpToPx(46));
+        lp.setMargins(0, dpToPx(2), 0, dpToPx(2));
+        item.setLayoutParams(lp);
         mMenuView.addView(item);
     }
 
@@ -483,16 +530,23 @@ public final class FloatingToolbarService extends Service {
         if (mMenuView == null) return;
         positionMenu();
         if (!mMenuView.isAttachedToWindow()) {
-            mMenuView.setScaleX(0.85f);
-            mMenuView.setScaleY(0.85f);
+            float direction = mMenuParams.x >= mBubbleParams.x ? 1f : -1f;
+            mMenuView.setPivotX(direction > 0 ? 0f : mMenuParams.width);
+            mMenuView.setPivotY(0f);
+            mMenuView.setScaleX(0.92f);
+            mMenuView.setScaleY(0.92f);
+            mMenuView.setTranslationX(direction * dpToPx(18));
+            mMenuView.setTranslationY(dpToPx(8));
             mMenuView.setAlpha(0f);
             mWindowManager.addView(mMenuView, mMenuParams);
             mMenuView.animate()
                     .scaleX(1.0f)
                     .scaleY(1.0f)
+                    .translationX(0f)
+                    .translationY(0f)
                     .alpha(1.0f)
-                    .setDuration(180)
-                    .setInterpolator(new DecelerateInterpolator())
+                    .setDuration(220)
+                    .setInterpolator(new OvershootInterpolator(0.8f))
                     .start();
         }
         mMenuOpen = true;
@@ -501,11 +555,15 @@ public final class FloatingToolbarService extends Service {
 
     private void closeMenu() {
         if (mMenuView != null && mMenuView.isAttachedToWindow()) {
+            float direction = mMenuParams.x >= mBubbleParams.x ? 1f : -1f;
+            mMenuView.animate().cancel();
             mMenuView.animate()
-                    .scaleX(0.85f)
-                    .scaleY(0.85f)
+                    .scaleX(0.92f)
+                    .scaleY(0.92f)
+                    .translationX(direction * dpToPx(12))
+                    .translationY(dpToPx(6))
                     .alpha(0f)
-                    .setDuration(140)
+                    .setDuration(160)
                     .withEndAction(() -> {
                         if (mMenuView.isAttachedToWindow()) {
                             mWindowManager.removeView(mMenuView);
@@ -527,7 +585,9 @@ public final class FloatingToolbarService extends Service {
                     View.MeasureSpec.makeMeasureSpec(screenHeight, View.MeasureSpec.AT_MOST));
         }
         int menuWidth = mMenuView != null && mMenuView.getMeasuredWidth() > 0
-                ? mMenuView.getMeasuredWidth() : dpToPx(280);
+                ? mMenuView.getMeasuredWidth() : dpToPx(MENU_WIDTH_DP);
+        int menuHeight = mMenuView != null && mMenuView.getMeasuredHeight() > 0
+                ? mMenuView.getMeasuredHeight() : dpToPx(340);
         int bubbleSize = mBubbleParams.width > 0 ? mBubbleParams.width : dpToPx(BUBBLE_SIZE_DP);
 
         int menuX;
@@ -537,7 +597,7 @@ public final class FloatingToolbarService extends Service {
             menuX = Math.max(0, mBubbleParams.x - menuWidth - dpToPx(8));
         }
 
-        int menuY = Math.max(0, Math.min(mBubbleParams.y, screenHeight - dpToPx(280)));
+        int menuY = Math.max(0, Math.min(mBubbleParams.y, screenHeight - menuHeight));
         mMenuParams.x = menuX;
         mMenuParams.y = menuY;
     }

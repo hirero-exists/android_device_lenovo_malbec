@@ -38,6 +38,8 @@ public final class LenovoPartsApplication extends Application implements SensorE
     public void onCreate() {
         super.onCreate();
         SystemProperties.set("persist.sys.gaming.overlay", "0");
+        SystemProperties.set("sys.malbec.perf.overlay_active", "0");
+        PenMode.syncGestureProperties();
         PenShortcuts.apply(this);
         new PenGattService(this).start();
         DolbyStatusNotification.init(this);

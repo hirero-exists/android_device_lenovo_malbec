@@ -44,9 +44,10 @@ PRODUCT_PACKAGES += \
     otapreopt_script
 
 # API
-BOARD_SHIPPING_API_LEVEL := 202504
-PRODUCT_SHIPPING_API_LEVEL := 36
+BOARD_SHIPPING_API_LEVEL := 35
+PRODUCT_SHIPPING_API_LEVEL := $(BOARD_SHIPPING_API_LEVEL)
 
+# Audio
 PRODUCT_PACKAGES += \
     audiohalservice.qti \
     qtiaudiohalvendorextn
@@ -57,10 +58,6 @@ PRODUCT_PACKAGES += \
     android.hardware.audio.core.sounddose-V1-ndk.vendor \
     android.hardware.audio.core.sounddose-V2-ndk.vendor \
     android.hardware.audio.effect-V2-ndk.vendor \
-    android.hardware.bluetooth.audio-V3-ndk.vendor \
-    android.hardware.bluetooth.audio-V4-ndk.vendor \
-    android.hardware.drm-V1-ndk.vendor \
-    android.hardware.health-V1-ndk.vendor \
     android.media.audio.common.types-V3-ndk.vendor \
     vendor.qti.hardware.paleventnotifier-V2-ndk.vendor \
     libalsautilsv2.vendor \
@@ -70,23 +67,11 @@ PRODUCT_PACKAGES += \
     libmemunreachable.vendor
 
 PRODUCT_PACKAGES += \
-    android.hardware.bluetooth.audio@2.0.vendor \
-    android.hardware.bluetooth.audio@2.1.vendor \
-    android.hardware.health@1.0.vendor \
-    android.hardware.health@2.0.vendor \
-    android.hardware.health@2.1.vendor \
-    android.hardware.power@1.0.vendor \
-    android.hardware.power@1.1.vendor \
-    android.hardware.power@1.2.vendor \
     android.hardware.soundtrigger3-V1-ndk.vendor \
-    android.hardware.thermal@1.0.vendor \
-    android.hardware.thermal@2.0.vendor \
     android.media.soundtrigger.types-V1-ndk.vendor \
     libaudio_aidl_conversion_common_ndk.vendor \
     libflatbuffers-cpp.vendor \
-    libusbhost.vendor \
-    qti-audio-types-aidl-V1-ndk.vendor \
-    vendor.qti.hardware.bluetooth.audio-V1-ndk.vendor
+    qti-audio-types-aidl-V1-ndk.vendor
 
 PRODUCT_PACKAGES += \
     manifest_audiocorehal_default.xml \
@@ -105,7 +90,7 @@ PRODUCT_COPY_FILES += \
     $(AUDIO_HAL_DIR)/../pal/configs/sun/Hapticsconfig.xml:$(TARGET_COPY_OUT_VENDOR)/etc/Hapticsconfig.xml \
     $(AUDIO_HAL_DIR)/configs/sun/quasar_config.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/sku_tuna/quasar_config.xml \
     $(AUDIO_HAL_DIR)/configs/sun/vendor_audio_interfaces.xml:$(TARGET_COPY_OUT_VENDOR)/etc/vendor_audio_interfaces.xml \
-    $(AUDIO_HAL_DIR)/configs/sun/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml \
+    $(AUDIO_HAL_DIR)/configs/sun/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml
 
 PRODUCT_COPY_FILES += \
     frameworks/av/services/audiopolicy/config/audio_policy_volumes.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_volumes.xml \
@@ -119,7 +104,12 @@ PRODUCT_COPY_FILES += \
 
 # Bluetooth
 PRODUCT_PACKAGES += \
-    android.hardware.bluetooth.audio-impl
+    android.hardware.bluetooth.audio-impl \
+    android.hardware.bluetooth.audio-V3-ndk.vendor \
+    android.hardware.bluetooth.audio-V4-ndk.vendor \
+    android.hardware.bluetooth.audio@2.0.vendor \
+    android.hardware.bluetooth.audio@2.1.vendor \
+    vendor.qti.hardware.bluetooth.audio-V1-ndk.vendor
 
 PRODUCT_PACKAGES += \
     lib_bt_aptx \
@@ -134,9 +124,6 @@ PRODUCT_COPY_FILES += \
 PRODUCT_PACKAGES += \
     android.hardware.boot-service.qti \
     android.hardware.boot-service.qti.recovery
-
-# Recovery
-$(call soong_config_set_bool,recovery,target_recovery_uses_qti_drm,true)
 
 # Camera (tablet has front + rear cameras; permissions only)
 PRODUCT_COPY_FILES += \
@@ -167,15 +154,14 @@ PRODUCT_PACKAGES += \
 
 # DRM
 PRODUCT_PACKAGES += \
-    android.hardware.drm-service.clearkey
+    android.hardware.drm-service.clearkey \
+    android.hardware.drm-V1-ndk.vendor
 
 # Fastbootd
 PRODUCT_PACKAGES += \
     fastbootd
 
 # Graphics
-TARGET_USES_VULKAN = true
-
 PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.vulkan.compute-0.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.vulkan.compute-0.xml \
     frameworks/native/data/etc/android.hardware.vulkan.level-1.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.vulkan.level-1.xml \
@@ -194,7 +180,11 @@ PRODUCT_COPY_FILES += \
 # Health
 PRODUCT_PACKAGES += \
     android.hardware.health-service.qti \
-    android.hardware.health-service.qti_recovery
+    android.hardware.health-service.qti_recovery \
+    android.hardware.health-V1-ndk.vendor \
+    android.hardware.health@1.0.vendor \
+    android.hardware.health@2.0.vendor \
+    android.hardware.health@2.1.vendor
 
 # IPACM
 PRODUCT_PACKAGES += \
@@ -248,11 +238,9 @@ PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/rootdir/etc/fstab.qcom:$(TARGET_COPY_OUT_VENDOR_RAMDISK)/first_stage_ramdisk/fstab.qcom \
     $(LOCAL_PATH)/rootdir/etc/fstab.qcom:$(TARGET_COPY_OUT_VENDOR_RAMDISK)/first_stage_ramdisk/fstab.qcom.dm
 
+# Keymint
 PRODUCT_PACKAGES += \
     android.hardware.hardware_keystore_V3.xml
-
-PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/configs/hal_uuid_map.xml:$(TARGET_COPY_OUT_VENDOR)/etc/hal_uuid_map_malbec.xml
 
 PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.software.device_id_attestation.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.software.device_id_attestation.xml \
@@ -305,9 +293,23 @@ PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/handheld_core_hardware.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/handheld_core_hardware.xml \
     frameworks/native/data/etc/android.software.ipsec_tunnel_migration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.software.ipsec_tunnel_migration.xml
 
-# Reduce system server verbosity.
+# Power
+PRODUCT_PACKAGES += \
+    android.hardware.power@1.0.vendor \
+    android.hardware.power@1.1.vendor \
+    android.hardware.power@1.2.vendor
+
+PRODUCT_COPY_FILES += \
+    vendor/qcom/opensource/power/config/sun/powerhint.xml:$(TARGET_COPY_OUT_VENDOR)/etc/powerhint.xml \
+    vendor/qcom/opensource/power/config/sun/powerhint.xml:$(TARGET_COPY_OUT_VENDOR)/etc/perf/powerhint.xml
+
+# Recovery
+$(call soong_config_set_bool,recovery,target_recovery_uses_qti_drm,true)
+
+# Runtime
 PRODUCT_SYSTEM_SERVER_DEBUG_INFO := false
 
+# Sensors
 PRODUCT_PACKAGES += \
     android.hardware.sensors-service.multihal
 
@@ -325,7 +327,9 @@ PRODUCT_SOONG_NAMESPACES += \
 
 # Thermal
 PRODUCT_PACKAGES += \
-    android.hardware.thermal-service.qti
+    android.hardware.thermal-service.qti \
+    android.hardware.thermal@1.0.vendor \
+    android.hardware.thermal@2.0.vendor
 
 # Touchscreen (Novatek NT36536E, active pen supported)
 PRODUCT_COPY_FILES += \
@@ -351,6 +355,7 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     android.hardware.usb-service.qti \
     android.hardware.usb.gadget-service.qti \
+    libusbhost.vendor
 
 PRODUCT_PACKAGES += \
     init.qcom.usb.rc \

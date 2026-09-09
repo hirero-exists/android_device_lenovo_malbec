@@ -23,16 +23,20 @@ import android.os.IBinder;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.TypedValue;
+import android.util.Log;
+import android.view.Display;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowInsets;
 import android.view.WindowManager;
+import android.view.WindowManagerGlobal;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
+import android.window.ScreenCaptureInternal;
 
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
@@ -45,6 +49,8 @@ public final class QuickNoteService extends Service {
     private static final String CHANNEL_ID = "quick_note";
     private WindowManager mWindowManager;
     private FrameLayout mRoot;
+    private LinearLayout mToolBar;
+    private boolean mSaving;
     private final BroadcastReceiver mScreenReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -69,7 +75,7 @@ public final class QuickNoteService extends Service {
         NotificationManager notifications = getSystemService(NotificationManager.class);
         notifications.createNotificationChannel(new NotificationChannel(CHANNEL_ID,
                 getString(R.string.quick_note_title), NotificationManager.IMPORTANCE_LOW));
-        startForeground(1005, new Notification.Builder(this, CHANNEL_ID)
+        startForeground(1006, new Notification.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_lenovo_parts)
                 .setContentTitle(getString(R.string.quick_note_title))
                 .setOngoing(true).build());
@@ -90,6 +96,7 @@ public final class QuickNoteService extends Service {
         root.addView(mCanvasView);
 
         LinearLayout topBar = new LinearLayout(this);
+        mToolBar = topBar;
         FrameLayout.LayoutParams barLp = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, dp(44));
         barLp.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
@@ -243,9 +250,49 @@ public final class QuickNoteService extends Service {
     }
 
     private void saveNote() {
-        Bitmap bitmap = mCanvasView.exportBitmap();
+        if (mSaving) {
+            return;
+        }
+        mSaving = true;
+        mToolBar.setVisibility(View.INVISIBLE);
+        mRoot.postOnAnimation(() -> mRoot.postOnAnimation(this::saveAnnotatedScreen));
+    }
+
+    private Bitmap captureAnnotatedScreen() {
+        try {
+            ScreenCaptureInternal.SynchronousScreenCaptureListener listener =
+                    ScreenCaptureInternal.createSyncCaptureListener();
+            WindowManagerGlobal.getWindowManagerService().captureDisplay(
+                    Display.DEFAULT_DISPLAY, null, listener);
+            ScreenCaptureInternal.ScreenshotHardwareBuffer buffer = listener.getBuffer();
+            if (buffer != null) {
+                try {
+                    Bitmap hardwareBitmap = buffer.asBitmap();
+                    if (hardwareBitmap != null) {
+                        Bitmap copy = hardwareBitmap.copy(Bitmap.Config.ARGB_8888, false);
+                        hardwareBitmap.recycle();
+                        return copy;
+                    }
+                } finally {
+                    buffer.getHardwareBuffer().close();
+                }
+            }
+        } catch (Exception e) {
+            Log.e("QuickNoteService", "Unable to save annotated screen", e);
+        }
+        return null;
+    }
+
+    private void saveAnnotatedScreen() {
+        if (!mRoot.isAttachedToWindow()) {
+            return;
+        }
+        Bitmap bitmap = mCanvasView.mShowBackground
+                ? captureAnnotatedScreen() : mCanvasView.exportBitmap();
+        mToolBar.setVisibility(View.VISIBLE);
+        mSaving = false;
         if (bitmap == null) {
-            Toast.makeText(this, "Empty note", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.quick_note_save_error, Toast.LENGTH_SHORT).show();
             return;
         }
 

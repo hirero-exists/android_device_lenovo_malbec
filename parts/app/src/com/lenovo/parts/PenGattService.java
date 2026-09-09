@@ -59,7 +59,7 @@ final class PenGattService {
     private final Context mContext;
     private final Handler mHandler = new Handler(Looper.getMainLooper());
     private final NotificationManager mNotificationManager;
-    private final Queue<BluetoothGattDescriptor> mDescriptorWriteQueue = new LinkedList<>();
+    private final Queue<DescriptorSubscription> mDescriptorWriteQueue = new LinkedList<>();
     private final Queue<BluetoothGattDescriptor> mReportReferences = new LinkedList<>();
     private final Set<Integer> mGestureReports = new java.util.HashSet<>();
     private int mLastMask;
@@ -68,6 +68,16 @@ final class PenGattService {
     private BluetoothDevice mTargetDevice;
     private boolean mWritingDescriptor = false;
     private long mConnectedTimestamp = 0;
+
+    private static final class DescriptorSubscription {
+        final BluetoothGattDescriptor descriptor;
+        final byte[] value;
+
+        DescriptorSubscription(BluetoothGattDescriptor descriptor, byte[] value) {
+            this.descriptor = descriptor;
+            this.value = value;
+        }
+    }
 
     private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
         @Override
@@ -114,8 +124,10 @@ final class PenGattService {
                 mWritingDescriptor = false;
 
                 for (BluetoothGattCharacteristic characteristic : hidService.getCharacteristics()) {
+                    int properties = characteristic.getProperties();
                     if (REPORT_CHAR_UUID.equals(characteristic.getUuid())
-                            && (characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) != 0) {
+                            && (properties & (BluetoothGattCharacteristic.PROPERTY_NOTIFY
+                                    | BluetoothGattCharacteristic.PROPERTY_INDICATE)) != 0) {
                         BluetoothGattDescriptor reference = characteristic.getDescriptor(REPORT_REFERENCE_UUID);
                         if (reference != null) {
                             mReportReferences.add(reference);
@@ -179,7 +191,11 @@ final class PenGattService {
 
     private synchronized void acceptReportReference(BluetoothGatt gatt,
             BluetoothGattDescriptor descriptor, int status, byte[] value) {
-        if (gatt != mGatt || descriptor != mReportReferences.peek()) {
+        BluetoothGattDescriptor pending = mReportReferences.peek();
+        if (gatt != mGatt || pending == null || descriptor == null
+                || descriptor.getCharacteristic() == null || pending.getCharacteristic() == null
+                || descriptor.getCharacteristic().getInstanceId()
+                        != pending.getCharacteristic().getInstanceId()) {
             return;
         }
         mReportReferences.remove();
@@ -189,7 +205,11 @@ final class PenGattService {
             BluetoothGattDescriptor cccd = characteristic.getDescriptor(CCCD_UUID);
             if (cccd != null && gatt.setCharacteristicNotification(characteristic, true)) {
                 mGestureReports.add(characteristic.getInstanceId());
-                mDescriptorWriteQueue.add(cccd);
+                int properties = characteristic.getProperties();
+                byte[] subscriptionValue = (properties & BluetoothGattCharacteristic.PROPERTY_NOTIFY) != 0
+                        ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+                        : BluetoothGattDescriptor.ENABLE_INDICATION_VALUE;
+                mDescriptorWriteQueue.add(new DescriptorSubscription(cccd, subscriptionValue));
             }
         }
         readNextReportReference(gatt);
@@ -309,10 +329,10 @@ final class PenGattService {
         if (mWritingDescriptor || mDescriptorWriteQueue.isEmpty() || gatt == null) {
             return;
         }
-        BluetoothGattDescriptor descriptor = mDescriptorWriteQueue.poll();
-        if (descriptor != null) {
+        DescriptorSubscription subscription = mDescriptorWriteQueue.poll();
+        if (subscription != null) {
             mWritingDescriptor = true;
-            int result = gatt.writeDescriptor(descriptor, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+            int result = gatt.writeDescriptor(subscription.descriptor, subscription.value);
             if (result != BluetoothStatusCodes.SUCCESS) {
                 Log.e(TAG, "CCCD write initiation failed: " + result);
                 mWritingDescriptor = false;
