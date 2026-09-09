@@ -573,12 +573,7 @@ public final class FloatingToolbarService extends Service {
     }
 
     private void toggleDesktopMode() {
-        boolean enabled = Settings.Global.getInt(
-                getContentResolver(), "override_desktop_mode_features", 0) == 1;
-        Settings.Global.putInt(
-                getContentResolver(), "override_desktop_mode_features", enabled ? 0 : 1);
-        Toast.makeText(this, enabled ? R.string.desktop_mode_disabled : R.string.desktop_mode_enabled,
-                Toast.LENGTH_SHORT).show();
+        DesktopModeTile.openDesktop(this);
     }
 
     private void restoreBubblePosition() {

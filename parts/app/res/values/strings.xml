@@ -26,6 +26,7 @@
     <string name="high_report_rate_option_force_120">Force 120 Hz</string>
     <string name="high_report_rate_option_dynamic_120">Dynamic (60-120 Hz)</string>
     <string name="desktop_mode_title">Desktop mode</string>
+    <string name="desktop_mode_open_app">Move current app to desktop</string>
     <string name="pen_action_toolbar">Toggle pen toolbar</string>
     <string name="gaming_bypass_title">Bypass charging</string>
     <string name="gaming_bypass_summary">Stops battery charging while USB-PD remains online. WARNING: Powers tablet directly from connected charger without charging battery. Use at your own risk. Disconnecting the cable or turning this off restores normal charging.</string>
