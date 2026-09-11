@@ -76,8 +76,7 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     manifest_audiocorehal_default.xml \
     audioeffectservice_qti.xml \
-    libaudioeffecthal.qti \
-    libsoundtriggerhal.qti
+    libaudioeffecthal.qti
 
 AUDIO_HAL_DIR := hardware/qcom-caf/sm8750/audio/primary-hal
 
@@ -273,8 +272,6 @@ PRODUCT_PACKAGES += \
     SystemUIOverlayMalbec \
     FrameworkOverlayMalbec \
     FrameworkOverlayMalbecGL \
-    LineageSDKOverlayMalbec \
-    LineageSettingsOverlayMalbec \
     SettingsOverlayMalbec \
     SettingsProviderOverlayMalbec \
     WifiOverlayMalbec
