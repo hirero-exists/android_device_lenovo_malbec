@@ -8,16 +8,14 @@ $(call inherit-product, $(SRC_TARGET_DIR)/product/core_64_bit_only.mk)
 
 $(call inherit-product, $(SRC_TARGET_DIR)/product/aosp_base.mk)
 
-# Inherit some common Lineage stuff.
-$(call inherit-product, vendor/lineage/config/common_full_tablet_wifionly.mk)
+TARGET_SCREEN_WIDTH := 2190
+TARGET_CALL_RECORDING_SUPPORTED := false
+$(call inherit-product, vendor/custom/config/common_full_tablet_wifionly.mk)
 
 # Inherit from malbec device
 $(call inherit-product, device/lenovo/malbec/device.mk)
 
-# Kernel-Headers
-$(info $(shell bash device/lenovo/malbec-kernel/setup-kernel-headers.sh $(abspath .)))
-
-PRODUCT_NAME := lineage_malbec
+PRODUCT_NAME := custom_malbec
 PRODUCT_DEVICE := malbec
 PRODUCT_MANUFACTURER := Lenovo
 PRODUCT_BRAND := Lenovo

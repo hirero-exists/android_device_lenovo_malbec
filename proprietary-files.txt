@@ -172,6 +172,7 @@ vendor/lib64/android.hardware.bluetooth.audio-impl.so;DISABLE_DEPS
 vendor/lib64/btaudio_offload_if.so
 vendor/lib64/hw/libaudiocorehal.default.so;DISABLE_DEPS
 vendor/lib64/hw/libaudiocorehal.qti.so;DISABLE_DEPS
+vendor/lib64/hw/libsoundtriggerhal.qti.so
 vendor/lib64/libPeripheralStateUtils.so
 vendor/lib64/libagm.so
 vendor/lib64/libagm_compress_plugin.so
@@ -188,7 +189,7 @@ vendor/lib64/libaudiochargerlistener.so
 vendor/lib64/libaudioplatformconverter.qti.so;DISABLE_DEPS
 vendor/lib64/libaudioserviceexampleimpl.so;DISABLE_DEPS
 vendor/lib64/libbatterylistener.so;DISABLE_DEPS
-vendor/lib64/libbluetooth_audio_session_aidl.so;DISABLE_DEPS
+vendor/lib64/libbluetooth_audio_session_aidl.so:vendor/lib64/libbluetooth_audio_session_aidl_prebuilt.so;FIX_SONAME;DISABLE_DEPS
 vendor/lib64/libcustomva_intf.so
 vendor/lib64/libfmpal.so
 vendor/lib64/libhfp_pal.so

@@ -806,7 +806,6 @@
          config_defaultRefreshRate may be set to 0, in which case the value set for
          config_defaultPeakRefreshRate will act as the default frame rate. -->
     <integer name="config_defaultRefreshRate">120</integer>
-   <integer name="config_defaultMinRefreshRate">90</integer>
     <!-- The default peak refresh rate for a given device. Change this value if you want to prevent
          the framework from using higher refresh rates, even if display modes with higher refresh
          rates are available from hardware composer. Only has an effect if the value is
@@ -829,16 +828,8 @@
          the highest resolution so that it can be scaled correctly in each resolution. -->
     <string name="config_mainDisplayShape" translatable="false"></string>
 
-    <!-- When true, the tethering upstream network follows the current default
-         Internet network (except when the current default network is mobile,
-         in which case a DUN network will be used if required). -->
-    <bool translatable="false" name="config_tether_upstream_automatic">true</bool>
-
     <!-- Whether or not wcg mode should be enabled on this device -->
     <bool name="config_enableWcgMode">true</bool>
-
-    <!-- Whether the device supports Smart Pixels -->
-    <bool name="config_supportSmartPixels">true</bool>
 
     <!-- Bytes that the PinnerService will pin for Home app -->
     <integer name="config_pinnerHomePinBytes">6291456</integer>
@@ -848,18 +839,6 @@
 
     <!-- True if the device supports Sustained Performance Mode -->
     <bool name="config_sustainedPerformanceModeSupported">true</bool>
-
-    <!-- System Info -->
-    <integer name="config_sysCPUTempMultiplier">1000</integer>
-
-    <!-- GPU temperature path -->
-    <string name="config_gpu_temp_path">/sys/class/kgsl/kgsl-3d0/temp</string>
-
-    <!-- RAM temperature path -->
-    <string name="config_ram_temp_path">/sys/class/thermal/thermal_zone23/temp</string>
-
-    <!-- Adjust dividers if needed (usually 1000 for millidegrees, 10 for decidegrees) -->
-    <integer name="config_cpu_temp_divider">1000</integer>
 
     <string-array name="config_statusBarIcons">
         <item>@*android:string/status_bar_no_calling</item>

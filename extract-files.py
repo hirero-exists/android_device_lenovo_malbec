@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 import zipfile
+from pathlib import Path
 
 from extract_utils.fixups_blob import (
     BlobFixupCtx,
@@ -40,6 +41,20 @@ def lib_fixup_vendor_suffix(lib: str, partition: str, *args, **kwargs):
 lib_fixups: lib_fixups_user_type = {
     **lib_fixups,
 }
+
+
+def fix_graphic_buffer_size(ctx: BlobFixupCtx, file: File, file_path: str,
+                           signatures, *args, **kwargs):
+    path = Path(file_path)
+    data = path.read_bytes()
+    for signature in signatures:
+        original = bytes.fromhex(signature)
+        replacement = bytes.fromhex('00a68152') + original[4:]
+        if data.count(original) == 1 and data.count(replacement) == 0:
+            data = data.replace(original, replacement, 1)
+        elif data.count(original) != 0 or data.count(replacement) != 1:
+            raise ValueError(f'{file_path}: unrecognized GraphicBuffer allocation')
+    path.write_bytes(data)
 
 
 def fix_zui_notes(ctx: BlobFixupCtx, file: File, file_path: str, *args, **kwargs):
@@ -88,13 +103,34 @@ blob_fixups: blob_fixups_user_type = {
         'vendor/lib64/hw/com.qti.chi.override.so',
         'vendor/lib64/libcamximageformatutils.so',
         'vendor/lib64/libchifeature2.so',
-        'vendor/lib64/libqvrservice.so',
         'vendor/lib64/vendor.qti.hardware.camera.offlinecamera-service-impl.so',
     ): blob_fixup()
         .replace_needed(
             'android.hardware.graphics.allocator-V1-ndk.so',
             'android.hardware.graphics.allocator-V2-ndk.so',
     ),
+
+    'vendor/lib64/libgpu_tonemapper.so': blob_fixup()
+        .call(fix_graphic_buffer_size, (
+            '00208052b6e5f7f217d5e0f23a01881aff4300f901060094',
+        )),
+
+    'vendor/lib64/libqvrservice.so': blob_fixup()
+        .call(fix_graphic_buffer_size, (
+            '002080526f100094c8078052611a40b9e5c3009168230039',
+            '00208052d60f009448028052a9f6fff0290d1a91e8430039',
+            '002080525509009469208552aaf6ffb04a0d1a91618a4729',
+            '00208052e81640f9f403012aa8831ff87c08009448028052',
+        ))
+        .replace_needed(
+            'android.hardware.graphics.allocator-V1-ndk.so',
+            'android.hardware.graphics.allocator-V2-ndk.so',
+        ),
+
+    'vendor/lib64/libxrcommnetworkservice.so': blob_fixup()
+        .call(fix_graphic_buffer_size, (
+            '002080523331009448028052810e41b9e5630091e8630039',
+        )),
 
     # --- sensors V2 -> V3 (blobs built against old sensors AIDL) ---
     (
@@ -163,8 +199,18 @@ blob_fixups: blob_fixups_user_type = {
             'sched_get_priority_max: 1',
         ),
 
+    'vendor/lib64/android.hardware.bluetooth.audio-impl.so': blob_fixup()
+        .replace_needed(
+            'libbluetooth_audio_session_aidl.so',
+            'libbluetooth_audio_session_aidl_prebuilt.so',
+        ),
+
     'vendor/lib64/libaudioserviceexampleimpl.so': blob_fixup()
-        .add_needed('libaudioutils_shim.so'),
+        .add_needed('libaudioutils_shim.so')
+        .replace_needed(
+            'libbluetooth_audio_session_aidl.so',
+            'libbluetooth_audio_session_aidl_prebuilt.so',
+        ),
 
     'product/app/ZuiNotes/ZuiNotes.apk': blob_fixup()
         .call(fix_zui_notes)

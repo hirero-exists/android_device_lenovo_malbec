@@ -4,9 +4,9 @@
 #
 
 PRODUCT_MAKEFILES := \
-    $(LOCAL_DIR)/lineage_malbec.mk
+    $(LOCAL_DIR)/custom_malbec.mk
 
 COMMON_LUNCH_CHOICES := \
-    lineage_malbec-user \
-    lineage_malbec-userdebug \
-    lineage_malbec-eng
+    custom_malbec-cp2a-user \
+    custom_malbec-cp2a-userdebug \
+    custom_malbec-cp2a-eng
