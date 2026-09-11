@@ -5,11 +5,9 @@
 
 # Inherit from those products. Most specific first.
 $(call inherit-product, $(SRC_TARGET_DIR)/product/core_64_bit_only.mk)
-
 $(call inherit-product, $(SRC_TARGET_DIR)/product/aosp_base.mk)
 
-TARGET_SCREEN_WIDTH := 2190
-TARGET_CALL_RECORDING_SUPPORTED := false
+# Inherit some common PixelOS stuff.
 $(call inherit-product, vendor/custom/config/common_full_tablet_wifionly.mk)
 
 # Inherit from malbec device
@@ -20,6 +18,9 @@ PRODUCT_DEVICE := malbec
 PRODUCT_MANUFACTURER := Lenovo
 PRODUCT_BRAND := Lenovo
 PRODUCT_MODEL := Idea Tab Pro 2
+
+TARGET_SCREEN_WIDTH := 2190
+TARGET_CALL_RECORDING_SUPPORTED := false
 
 PRODUCT_SYSTEM_NAME := malbec
 PRODUCT_SYSTEM_DEVICE := malbec

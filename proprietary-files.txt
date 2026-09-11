@@ -1716,7 +1716,6 @@ vendor/etc/init/android.hardware.weaver-service-spu-qti.rc
 # Wi-Fi
 system_ext/lib64/vendor.qti.hardware.wigig.supptunnel@1.0.so
 vendor/bin/cnss-daemon
-vendor/etc/init/android.hardware.wifi.supplicant-service.rc
 vendor/etc/init/vendor.qti.hardware.wifi.wifilearner-service.rc
 vendor/etc/vintf/manifest/vendor.qti.hardware.wifi.wifilearner-service.xml
 vendor/lib64/libcert_parse.wpa_s.so
