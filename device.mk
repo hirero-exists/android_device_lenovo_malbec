@@ -341,7 +341,8 @@ PRODUCT_PACKAGES += \
     privapp_permissions_com.lenovo.parts
 
 PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/idc/NVTCapacitivePen.idc:$(TARGET_COPY_OUT_VENDOR)/usr/idc/NVTCapacitivePen.idc
+    $(LOCAL_PATH)/idc/NVTCapacitivePen.idc:$(TARGET_COPY_OUT_VENDOR)/usr/idc/NVTCapacitivePen.idc \
+    $(LOCAL_PATH)/idc/Vendor_17ef_Product_0036.idc:$(TARGET_COPY_OUT_VENDOR)/usr/idc/Vendor_17ef_Product_0036.idc
 
 # Update engine
 PRODUCT_PACKAGES += \

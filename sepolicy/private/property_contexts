@@ -6,6 +6,9 @@ persist.sys.pen.wakeup u:object_r:malbec_parts_prop:s0 exact bool
 persist.sys.pen.toolbar u:object_r:malbec_parts_prop:s0 exact bool
 persist.sys.pen.gestures_disabled u:object_r:malbec_parts_prop:s0 exact bool
 persist.sys.pen.gestures_fingers_only u:object_r:malbec_parts_prop:s0 exact bool
+sys.malbec.pen.guard_active u:object_r:malbec_parts_prop:s0 exact bool
+sys.malbec.pen.guard_config u:object_r:malbec_parts_prop:s0 exact string
+sys.malbec.pen.guard_ready u:object_r:malbec_parts_prop:s0 exact string
 persist.sys.touch.high_report_rate u:object_r:malbec_parts_prop:s0 exact bool
 sys.malbec.bypass.active u:object_r:malbec_parts_prop:s0 exact bool
 sys.malbec.bypass.heartbeat u:object_r:malbec_parts_prop:s0 exact int

@@ -91,7 +91,7 @@
     <string name="gaming_overlay_opacity_title">Island opacity</string>
     <string name="gaming_overlay_bypass_enable">Enable bypass</string>
     <string name="pen_gestures_title">Disable pen gestures</string>
-    <string name="pen_gestures_summary">Prevent pen strokes from triggering system navigation gestures (Back/Home) so gestures can only be used by fingers</string>
+    <string name="pen_gestures_summary">Prevent accidental Back and Home gestures with the pen. Finger gestures still work. Pen strokes cannot start at the screen’s side and bottom edges.</string>
     <string name="toolbar_desktop_mode">Desktop mode</string>
     <string name="desktop_mode_enabled">Desktop mode enabled</string>
     <string name="desktop_mode_disabled">Desktop mode disabled</string>
