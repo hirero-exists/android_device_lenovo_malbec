@@ -36,7 +36,10 @@ prebuilt_etc {
 
 cc_binary {
     name: "malbec_partsd",
-    srcs: ["backend/malbec_partsd.cpp"],
+    srcs: [
+        "backend/malbec_partsd.cpp",
+        "backend/PenGuard.cpp",
+    ],
     init_rc: ["init.malbec.rc"],
     shared_libs: [
         "libbase",

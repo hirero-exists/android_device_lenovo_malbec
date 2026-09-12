@@ -14,6 +14,8 @@
 #include <android-base/properties.h>
 #include <android-base/strings.h>
 
+#include "PenGuard.h"
+
 #include <dirent.h>
 #include <fcntl.h>
 #include <linux/input.h>
@@ -29,6 +31,7 @@
 #include <cmath>
 #include <sstream>
 #include <string>
+#include <thread>
 
 namespace {
 
@@ -457,11 +460,6 @@ int main() {
         LOG(INFO) << "Opened hall input device";
     }
 
-    int pen_cap_input = OpenNamedInput("NVTCapacitivePen");
-    if (pen_cap_input >= 0) {
-        LOG(INFO) << "Opened capacitive pen input device";
-    }
-
     int pen_bt_input = OpenNamedInput("moto pen pro");
     if (pen_bt_input >= 0) {
         LOG(INFO) << "Opened bluetooth pen input device";
@@ -472,6 +470,12 @@ int main() {
         PLOG(ERROR) << "Unable to create folio input device";
         return 1;
     }
+
+    std::thread([uinput] {
+        malbec::RunPenGuard("NVTCapacitivePen", [uinput](int action) {
+            DispatchPenAction(uinput, action);
+        });
+    }).detach();
 
     bool folio_enabled = android::base::GetBoolProperty(kFolioEnabledProperty, true);
     int folio_applied = -1;
@@ -493,20 +497,16 @@ int main() {
             if (hall_input < 0) {
                 hall_input = OpenHallInput();
             }
-            if (pen_cap_input < 0) {
-                pen_cap_input = OpenNamedInput("NVTCapacitivePen");
-            }
             if (pen_bt_input < 0) {
                 pen_bt_input = OpenNamedInput("moto pen pro");
             }
         }
 
-        pollfd fds[3] = {
+        pollfd fds[2] = {
                 {hall_input, POLLIN, 0},
-                {pen_cap_input, POLLIN, 0},
                 {pen_bt_input, POLLIN, 0},
         };
-        int result = poll(fds, 3, 250);
+        int result = poll(fds, 2, 250);
         if (result < 0 && errno != EINTR) {
             PLOG(ERROR) << "Input poll failed";
             return 1;
@@ -539,7 +539,7 @@ int main() {
             }
         }
 
-        for (int p = 1; p <= 2; ++p) {
+        for (int p = 1; p < 2; ++p) {
             if (fds[p].fd >= 0 && (fds[p].revents & POLLIN) != 0) {
                 input_event events[16];
                 ssize_t length;
