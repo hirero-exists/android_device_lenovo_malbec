@@ -1,0 +1,30 @@
+cc_defaults {
+    name: "malbec_dolby_v2_defaults",
+    vendor: true,
+    shared_libs: [
+        "android.hardware.audio.effect-V2-ndk",
+        "android.media.audio.common.types-V3-ndk",
+        "android.hardware.common-V2-ndk",
+        "android.hardware.common.fmq-V1-ndk",
+        "libbinder_ndk",
+        "libfmq",
+        "libutils",
+        "libcutils",
+        "liblog",
+        "libdl",
+    ],
+    header_libs: ["libaudio_system_headers"],
+}
+
+cc_binary {
+    name: "malbec_dolby_probe",
+    defaults: ["malbec_dolby_v2_defaults"],
+    srcs: ["Probe.cpp"],
+}
+
+cc_library_shared {
+    name: "libmalbec_dap_bridge",
+    defaults: ["malbec_dolby_v2_defaults"],
+    srcs: ["Bridge.cpp"],
+    relative_install_path: "soundfx",
+}
