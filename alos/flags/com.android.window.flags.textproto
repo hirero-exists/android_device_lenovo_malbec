@@ -1,0 +1,876 @@
+flag_value {
+  package: "com.android.window.flags"
+  name: "allow_drag_and_drop_when_interactive_bugfix"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "appheader_launch_color_bugfix"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "better_desk_deactivation_in_recents_transition"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "change_display_focus_on_wallpaper_touch"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "close_fullscreen_and_splitscreen_keyboard_shortcut"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "default_desk_without_warmup_migration"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "defer_resume_focus_in_non_focused_window"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "delegate_request_fullscreen_handling_to_shell"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "desktop_ai_platform"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "desktop_homescreen_icons_applaunch_transitions"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "desktop_minimize_last_task_bugfix"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "desktop_overview_rotation_task_resize_bugfix"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "different_display_launch_focus_restriction"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "dimming_wallpaper_for_maximized_and_tiled"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "disable_display_force_freeform_on_pc"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "disable_restore_non_fullscreen_bounds_on_configuration_change"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_add_window_decoration_to_all_tasks"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_animation_on_back_navigation_interception"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_app_restart_after_update"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_app_restart_after_update_split_screen"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_auto_recovery_from_self_kill"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_auto_rotate_on_slate_state"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_back_navigation_desktop_app_no_minimize"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_bounds_restoring_on_drag_exit"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_bug_fixes_for_secondary_display"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_caption_compat_inset_conversion"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_close_lid_wm_shell_bugfix"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_connected_displays_wallpaper_presentations"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_consolidated_window_options"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_cross_display_snap_support"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_cross_displays_app_launch_transition"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_desktop_app_handle_animation"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_desktop_app_launch_alttab_transitions"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_desktop_app_launch_transitions"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_desktop_first_based_default_to_desktop_bugfix"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_desktop_first_exempted_source_bugfix"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_desktop_first_laptop_state_bugfix"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_desktop_first_multiple_launch_root_bugfix"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_desktop_first_policy_in_lpm"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_desktop_first_top_fullscreen_bugfix"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_desktop_first_user_change_bugfix"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_desktop_ime_bugfix"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_desktop_mode_through_dev_option"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_desktop_taskbar_in_fullscreen_mode"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_desktop_taskbar_on_freeform_displays"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_desktop_wallpaper_activity_for_system_user"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_desktop_windowing_app_handle_education"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_desktop_windowing_app_to_web_education"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_desktop_windowing_back_navigation"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_desktop_windowing_enter_transition_bugfix"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_desktop_windowing_enter_transitions"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_desktop_windowing_exit_transitions"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_desktop_windowing_exit_transitions_bugfix"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_desktop_windowing_free_floating_pip"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_desktop_windowing_mode"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_desktop_windowing_persistence"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_desktop_windowing_size_constraints"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_desktop_windowing_transitions"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_desktop_windowing_wallpaper_activity"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_display_disconnect_fullscreen"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_display_disconnect_interaction"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_display_disconnect_pip"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_display_disconnect_splitscreen"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_display_reconnect_interaction"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_display_windowing_mode_switching"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_drawing_app_handle"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_enhanced_app_to_web_transition"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_fluid_resizing_for_listed_apps"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_focus_reset_on_display_removal"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_focus_transition_observer_cleanup"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_freeform_box_shadows_v2"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_freeform_fallback_transition_observer"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_fullscreen_in_new_task_preference"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_fullscreen_window_controls"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_handle_input_fix"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_home_screen_peeking"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_interaction_dependent_tab_tearing_bounds"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_launcher_handle_go_home_keyboard_shortcut"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_less_activity_recreation_on_config_change"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_multi_display_split"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_multiple_desktops_default_activation_in_desktop_first_displays"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_no_resize_cursor"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_non_default_display_split_bugfix"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_open_by_default_dialog_focus_bugfix"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_overflow_button_for_taskbar_pinned_items"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_per_display_desktop_wallpaper_activity"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_pinning_app_with_context_menu"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_presentation_stops_top_task_bugfix"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_prevent_desktop_in_locktaskmode_bugfix"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_privileged_app_transparent_windowing_exemptions"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_projected_display_desktop_mode"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_remembered_bounds"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_request_fullscreen_refactor"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_require_movable_task_api"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_resizing_metrics"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_stepped_cascading"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_sys_decors_callbacks_via_wm"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_task_positioner_refactor"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_task_positioner_refactor_clank"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_task_positioner_refactor_for_listed_apps"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_task_stack_observer_in_shell"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_taskbar_connected_displays"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_taskbar_overflow"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_trampoline_task_affinity_bugfix"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_transient_gesture_in_system_ui"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_user_preferred_hdr_mode"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_veil_less_window_maximization_for_listed_apps"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_window_decoration_refactor"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "enable_window_repositioning_api"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "exclude_caption_insets_opt_out_api"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "filter_events_from_irrelevant_devices_in_drag_move_resize"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "fix_wallpaper_dim_issues_26q2"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "fullscreen_key_ignores_bubble_bugfix"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "grant_manage_key_gestures_to_recents"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "handle_overview_desktop_scrim_bugfix"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "home_package_windowing_exemptions_bug_fix"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "intercept_touch_event_for_app_header_drag_move"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "launch_games_in_fullscreen_by_allowlist"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "mask_presentation_flags_on_internal_displays"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "move_task_to_front_on_drag_resizing_bugfix"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "nested_tasks_with_independent_bounds_bugfix"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "prioritize_visible_task_display_over_source"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "protect_set_launch_windowing_mode_api"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "reenable_app_handle_color_animations"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "refactor_caption_sandboxing_to_core"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "reparent_desk_leaf_tasks_if_relaunched"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "repository_based_persistence_bg_thread"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "request_fullscreen_api_permission"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "respect_system_default_min_size"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "return_windowless_root_views_in_wmglobal_getwindowview"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "runtime_density_resolution_for_window_layout"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "runtime_density_resolution_for_window_layout_bugfix"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "secure_content_failure_ui"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "show_app_handle_large_screens"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "show_desktop_experience_dev_option"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "show_desktop_windowing_dev_option"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "show_home_behind_desktop"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "show_when_locked_desktop_bugfix"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "skip_deactivation_of_desk_with_nothing_in_front"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "skip_kill_process_for_desktop_task_core_close_transition"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "update_desktop_scrim_on_desktop_task_launch"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "update_desktop_scrim_on_drag_resize_end"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "update_desktop_scrim_on_fullscreen_launch"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "update_desktop_scrim_on_move_task_to_desk"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "update_desktop_scrim_when_locked_bugfix"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.window.flags"
+  name: "update_desktop_scrim_when_move_task_to_front_bugfix"
+  state: ENABLED
+  permission: READ_ONLY
+}

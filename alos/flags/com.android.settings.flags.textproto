@@ -1,0 +1,24 @@
+flag_value {
+  package: "com.android.settings.flags"
+  name: "enable_resolution_refresh_rate_setting"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.settings.flags"
+  name: "show_detailed_fingerprint_sensor_location"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.settings.flags"
+  name: "show_top_level_device_category"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.settings.flags"
+  name: "show_user_details_settings_for_self"
+  state: ENABLED
+  permission: READ_ONLY
+}

@@ -1,0 +1,6 @@
+flag_value {
+  package: "com.android.settings.accessibility"
+  name: "desktop_magnification_settings_polish"
+  state: ENABLED
+  permission: READ_ONLY
+}
