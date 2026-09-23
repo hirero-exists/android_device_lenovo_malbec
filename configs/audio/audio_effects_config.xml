@@ -21,7 +21,7 @@ SPDX-License-Identifier: BSD-3-Clause-Clear
         <library name="misoundfx" path="libmisoundfx_aidl.so"/>
         <library name="mispatializer" path="libspatializeraidl.so"/>
         <!--DOLBY DAP-->
-        <library name="dap" path="libswdapaidl.so"/>
+        <library name="dap" path="libmalbec_dap_bridge.so"/>
         <library name="dvl" path="libdlbvolaidl.so"/>
         <!--DOLBY GAME-->
         <library name="gamedap" path="libswgamedapaidl.so"/>

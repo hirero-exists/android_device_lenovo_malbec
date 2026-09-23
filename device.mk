@@ -63,6 +63,7 @@ PRODUCT_PACKAGES += \
     libalsautilsv2.vendor \
     libaudioaidlcommon.vendor \
     libaudioutils_shim \
+    libmalbec_dap_bridge \
     libmediautils_vendor.vendor \
     libmemunreachable.vendor
 
