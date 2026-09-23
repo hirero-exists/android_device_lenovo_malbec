@@ -1,0 +1,47 @@
+aconfig_value_set {
+    name: "malbec_alos_flags",
+    values: [
+        "malbec_alos_com_android_launcher3",
+        "malbec_alos_com_android_settings_accessibility",
+        "malbec_alos_com_android_settings_connectivity",
+        "malbec_alos_com_android_settings_flags",
+        "malbec_alos_com_android_systemui",
+        "malbec_alos_com_android_window_flags",
+    ],
+}
+
+aconfig_values {
+    name: "malbec_alos_com_android_launcher3",
+    package: "com.android.launcher3",
+    srcs: ["com.android.launcher3.textproto"],
+}
+
+aconfig_values {
+    name: "malbec_alos_com_android_settings_accessibility",
+    package: "com.android.settings.accessibility",
+    srcs: ["com.android.settings.accessibility.textproto"],
+}
+
+aconfig_values {
+    name: "malbec_alos_com_android_settings_connectivity",
+    package: "com.android.settings.connectivity",
+    srcs: ["com.android.settings.connectivity.textproto"],
+}
+
+aconfig_values {
+    name: "malbec_alos_com_android_settings_flags",
+    package: "com.android.settings.flags",
+    srcs: ["com.android.settings.flags.textproto"],
+}
+
+aconfig_values {
+    name: "malbec_alos_com_android_systemui",
+    package: "com.android.systemui",
+    srcs: ["com.android.systemui.textproto"],
+}
+
+aconfig_values {
+    name: "malbec_alos_com_android_window_flags",
+    package: "com.android.window.flags",
+    srcs: ["com.android.window.flags.textproto"],
+}

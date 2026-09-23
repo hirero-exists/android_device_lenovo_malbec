@@ -1,0 +1,14 @@
+{
+  "repository": "frameworks/base",
+  "base_revision": "db291d9dc8bd8bd951edc117fdedbdf332118e48",
+  "patches": [
+    {
+      "file": "0001-shell-handle-missing-decoration-surface.patch",
+      "sha256": "6847dfdfa48fe3d315da1c31a83be6a332ab6bddc2316323c45c1e6e4f76e7f0"
+    },
+    {
+      "file": "0002-shell-opt-in-automatic-desktop-immersive.patch",
+      "sha256": "d7b46eb80a8f084967bc9aec8c6823b2c1c1d25c25b8444b1196c635b89c3250"
+    }
+  ]
+}

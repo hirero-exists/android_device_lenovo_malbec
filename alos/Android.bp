@@ -1,0 +1,12 @@
+override_android_app {
+    name: "MalbecDesktopLauncher",
+    base: "Launcher3QuickStep",
+    certificate: "platform",
+    overrides: [
+        "NexusLauncherRelease",
+        "NexusLauncherReleaseTablet",
+        "FrameworkPixellauncher",
+        "PixelLauncherOverlay",
+        "SystemUIPixellauncher",
+    ],
+}

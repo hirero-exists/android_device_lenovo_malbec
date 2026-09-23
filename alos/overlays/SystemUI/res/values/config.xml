@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <bool name="config_useDesktopStatusBar">true</bool>
+    <bool name="config_endSideBrightnessDialog">true</bool>
+    <bool name="config_desktopAutoEnterImmersive">true</bool>
+</resources>

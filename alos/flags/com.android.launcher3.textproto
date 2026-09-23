@@ -1,0 +1,90 @@
+flag_value {
+  package: "com.android.launcher3"
+  name: "enable_alt_tab_kqs_flatenning"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.launcher3"
+  name: "enable_cue_bar_desktop_form_factor"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.launcher3"
+  name: "enable_cursor_driven_workflows"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.launcher3"
+  name: "enable_fallback_overview_in_window"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.launcher3"
+  name: "enable_growth_nudge"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.launcher3"
+  name: "enable_launcher_overview_in_window"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.launcher3"
+  name: "enable_mouse_interaction_changes"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.launcher3"
+  name: "enable_overview_desktop_tile_wallpaper_background"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.launcher3"
+  name: "enable_overview_pagination"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.launcher3"
+  name: "enable_scalability_for_desktop_experience"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.launcher3"
+  name: "enable_simultaneous_overview_trigger_on_extended_desktop"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.launcher3"
+  name: "enable_taskbar_behind_shade"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.launcher3"
+  name: "enable_taskbar_icon_desktop_clicks"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.launcher3"
+  name: "enable_tasks_drag_and_drop_in_overview"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.launcher3"
+  name: "orientation_friendly_desktop_grid_spec"
+  state: ENABLED
+  permission: READ_ONLY
+}

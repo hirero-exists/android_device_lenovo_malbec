@@ -1,0 +1,186 @@
+Subject: [PATCH] Shell: allow products to honor focused desktop immersive requests
+Base-commit: db291d9dc8bd8bd951edc117fdedbdf332118e48
+
+diff --git a/libs/WindowManager/Shell/res/values/config.xml b/libs/WindowManager/Shell/res/values/config.xml
+index 1e67a8592..2675ac96c 100644
+--- a/libs/WindowManager/Shell/res/values/config.xml
++++ b/libs/WindowManager/Shell/res/values/config.xml
+@@ -197,6 +197,8 @@
+           devices. -->
+     <bool name="config_removeStatusBarInputLayer">true</bool>
+ 
++    <bool name="config_desktopAutoEnterImmersive">false</bool>
++
+     <!-- Whether to actively prompt user to use web rather than apps. -->
+     <bool name="config_appToWebActivePrompting">false</bool>
+     <!-- Packages that are exempt from the app-to-web first run prompt. -->
+diff --git a/libs/WindowManager/Shell/src/com/android/wm/shell/desktopmode/DesktopImmersiveController.kt b/libs/WindowManager/Shell/src/com/android/wm/shell/desktopmode/DesktopImmersiveController.kt
+index 24ccd32d1..89865498e 100644
+--- a/libs/WindowManager/Shell/src/com/android/wm/shell/desktopmode/DesktopImmersiveController.kt
++++ b/libs/WindowManager/Shell/src/com/android/wm/shell/desktopmode/DesktopImmersiveController.kt
+@@ -93,14 +93,14 @@ class DesktopImmersiveController(
+     }
+ 
+     /** Starts a transition to enter full immersive state inside the desktop. */
+-    fun moveTaskToImmersive(taskInfo: RunningTaskInfo) {
++    fun moveTaskToImmersive(taskInfo: RunningTaskInfo): Boolean {
+         check(taskInfo.isFreeform) { "Task must already be in freeform" }
+         if (inProgress) {
+             logV(
+                 "Cannot start entry because transition(s) already in progress: %s",
+                 pendingImmersiveTransitions,
+             )
+-            return
++            return false
+         }
+         val wct = WindowContainerTransaction().apply { setBounds(taskInfo.token, Rect()) }
+         logV("Moving task %d into immersive mode", taskInfo.taskId)
+@@ -111,6 +111,7 @@ class DesktopImmersiveController(
+             direction = Direction.ENTER,
+             transition = transition,
+         )
++        return true
+     }
+ 
+     /** Starts a transition to move an immersive task out of immersive. */
+diff --git a/libs/WindowManager/Shell/src/com/android/wm/shell/desktopmode/DesktopTasksController.kt b/libs/WindowManager/Shell/src/com/android/wm/shell/desktopmode/DesktopTasksController.kt
+index 659479089..12aed7b79 100644
+--- a/libs/WindowManager/Shell/src/com/android/wm/shell/desktopmode/DesktopTasksController.kt
++++ b/libs/WindowManager/Shell/src/com/android/wm/shell/desktopmode/DesktopTasksController.kt
+@@ -83,6 +83,7 @@ import android.window.TaskSnapshotManager
+ import android.window.TransitionInfo
+ import android.window.TransitionInfo.Change
+ import android.window.TransitionRequestInfo
++import android.window.WindowContainerToken
+ import android.window.WindowContainerTransaction
+ import android.window.WindowContainerTransaction.HierarchyOp.HIERARCHY_OP_TYPE_PENDING_INTENT
+ import androidx.annotation.BinderThread
+@@ -379,6 +380,8 @@ class DesktopTasksController(
+ 
+     @RecentsTransitionState private var recentsTransitionState = TRANSITION_STATE_NOT_RUNNING
+ 
++    private var lastAutoImmersiveRequest: WindowContainerToken? = null
++
+     private lateinit var splitScreenController: SplitScreenController
+     lateinit var freeformTaskTransitionStarter: FreeformTaskTransitionStarter
+     // Launch cookie used to identify a drag and drop transition to fullscreen after it has begun.
+@@ -6780,6 +6783,22 @@ class DesktopTasksController(
+         val repository = userRepositories.getProfile(taskInfo.userId)
+         val inImmersive = repository.isTaskInFullImmersiveState(taskInfo.taskId)
+         val requestingImmersive = taskInfo.requestingImmersive
++        if (!requestingImmersive && lastAutoImmersiveRequest == taskInfo.token) {
++            lastAutoImmersiveRequest = null
++        }
++        if (
++            context.resources.getBoolean(R.bool.config_desktopAutoEnterImmersive) &&
++                requestingImmersive &&
++                !inImmersive &&
++                taskInfo.isFreeform &&
++                taskInfo.isVisible &&
++                taskInfo.isFocused &&
++                lastAutoImmersiveRequest != taskInfo.token &&
++                !RecentsTransitionStateListener.isRunning(recentsTransitionState) &&
++                desktopImmersiveController.moveTaskToImmersive(taskInfo)
++        ) {
++            lastAutoImmersiveRequest = taskInfo.token
++        }
+         if (
+             inImmersive &&
+                 !requestingImmersive &&
+diff --git a/libs/WindowManager/Shell/tests/unittest/src/com/android/wm/shell/desktopmode/DesktopTasksControllerTest.kt b/libs/WindowManager/Shell/tests/unittest/src/com/android/wm/shell/desktopmode/DesktopTasksControllerTest.kt
+index d47530646..d81400a6d 100644
+--- a/libs/WindowManager/Shell/tests/unittest/src/com/android/wm/shell/desktopmode/DesktopTasksControllerTest.kt
++++ b/libs/WindowManager/Shell/tests/unittest/src/com/android/wm/shell/desktopmode/DesktopTasksControllerTest.kt
+@@ -8147,6 +8147,92 @@ class DesktopTasksControllerTest : ShellTestCase() {
+         verify(mMockDesktopImmersiveController).moveTaskToNonImmersive(eq(task), any())
+     }
+ 
++    @Test
++    fun onTaskInfoChanged_autoImmersive_focusedRequestEntersOnlyOnce() {
++        mContext.getOrCreateTestableResources()
++            .addOverride(R.bool.config_desktopAutoEnterImmersive, true)
++        val task = setUpFreeformTask(DEFAULT_DISPLAY).apply {
++            isVisible = true
++            isFocused = true
++            requestedVisibleTypes = 0
++        }
++        whenever(mMockDesktopImmersiveController.moveTaskToImmersive(any())).thenReturn(true)
++
++        controller.onTaskInfoChanged(task)
++        controller.onTaskInfoChanged(task)
++
++        verify(mMockDesktopImmersiveController).moveTaskToImmersive(task)
++    }
++
++    @Test
++    fun onTaskInfoChanged_autoImmersive_newRequestCanEnterAgain() {
++        mContext.getOrCreateTestableResources()
++            .addOverride(R.bool.config_desktopAutoEnterImmersive, true)
++        val task = setUpFreeformTask(DEFAULT_DISPLAY).apply {
++            isVisible = true
++            isFocused = true
++            requestedVisibleTypes = 0
++        }
++        whenever(mMockDesktopImmersiveController.moveTaskToImmersive(any())).thenReturn(true)
++
++        controller.onTaskInfoChanged(task)
++        task.requestedVisibleTypes = WindowInsets.Type.statusBars()
++        controller.onTaskInfoChanged(task)
++        task.requestedVisibleTypes = 0
++        controller.onTaskInfoChanged(task)
++
++        verify(mMockDesktopImmersiveController, times(2)).moveTaskToImmersive(task)
++    }
++
++    @Test
++    fun onTaskInfoChanged_autoImmersive_unfocusedRequestDoesNotEnter() {
++        mContext.getOrCreateTestableResources()
++            .addOverride(R.bool.config_desktopAutoEnterImmersive, true)
++        val task = setUpFreeformTask(DEFAULT_DISPLAY).apply {
++            isVisible = true
++            isFocused = false
++            requestedVisibleTypes = 0
++        }
++
++        controller.onTaskInfoChanged(task)
++
++        verify(mMockDesktopImmersiveController, never()).moveTaskToImmersive(any())
++    }
++
++    @Test
++    fun onTaskInfoChanged_autoImmersive_disabledDoesNotEnter() {
++        mContext.getOrCreateTestableResources()
++            .addOverride(R.bool.config_desktopAutoEnterImmersive, false)
++        val task = setUpFreeformTask(DEFAULT_DISPLAY).apply {
++            isVisible = true
++            isFocused = true
++            requestedVisibleTypes = 0
++        }
++
++        controller.onTaskInfoChanged(task)
++
++        verify(mMockDesktopImmersiveController, never()).moveTaskToImmersive(any())
++    }
++
++    @Test
++    fun onTaskInfoChanged_autoImmersive_duringRecentsDoesNotEnter() {
++        mContext.getOrCreateTestableResources()
++            .addOverride(R.bool.config_desktopAutoEnterImmersive, true)
++        val task = setUpFreeformTask(DEFAULT_DISPLAY).apply {
++            isVisible = true
++            isFocused = true
++            requestedVisibleTypes = 0
++        }
++        recentsTransitionStateListener.onTransitionStateChanged(
++            TRANSITION_STATE_REQUESTED,
++            DEFAULT_DISPLAY,
++        )
++
++        controller.onTaskInfoChanged(task)
++
++        verify(mMockDesktopImmersiveController, never()).moveTaskToImmersive(any())
++    }
++
+     @Test
+     fun onTaskInfoChanged_notInImmersiveUnrequestsImmersive_noReExit() {
+         val task = setUpFreeformTask(DEFAULT_DISPLAY)

@@ -1,0 +1,43 @@
+Subject: [PATCH] Shell: release resize input when the decoration surface is absent
+Base-commit: db291d9dc8bd8bd951edc117fdedbdf332118e48
+
+diff --git a/libs/WindowManager/Shell/src/com/android/wm/shell/windowdecor/DefaultWindowDecoration.kt b/libs/WindowManager/Shell/src/com/android/wm/shell/windowdecor/DefaultWindowDecoration.kt
+index 2233fc581..c67c7900f 100644
+--- a/libs/WindowManager/Shell/src/com/android/wm/shell/windowdecor/DefaultWindowDecoration.kt
++++ b/libs/WindowManager/Shell/src/com/android/wm/shell/windowdecor/DefaultWindowDecoration.kt
+@@ -783,6 +783,11 @@ constructor(
+     }
+ 
+     private fun updateDragResizeListenerIfNeeded(prevContainerSurface: SurfaceControl?) {
++        if (decorationContainerSurface == null) {
++            closeDragResizeListener()
++            updateExclusionRegion()
++            return
++        }
+         val taskPositionChanged = !taskInfo.positionInParent.equals(taskPositionInParent)
+         if (!taskInfo.isDragResizable(inFullImmersive)) {
+             closeDragResizeListener()
+diff --git a/libs/WindowManager/Shell/tests/unittest/src/com/android/wm/shell/windowdecor/DefaultWindowDecorationTests.kt b/libs/WindowManager/Shell/tests/unittest/src/com/android/wm/shell/windowdecor/DefaultWindowDecorationTests.kt
+index 625f1ecbf..22a63ae8f 100644
+--- a/libs/WindowManager/Shell/tests/unittest/src/com/android/wm/shell/windowdecor/DefaultWindowDecorationTests.kt
++++ b/libs/WindowManager/Shell/tests/unittest/src/com/android/wm/shell/windowdecor/DefaultWindowDecorationTests.kt
+@@ -193,6 +193,19 @@ class DefaultWindowDecorationTests : ShellTestCase() {
+         assertTrue(relayoutParams.isCaptionVisible)
+     }
+ 
++    @Test
++    @EnableFlags(Flags.FLAG_ENABLE_ADD_WINDOW_DECORATION_TO_ALL_TASKS)
++    fun relayout_invisibleTaskStillRequestedVisible_doesNotCreateResizeListener() {
++        val task = WindowDecorationTestHelper.createAppHeaderTask()
++        val decoration = setUpWindowDecoration(task)
++        task.isVisible = false
++        task.isVisibleRequested = true
++
++        decoration.relayout(task, true, Region())
++
++        assertFalse(decoration.isHandlingDragResize())
++    }
++
+     private fun setUpWindowDecoration(taskInfo: RunningTaskInfo): DefaultWindowDecoration {
+         val wrappedDecoration =
+             WindowDecorationTestHelper.createWindowDecoration(

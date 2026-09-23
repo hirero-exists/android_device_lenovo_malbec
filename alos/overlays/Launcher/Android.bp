@@ -1,0 +1,5 @@
+runtime_resource_overlay {
+    name: "MalbecAlosLauncherOverlay",
+    system_ext_specific: true,
+    certificate: "platform",
+}

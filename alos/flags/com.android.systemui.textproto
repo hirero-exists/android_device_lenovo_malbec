@@ -1,0 +1,150 @@
+flag_value {
+  package: "com.android.systemui"
+  name: "add_new_unlock_hint_on_keyguard"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.systemui"
+  name: "back_button_on_bouncer_fix"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.systemui"
+  name: "bouncer_accessibility_button_for_desktop"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.systemui"
+  name: "check_desktop_mode_for_spacial_model_app_pushback"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.systemui"
+  name: "containerize_bouncer_on_large_screens"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.systemui"
+  name: "desktop_av_controls_popup"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.systemui"
+  name: "desktop_effects_qs_tile"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.systemui"
+  name: "desktop_optimized_notification"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.systemui"
+  name: "desktop_sizing"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.systemui"
+  name: "disable_double_click_swap_on_bouncer"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.systemui"
+  name: "disable_user_switcher_dropdown_on_bouncer"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.systemui"
+  name: "dual_shade"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.systemui"
+  name: "enable_desktop_growth"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.systemui"
+  name: "fix_nssl_blocking_qs"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.systemui"
+  name: "more_indicators_and_buttons_on_password_bouncer"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.systemui"
+  name: "nssl_touch_dispatch_fix"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.systemui"
+  name: "press_any_key_to_access_bouncer"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.systemui"
+  name: "scene_container"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.systemui"
+  name: "status_bar_assistant_icon"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.systemui"
+  name: "status_bar_date"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.systemui"
+  name: "status_bar_event_forwarding_modernization"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.systemui"
+  name: "status_bar_for_desktop"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.systemui"
+  name: "status_bar_ime_chip"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.systemui"
+  name: "status_bar_popup_chips"
+  state: ENABLED
+  permission: READ_ONLY
+}
+flag_value {
+  package: "com.android.systemui"
+  name: "status_bar_root_modernization"
+  state: ENABLED
+  permission: READ_ONLY
+}
