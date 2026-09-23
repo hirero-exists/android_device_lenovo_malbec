@@ -13,7 +13,10 @@ cc_defaults {
         "liblog",
         "libdl",
     ],
-    header_libs: ["libaudio_system_headers"],
+    header_libs: [
+        "libaudio_system_headers",
+        "libaudioutils_headers",
+    ],
 }
 
 cc_binary {
