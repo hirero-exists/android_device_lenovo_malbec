@@ -9,6 +9,14 @@
     {
       "file": "0002-shell-opt-in-automatic-desktop-immersive.patch",
       "sha256": "d7b46eb80a8f084967bc9aec8c6823b2c1c1d25c25b8444b1196c635b89c3250"
+    },
+    {
+      "file": "0003-systemui-clear-desktop-touch-region.patch",
+      "sha256": "40686dfd47817be105bd2c3953ce571c58d6741f162271afa15d026dc67678a9"
+    },
+    {
+      "file": "0004-systemui-measure-shade-window-root.patch",
+      "sha256": "966a9722fdcf4762e37fdb317bcab28c20b487356269b11ed4f2788ecde91c20"
     }
   ]
 }

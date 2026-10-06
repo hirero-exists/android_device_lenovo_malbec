@@ -1,0 +1,18 @@
+Subject: [PATCH] SystemUI: clear stale desktop status-bar touch region
+Base-commit: db291d9dc8bd8bd951edc117fdedbdf332118e48
+
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/pipeline/shared/ui/composable/StatusBarRoot.kt b/packages/SystemUI/src/com/android/systemui/statusbar/pipeline/shared/ui/composable/StatusBarRoot.kt
+index 013eae5ed..a21666e86 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/pipeline/shared/ui/composable/StatusBarRoot.kt
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/pipeline/shared/ui/composable/StatusBarRoot.kt
+@@ -236,6 +236,10 @@ fun StatusBarRoot(
+ 
+     // Let the DesktopStatusBar compose all the UI if [useDesktopStatusBar] is true.
+     if (StatusBarForDesktop.isEnabled && statusBarViewModel.useDesktopStatusBar) {
++        DisposableEffect(parent) {
++            parent.getViewRootImpl()?.setTouchableRegion(null)
++            onDispose {}
++        }
+         DesktopStatusBar(
+             viewModel = statusBarViewModel,
+             clockViewModelFactory = clockViewModelFactory,
