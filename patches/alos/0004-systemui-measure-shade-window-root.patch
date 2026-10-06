@@ -1,0 +1,67 @@
+Subject: [PATCH] SystemUI: measure desktop shade touch bounds from the window root
+Base-commit: db291d9dc8bd8bd951edc117fdedbdf332118e48
+
+diff --git a/packages/SystemUI/multivalentTests/src/com/android/systemui/statusbar/phone/ShadeTouchableRegionManagerTest.kt b/packages/SystemUI/multivalentTests/src/com/android/systemui/statusbar/phone/ShadeTouchableRegionManagerTest.kt
+index 3b6500836..512b061f6 100644
+--- a/packages/SystemUI/multivalentTests/src/com/android/systemui/statusbar/phone/ShadeTouchableRegionManagerTest.kt
++++ b/packages/SystemUI/multivalentTests/src/com/android/systemui/statusbar/phone/ShadeTouchableRegionManagerTest.kt
+@@ -20,6 +20,7 @@ import android.content.res.Configuration
+ import android.content.testableContext
+ import android.graphics.Rect
+ import android.platform.test.annotations.EnableFlags
++import android.widget.FrameLayout
+ import androidx.test.ext.junit.runners.AndroidJUnit4
+ import androidx.test.filters.SmallTest
+ import com.android.compose.animation.scene.ObservableTransitionState.Idle
+@@ -71,6 +72,7 @@ class ShadeTouchableRegionManagerTest : SysuiTestCase() {
+     fun setUp() {
+         with(kosmos) {
+             notificationShadeWindowView.apply {
++                whenever(rootView).thenReturn(this)
+                 whenever(width).thenReturn(1000)
+                 whenever(height).thenReturn(1000)
+             }
+@@ -264,6 +266,30 @@ class ShadeTouchableRegionManagerTest : SysuiTestCase() {
+             assertThat(rects).containsExactly(expectedRect)
+         }
+ 
++    @Test
++    @EnableFlags(Flags.FLAG_SCENE_CONTAINER, Flags.FLAG_DUAL_SHADE)
++    fun calculateTouchableRegionForDesktop_usesResizedRootWithStaleLegacyChild() =
++        kosmos.runTest {
++            val root = FrameLayout(mContext)
++            root.layout(0, 0, 2190, 3504)
++            whenever(notificationShadeWindowView.rootView).thenReturn(root)
++            whenever(notificationShadeWindowView.width).thenReturn(2190)
++            whenever(notificationShadeWindowView.height).thenReturn(3504)
++            underTest.setup(notificationShadeWindowView)
++            enableStatusBarForDesktop()
++            lockDevice()
++            shadeInteractor.setShadeOverlayBounds(null)
++            val statusBarHeight = SystemBarUtils.getStatusBarHeight(mContext)
++
++            assertThat(underTest.calculateTouchableRegionForDesktop())
++                .containsExactly(Rect(0, statusBarHeight, 2190, 3504))
++
++            root.layout(0, 0, 3504, 2190)
++
++            assertThat(underTest.calculateTouchableRegionForDesktop())
++                .containsExactly(Rect(0, statusBarHeight, 3504, 2190))
++        }
++
+     private fun Kosmos.openShadeOverlay(overlay: OverlayKey) {
+         val shadeMode by collectLastValue(shadeMode)
+         val currentScene by collectLastValue(sceneInteractor.currentScene)
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/ShadeTouchableRegionManager.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/ShadeTouchableRegionManager.java
+index 5e62e029a..292067bc9 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/ShadeTouchableRegionManager.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/ShadeTouchableRegionManager.java
+@@ -200,7 +200,7 @@ public final class ShadeTouchableRegionManager implements Dumpable {
+     }
+ 
+     protected void setup(@NonNull View notificationShadeWindowView) {
+-        mNotificationShadeWindowView = notificationShadeWindowView;
++        mNotificationShadeWindowView = notificationShadeWindowView.getRootView();
+         mNotificationPanelView = mNotificationShadeWindowView.findViewById(R.id.notification_panel);
+     }
+ 
