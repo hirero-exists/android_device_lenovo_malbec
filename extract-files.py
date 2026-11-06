@@ -23,13 +23,8 @@ from extract_utils.main import (
 )
 
 namespace_imports = [
-    'hardware/qcom-caf/sm8750',
-    'hardware/qcom-caf/wlan',
-    'hardware/qcom-caf/common/libqti-perfd-client',
-    'vendor/qcom/opensource/commonsys/display',
-    'vendor/qcom/opensource/commonsys-intf/display',
-    'vendor/qcom/opensource/dataservices',
-    'vendor/qcom/opensource/display',
+    'hardware/qcom/wlan/qcwcn',
+    'vendor/qcom/opensource/data-ipa-cfg-mgr',
     'device/lenovo/malbec',
 ]
 

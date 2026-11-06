@@ -68,9 +68,9 @@ TARGET_FS_CONFIG_GEN := $(DEVICE_PATH)/configs/config.fs
 # HIDL
 DEVICE_FRAMEWORK_COMPATIBILITY_MATRIX_FILE += \
     $(DEVICE_PATH)/configs/hidl/compatibility_matrix.device.xml \
-    hardware/qcom-caf/common/vendor_framework_compatibility_matrix.xml
+    vendor/qcom/opensource/core-utils/vendor_framework_compatibility_matrix.xml
 
-DEVICE_MATRIX_FILE := hardware/qcom-caf/common/compatibility_matrix_aidl.xml
+DEVICE_MATRIX_FILE := device/qcom/vendor-common/compatibility_matrix.xml
 DEVICE_MANIFEST_FILE += \
     $(DEVICE_PATH)/configs/hidl/manifest.xml
 
@@ -90,9 +90,9 @@ BOARD_INIT_BOOT_HEADER_VERSION := 4
 BOARD_MKBOOTIMG_INIT_ARGS += --header_version $(BOARD_INIT_BOOT_HEADER_VERSION)
 
 BOARD_KERNEL_CMDLINE := \
-    swinfo.fingerprint=$(PRODUCT_DEVICE)-$(CUSTOM_PLATFORM_VERSION) \
-    mtdoops.fingerprint=$(PRODUCT_DEVICE)-$(CUSTOM_PLATFORM_VERSION) \
-    bootmonitor.fingerprint=$(PRODUCT_DEVICE)-$(CUSTOM_PLATFORM_VERSION)
+    swinfo.fingerprint=$(PRODUCT_DEVICE)-$(PLATFORM_VERSION) \
+    mtdoops.fingerprint=$(PRODUCT_DEVICE)-$(PLATFORM_VERSION) \
+    bootmonitor.fingerprint=$(PRODUCT_DEVICE)-$(PLATFORM_VERSION)
 
 BOARD_BOOTCONFIG := \
     androidboot.hardware=qcom \
@@ -104,13 +104,14 @@ BOARD_BOOTCONFIG := \
     androidboot.init_fatal_reboot_target=recovery
 
 PREBUILT_PATH := $(DEVICE_PATH)-kernel
-TARGET_NO_KERNEL_OVERRIDE := true
+TARGET_PREBUILT_KERNEL := $(PREBUILT_PATH)/images/kernel
 
 TARGET_PREBUILT_KERNEL_HEADERS := $(PREBUILT_PATH)/kernel-headers/kernel-uapi-headers.tar.gz
 BOARD_PREBUILT_DTBIMAGE_DIR := $(PREBUILT_PATH)/images/dtbs/
 BOARD_PREBUILT_DTBOIMAGE := $(PREBUILT_PATH)/images/dtbo.img
+
 PRODUCT_COPY_FILES += \
-	$(PREBUILT_PATH)/images/kernel:kernel
+    $(TARGET_PREBUILT_KERNEL):kernel
 
 GKI_VERSION := 6.6.87-android15-8-gc2569c3b141c-ab13768703-4k
 DLKM_MODULES_PATH := $(PREBUILT_PATH)/modules/vendor_dlkm
@@ -200,7 +201,6 @@ TARGET_RECOVERY_PIXEL_FORMAT := RGBX_8888
 TARGET_USERIMAGES_USE_F2FS := true
 
 # Sepolicy
-include device/qcom/sepolicy_vndr/SEPolicy.mk
 SYSTEM_EXT_PRIVATE_SEPOLICY_DIRS += $(DEVICE_PATH)/sepolicy/private
 BOARD_VENDOR_SEPOLICY_DIRS += $(DEVICE_PATH)/sepolicy/vendor
 SYSTEM_EXT_PUBLIC_SEPOLICY_DIRS += $(DEVICE_PATH)/sepolicy/public

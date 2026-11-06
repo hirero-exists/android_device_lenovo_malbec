@@ -21,11 +21,13 @@ $(call inherit-product, frameworks/native/build/phone-xhdpi-6144-dalvik-heap.mk)
 $(call inherit-product, packages/modules/Virtualization/apex/product_packages.mk)
 
 # Qualcomm
+TARGET_BOARD_PLATFORM := sun
+TARGET_KERNEL_VERSION := 6.6
+
 $(call soong_config_set,rfs,mpss_firmware_symlink_target,modem_firmware)
-$(call inherit-product, hardware/qcom-caf/common/common.mk)
 
 PRODUCT_VENDOR_LINKER_CONFIG_FRAGMENTS += \
-    hardware/qcom-caf/common/linker.config.json
+    $(LOCAL_PATH)/configs/linker.config.json
 
 AB_OTA_POSTINSTALL_CONFIG += \
     RUN_POSTINSTALL_system=true \
@@ -79,7 +81,7 @@ PRODUCT_PACKAGES += \
     audioeffectservice_qti.xml \
     libaudioeffecthal.qti
 
-AUDIO_HAL_DIR := hardware/qcom-caf/sm8750/audio/primary-hal
+AUDIO_HAL_DIR := vendor/qcom/opensource/audio-hal/primary-hal
 
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/configs/audio/audio_effects_config.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/sku_tuna/audio_effects_config.xml \
@@ -87,7 +89,7 @@ PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/configs/audio/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/sku_tuna/audio_policy_configuration.xml
 
 PRODUCT_COPY_FILES += \
-    $(AUDIO_HAL_DIR)/../pal/configs/sun/Hapticsconfig.xml:$(TARGET_COPY_OUT_VENDOR)/etc/Hapticsconfig.xml \
+    vendor/qcom/opensource/pal/configs/sun/Hapticsconfig.xml:$(TARGET_COPY_OUT_VENDOR)/etc/Hapticsconfig.xml \
     $(AUDIO_HAL_DIR)/configs/sun/quasar_config.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/sku_tuna/quasar_config.xml \
     $(AUDIO_HAL_DIR)/configs/sun/vendor_audio_interfaces.xml:$(TARGET_COPY_OUT_VENDOR)/etc/vendor_audio_interfaces.xml \
     $(AUDIO_HAL_DIR)/configs/sun/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml
@@ -292,6 +294,8 @@ PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.software.ipsec_tunnel_migration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.software.ipsec_tunnel_migration.xml
 
 # Power
+TARGET_PROVIDES_POWERHAL := true
+
 PRODUCT_PACKAGES += \
     android.hardware.power@1.0.vendor \
     android.hardware.power@1.1.vendor \
