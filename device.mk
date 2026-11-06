@@ -240,6 +240,9 @@ PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/rootdir/etc/fstab.qcom:$(TARGET_COPY_OUT_VENDOR_RAMDISK)/first_stage_ramdisk/fstab.qcom \
     $(LOCAL_PATH)/rootdir/etc/fstab.qcom:$(TARGET_COPY_OUT_VENDOR_RAMDISK)/first_stage_ramdisk/fstab.qcom.dm
 
+# Kernel
+TARGET_USES_KERNEL_PLATFORM := false
+
 # Keymint
 PRODUCT_PACKAGES += \
     android.hardware.hardware_keystore_V3.xml
