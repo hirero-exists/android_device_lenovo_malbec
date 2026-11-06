@@ -13,6 +13,8 @@ TARGET_NO_TELEPHONY := true
 $(call inherit-product, device/lenovo/malbec/device.mk)
 
 # Inherit from the AOSPA configuration.
+TARGET_USES_BLUR := true
+
 $(call inherit-product, vendor/aospa/target/product/aospa-target.mk)
 
 PRODUCT_NAME := aospa_malbec
