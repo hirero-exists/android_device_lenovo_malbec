@@ -34,9 +34,3 @@ PRODUCT_BUILD_PROP_OVERRIDES += \
     DeviceProduct=$(PRODUCT_SYSTEM_NAME)
 
 PRODUCT_GMS_CLIENTID_BASE := android-lenovo
-
-ifneq ($(wildcard vendor/lineage-priv/keys/keys.mk),)
-include vendor/lineage-priv/keys/keys.mk
-else ifneq ($(wildcard vendor/extra/product.mk),)
-include vendor/extra/product.mk
-endif
