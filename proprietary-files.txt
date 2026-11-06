@@ -2732,7 +2732,6 @@ vendor/lib64/libqvrcamera_client.qti.so
 vendor/lib64/libqvrcameraplayback.so
 vendor/lib64/libqwes.so
 vendor/lib64/librcmask.so
-vendor/lib64/librecovery_updater_msm.so
 vendor/lib64/libreffeature.so
 vendor/lib64/libril-qc-ltedirectdisc.so
 vendor/lib64/libril-qc-radioconfig.so
