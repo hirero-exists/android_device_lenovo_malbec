@@ -216,6 +216,10 @@ blob_fixups: blob_fixups_user_type = {
         .replace_needed(
             'vendor.qti.hardware.fm-V1-ndk.so',
             'vendor.qti.hardware.fm-V1-ndk_prebuilt.so',
+        )
+        .replace_needed(
+            'vendor.qti.hardware.fm@1.0.so',
+            'vendor.qti.hardware.fm@1.0_prebuilt.so',
         ),
 
     'product/app/ZuiNotes/ZuiNotes.apk': blob_fixup()

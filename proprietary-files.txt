@@ -1002,7 +1002,7 @@ vendor/etc/init/android.hardware.biometrics.face@4.0-service.face.rc
 vendor/lib64/vendor.qti.hardware.fingerprint@1.0.so
 
 # FM
-vendor/lib64/vendor.qti.hardware.fm@1.0.so
+vendor/lib64/vendor.qti.hardware.fm@1.0.so:vendor/lib64/vendor.qti.hardware.fm@1.0_prebuilt.so;FIX_SONAME
 
 # Gatekeeper
 vendor/bin/hw/android.hardware.gatekeeper-service-qti
