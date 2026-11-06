@@ -7,13 +7,15 @@
 $(call inherit-product, $(SRC_TARGET_DIR)/product/core_64_bit_only.mk)
 $(call inherit-product, $(SRC_TARGET_DIR)/product/aosp_base.mk)
 
-# Inherit some common PixelOS stuff.
-$(call inherit-product, vendor/custom/config/common_full_tablet_wifionly.mk)
+TARGET_NO_TELEPHONY := true
 
 # Inherit from malbec device
 $(call inherit-product, device/lenovo/malbec/device.mk)
 
-PRODUCT_NAME := custom_malbec
+# Inherit from the AOSPA configuration.
+$(call inherit-product, vendor/aospa/target/product/aospa-target.mk)
+
+PRODUCT_NAME := aospa_malbec
 PRODUCT_DEVICE := malbec
 PRODUCT_MANUFACTURER := Lenovo
 PRODUCT_BRAND := Lenovo
