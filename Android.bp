@@ -27,9 +27,3 @@ install_symlink {
     installed_location: "firmware/wlan/qca_cld/wcn7750/WCNSS_qcom_cfg.ini",
     symlink_target: "/vendor/etc/wifi/wcn7750/WCNSS_qcom_cfg.ini",
 }
-
-mkdir {
-    name: "vendor_modem_firmware_mountpoint",
-    dir: "modem_firmware",
-    vendor: true,
-}
