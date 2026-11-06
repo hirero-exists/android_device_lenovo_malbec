@@ -207,6 +207,17 @@ blob_fixups: blob_fixups_user_type = {
             'libbluetooth_audio_session_aidl_prebuilt.so',
         ),
 
+    (
+        'vendor/bin/hw/android.hardware.bluetooth@aidl-service-qti',
+        'vendor/lib64/ftm_fm_lib.so',
+        'vendor/lib64/hw/vendor.qti.hardware.fm-impl.so',
+        'vendor/lib64/libbt-hidlclient.so',
+    ): blob_fixup()
+        .replace_needed(
+            'vendor.qti.hardware.fm-V1-ndk.so',
+            'vendor.qti.hardware.fm-V1-ndk_prebuilt.so',
+        ),
+
     'product/app/ZuiNotes/ZuiNotes.apk': blob_fixup()
         .call(fix_zui_notes)
         .stripzip(),

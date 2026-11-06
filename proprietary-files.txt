@@ -2854,7 +2854,7 @@ vendor/lib64/vendor.qti.hardware.qasr-V2-ndk.so
 vendor/lib64/vendor.qti.hardware.spu-V2-ndk.so
 vendor/lib64/vendor.qti.diaghal-V1-ndk.so
 vendor/lib64/vendor.qti.hardware.data.connectionaidl-V1-ndk.so
-vendor/lib64/vendor.qti.hardware.fm-V1-ndk.so
+vendor/lib64/vendor.qti.hardware.fm-V1-ndk.so:vendor/lib64/vendor.qti.hardware.fm-V1-ndk_prebuilt.so;FIX_SONAME
 vendor/lib64/libqti-perfd.so
 vendor/lib64/camera/components/libcamxdummysatsnapshotfusionwrapper.so
 vendor/lib64/camera/components/libcamxdummysatsoftwarefusionwrapper.so
