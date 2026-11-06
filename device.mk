@@ -301,6 +301,7 @@ PRODUCT_COPY_FILES += \
 TARGET_PROVIDES_POWERHAL := true
 
 PRODUCT_PACKAGES += \
+    android.hardware.power-service \
     android.hardware.power@1.0.vendor \
     android.hardware.power@1.1.vendor \
     android.hardware.power@1.2.vendor
