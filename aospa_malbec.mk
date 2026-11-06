@@ -14,6 +14,7 @@ $(call inherit-product, device/lenovo/malbec/device.mk)
 
 # Inherit from the AOSPA configuration.
 TARGET_USES_BLUR := true
+TARGET_USES_PENGUIN_LATINIME := true
 
 $(call inherit-product, vendor/aospa/target/product/aospa-target.mk)
 
