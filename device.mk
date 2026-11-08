@@ -141,6 +141,7 @@ PRODUCT_SET_DEBUGFS_RESTRICTIONS := true
 
 # Display
 $(call soong_config_set,qtidisplay,default,true)
+$(call soong_config_set,qtidisplay,mapper_ext,true)
 
 PRODUCT_PACKAGES += \
     init.qti.display_boot.rc \
