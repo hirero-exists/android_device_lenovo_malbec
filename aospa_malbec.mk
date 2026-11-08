@@ -18,6 +18,11 @@ TARGET_USES_PENGUIN_LATINIME := true
 
 $(call inherit-product, vendor/aospa/target/product/aospa-target.mk)
 
+# Settings
+PRODUCT_PACKAGES += \
+    qti-telephony-utils \
+    qti_telephony_utils.xml
+
 PRODUCT_NAME := aospa_malbec
 PRODUCT_DEVICE := malbec
 PRODUCT_MANUFACTURER := Lenovo
