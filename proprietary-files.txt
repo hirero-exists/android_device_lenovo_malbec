@@ -326,11 +326,6 @@ vendor/lib64/libbluetooth_audio_session_qti.so
 vendor/lib64/libbluetooth_audio_session_qti_2_1.so
 vendor/lib64/vendor.qti.hardware.bluetooth_sar-V1-ndk.so
 
-# Boot
-vendor/etc/init/android.hardware.boot-service.qti.rc
-vendor/lib64/libboot_control_qti.so
-vendor/lib64/librecovery_updater.so
-
 # Camera
 system_ext/lib64/vendor.qti.hardware.seccam@1.0.so
 vendor/bin/hw/vendor.qti.camera.provider-service_64
