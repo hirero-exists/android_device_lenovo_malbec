@@ -70,6 +70,9 @@ def fix_zui_notes(ctx: BlobFixupCtx, file: File, file_path: str, *args, **kwargs
 
 
 blob_fixups: blob_fixups_user_type = {
+    'vendor/etc/seccomp_policy/syshealthmon.policy': blob_fixup()
+        .add_line_if_missing('lseek: 1'),
+
     (
         'system/usr/keylayout/Vendor_17ef_Product_612b.kl',
         'system/usr/keylayout/Vendor_17ef_Product_617f.kl',
