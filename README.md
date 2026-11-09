@@ -29,6 +29,20 @@
 
 Hardware configurations vary by region. Specifications: [Lenovo PSREF](https://psref.lenovo.com/syspool/Sys/PDF/Lenovo_Tablets/Idea_Tab_Pro_Gen_2/Idea_Tab_Pro_Gen_2_Spec.pdf).
 
+## Regional vendor_boot exports
+
+After `m otapackage`, export matching ROW and PRC boot images:
+
+```sh
+python3 device/lenovo/malbec/tools/export-regional-vendor-boot.py --product-out "$ANDROID_PRODUCT_OUT"
+```
+
+The output contains `vendor_boot_TB390FU.img` (ROW), `vendor_boot_TB376FC.img`
+(PRC), matching `vbmeta_TB390FU.img` / `vbmeta_TB376FC.img`, and checksums.
+The PRC export changes the three Tuna `region,country` fields and updates AVB
+with the configured signing identity. The ordinary OTA remains ROW; these
+separate images do not turn it into a PRC OTA. Regional boot testing is required.
+
 ## Regional names
 
 This tablet family is also sold under the following names:
