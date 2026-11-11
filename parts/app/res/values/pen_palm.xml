@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Copyright (C) 2026 hirero-exists <hirerokazuoa@gmail.com>
+    This Source Code Form is subject to the terms of the Mozilla Public
+    License, v. 2.0. If a copy of the MPL was not distributed with this
+    file, You can obtain one at https://mozilla.org/MPL/2.0/.
+    Compatible with GNU General Public License, Version 2.0 (GPLv2) or later
+    pursuant to Section 3.3 of the Mozilla Public License, v. 2.0.
+-->
+<resources>
+    <string name="pen_refresh_cap_title">120 Hz while using the pen</string>
+    <string name="pen_refresh_active">The pen display-mode limit is active. Other system limits may select a lower rate.</string>
+    <string name="pen_refresh_within_limit">The display is already at or below 120 Hz.</string>
+    <string name="pen_refresh_pending">Waiting for the display refresh rate to change.</string>
+    <string name="pen_refresh_unavailable">The pen display-mode limit is unavailable or its release could not be confirmed.</string>
+    <string name="pen_refresh_cap_summary">Temporarily cap a 144 Hz display while the pen is nearby. Release the cap after the pen leaves.</string>
+    <string name="pen_palm_title">Accidental-touch protection</string>
+    <string name="pen_palm_provider">Touchscreen palm provider</string>
+    <string name="pen_palm_enabled">Hardware palm protection</string>
+    <string name="pen_palm_enabled_summary">Use the touchscreen palm modes. Turning this off restores the mode observed before Parts took control.</string>
+    <string name="pen_palm_dynamic">Dynamic protection</string>
+    <string name="pen_palm_dynamic_summary">Use Pen mode near the stylus, Game mode in full-screen games, and Normal elsewhere. Selected pen apps always use Pen mode.</string>
+    <string name="pen_palm_apps">Protected pen apps</string>
+    <string name="pen_palm_apps_summary">Use Pen palm protection while a selected app is in front.</string>
+    <string name="pen_palm_checking">Checking provider…</string>
+    <string name="pen_palm_applied">Applied and read back: %1$s</string>
+    <string name="pen_palm_inactive">Policy inactive. Provider reports: %1$s</string>
+    <string name="pen_palm_unavailable">Provider unavailable, unsupported, or readback failed. No applied mode is confirmed.</string>
+    <string name="pen_palm_restore_pending">Provider failed. Restoring the captured mode is pending.</string>
+    <string-array name="pen_palm_modes"><item>Normal</item><item>Pen</item><item>Game</item></string-array>
+    <string-array name="pen_palm_default_apps">
+        <item>net.huanci.hsjpro</item>
+        <item>kr.neolab.neonote</item>
+        <item>jp.co.celsys.clipstudiopaint.googleplay</item>
+        <item>easynotes.notes.notepad.notebook.privatenotes.note</item>
+        <item>com.ZWSoft.ZWCAD</item>
+        <item>com.zui.notes</item>
+        <item>com.youdao.note</item>
+        <item>com.xodo.pdf.reader</item>
+        <item>com.wacom.signpropdf</item>
+        <item>com.wacom.bamboopapertab</item>
+        <item>com.vson.edraw</item>
+        <item>com.vistrav.whiteboard</item>
+        <item>com.ttluoshi.drawapp</item>
+        <item>com.tophatch.concepts.china</item>
+        <item>com.tophatch.concepts</item>
+        <item>com.steadfastinnovation.android.projectpapyrus</item>
+        <item>com.sonymobile.sketch</item>
+        <item>com.newskyer.draw</item>
+        <item>com.myscript.nebo</item>
+        <item>com.myscript.calculator</item>
+        <item>com.mubu.app</item>
+        <item>com.microsoft.office.onenote</item>
+        <item>com.medibang.android.paint.tablet</item>
+        <item>com.medibang.android.jumppaint</item>
+        <item>com.liubowang.drawingboard</item>
+        <item>com.kdanmobile.android.pdfreader.google.pad</item>
+        <item>com.jideos.jnotes</item>
+        <item>com.infraware.office.link</item>
+        <item>com.hlg.daydaytobusiness</item>
+        <item>com.google.android.keep</item>
+        <item>com.goodnotepad.smarttodolistnote</item>
+        <item>com.foxit.mobile.pdf.lite</item>
+        <item>com.flexcil.flexcilnote</item>
+        <item>com.eyewind.paperone</item>
+        <item>com.yinxiang</item>
+        <item>com.evernote</item>
+        <item>com.dencreak.esmemo</item>
+        <item>com.color365.sketch</item>
+        <item>com.brakefield.painter</item>
+        <item>com.brakefield.idfree</item>
+        <item>com.axis.drawingdesk.v3</item>
+        <item>com.adsk.sketchbook</item>
+        <item>com.pick.sketchbook</item>
+        <item>cn.wps.moffice_eng</item>
+        <item>cn.canva.editor</item>
+        <item>jp.ne.ibis.ibispaintx.app</item>
+        <item>com.tayasui.sketches</item>
+        <item>jp.ne.ibis.ibispaint.app</item>
+        <item>com.picsart.draw</item>
+        <item>com.bytestorm.artflow</item>
+        <item>com.topstack.kilonotes.pad</item>
+        <item>com.delgeo.desygner</item>
+        <item>com.orion.notein</item>
+        <item>com.microsoft.office.officehub</item>
+        <item>com.adobe.reader</item>
+        <item>com.officedocument.word.docx.document.viewer</item>
+        <item>com.officetoolsapps.document.reader.editor</item>
+        <item>com.adobe.fas</item>
+        <item>com.penly.planner.notes.tasks.reminders</item>
+        <item>com.fluidtouch.noteshelf2</item>
+        <item>com.viettran.INKrediblePro</item>
+        <item>com.acadoid.lecturenotes</item>
+        <item>com.zoho.notebook</item>
+        <item>note.notepad.todo.notebook</item>
+        <item>io.notewise.app</item>
+        <item>com.yocto.wenote</item>
+        <item>com.kreoSoft.Notepad</item>
+        <item>com.cga.my.color.note.notepad</item>
+        <item>note.notepad.diary.notebook</item>
+        <item>com.litewhite.notemaster.free</item>
+        <item>org.mightyfrog.android.simplenotepad</item>
+        <item>evansir.securenotepad</item>
+        <item>com.eyewind.paperonefree</item>
+        <item>org.gimp.GIMP</item>
+        <item>org.hermit.simpledrawpro</item>
+        <item>drawsketch.com.sketchpad.drawing.painting</item>
+        <item>org.n0n3m4.nomad</item>
+        <item>drawingapps.drawingsketchpad.paintingtools</item>
+        <item>com.royole.rydrawing</item>
+        <item>com.fiistudio.fiinote</item>
+        <item>com.nineton.shouzhang</item>
+        <item>com.chenupt.text</item>
+        <item>com.luyun.lightnote</item>
+        <item>com.videocutting.editor</item>
+        <item>com.sygd.gdpaintfive</item>
+        <item>jp.ne.ibis.ibispaintx.app.hms</item>
+        <item>net.huanci.hsj</item>
+        <item>com.moonlight.huatu</item>
+        <item>com.wyart.setfourpaper</item>
+        <item>com.zq.hand_drawn</item>
+        <item>com.littlez.draw</item>
+        <item>com.zh.drawworld</item>
+        <item>com.lloo.w.painting</item>
+        <item>com.painting.draw</item>
+        <item>com.google.android.apps.docs</item>
+        <item>com.google.android.apps.photos</item>
+        <item>com.jideos.jnotes.overseas.google</item>
+        <item>com.lenovo.styluspen</item>
+        <item>com.myscript.calculator.lenovo</item>
+        <item>com.myscript.nebo.lenovo</item>
+        <item>com.viettran.INKredible</item>
+    </string-array>
+    <string-array name="pen_palm_game_apps">
+        <item>com.tencent.tmgp.pubgmhd</item>
+        <item>com.tencent.tmgp.dfm</item>
+        <item>com.tencent.lolm</item>
+        <item>com.tencent.jkchess</item>
+        <item>com.miHoYo.Yuanshen</item>
+        <item>com.tencent.KiHan</item>
+        <item>cn.jj</item>
+        <item>com.tencent.tmgp.cf</item>
+        <item>com.nianticlabs.pokemongo</item>
+        <item>com.tencent.tmgp.sgame</item>
+        <item>com.happyelements.AndroidAnimal</item>
+        <item>com.minitech.miniworld.TMobile.Lenovo</item>
+        <item>com.aligames.kuang.kybc.lenovo</item>
+        <item>com.wepie.snakegame.lenovo</item>
+        <item>com.netease.harrypotter</item>
+        <item>com.tencent.tmgp.speedmobile</item>
+        <item>com.ztgame.bob</item>
+        <item>com.google.android.play.games</item>
+        <item>com.dts.freefireth</item>
+        <item>com.roblox.client</item>
+        <item>com.supercell.brawlstars</item>
+        <item>com.innersloth.spacemafia</item>
+        <item>com.mojang.minecraftpe</item>
+        <item>com.tocaboca.tocalifeworld</item>
+        <item>com.topwar.gp</item>
+        <item>com.noodlecake.altosodyssey</item>
+        <item>com.riotgames.league.wildrift</item>
+        <item>com.tencent.ig</item>
+    </string-array>
+</resources>

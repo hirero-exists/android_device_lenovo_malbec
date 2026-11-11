@@ -34,8 +34,14 @@ final class PenGestureGuard implements DisplayManager.DisplayListener,
     }
 
     void start() {
+        PenForeground.get(mContext).observe(state -> publishConfig());
         mNavigation.register();
         mContext.registerComponentCallbacks(this);
+        mContext.getContentResolver().registerContentObserver(
+                Settings.Secure.getUriFor(PenPreferences.GUARD_APPS), false,
+                new ContentObserver(mHandler) {
+                    @Override public void onChange(boolean selfChange) { publishConfig(); }
+                });
         mContext.getContentResolver().registerContentObserver(
                 Settings.Secure.getUriFor("navigation_mode"), false,
                 new ContentObserver(mHandler) {
@@ -48,6 +54,7 @@ final class PenGestureGuard implements DisplayManager.DisplayListener,
     }
 
     private void publishConfig() {
+        PenPreferences.publishCorners(mContext);
         Display display = mDisplays == null ? null : mDisplays.getDisplay(Display.DEFAULT_DISPLAY);
         if (display == null) {
             SystemProperties.set("sys.malbec.pen.guard_config", "");
@@ -62,6 +69,13 @@ final class PenGestureGuard implements DisplayManager.DisplayListener,
         int right = gestural ? mNavigation.getRightSensitivity(resources) : 0;
         int bottom = gestural ? resources.getDimensionPixelSize(
                 com.android.internal.R.dimen.navigation_bar_gesture_height) : 0;
+        String apps = Settings.Secure.getString(mContext.getContentResolver(), PenPreferences.GUARD_APPS);
+        if (apps != null && !apps.isEmpty()) {
+            String foreground = PenForeground.get(mContext).current().packageName;
+            if (foreground == null || !java.util.Arrays.asList(apps.split(",")).contains(foreground)) {
+                left = right = bottom = 0;
+            }
+        }
         SystemProperties.set("sys.malbec.pen.guard_config", display.getRotation() + ","
                 + size.x + "," + size.y + "," + left + "," + right + "," + bottom);
     }

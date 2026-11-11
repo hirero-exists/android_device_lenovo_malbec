@@ -42,7 +42,9 @@ public final class LenovoPartsApplication extends Application implements SensorE
         PenMode.syncGestureProperties();
         new PenGestureGuard(this).start();
         DesktopModeTile.migrateLegacyToggle(this);
-        PenShortcuts.apply(this);
+        PenShortcuts.removeLegacyGestures(this);
+        PenShortcuts.migrateActions(this);
+        PenActionRouter.get(this).start();
         new PenGattService(this).start();
         DolbyStatusNotification.init(this);
         GamingBypassController.getInstance(this);

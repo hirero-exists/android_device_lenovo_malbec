@@ -13,6 +13,7 @@ vendor.dolby.dvs.IDvs/default u:object_r:dvs_aidl_service:s0
 
 vendor.lenovo.hardware.keyboard.IKeyboard/default u:object_r:hal_lenovokeyboard_service:s0
 vendor.lenovo.hardware.touchscreen.ITouchscreen/default u:object_r:hal_lenovotouchscreen_service:s0
+vendor.lenovo.hardware.pen.IPen/default u:object_r:hal_pen_service:s0
 
 # Fingerprint
 

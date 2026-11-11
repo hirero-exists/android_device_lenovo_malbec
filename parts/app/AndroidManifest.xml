@@ -2,6 +2,7 @@
     package="com.lenovo.parts"
     android:sharedUserId="android.uid.system">
     <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.ACCESS_CONTEXTUAL_SEARCH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.BLUETOOTH_PRIVILEGED" />
@@ -9,7 +10,10 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.INJECT_EVENTS" />
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.MANAGE_KEY_GESTURES" />
+    <uses-permission android:name="android.permission.MANAGE_ACTIVITY_TASKS" />
+    <uses-permission android:name="android.permission.MONITOR_INPUT" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.READ_DEVICE_CONFIG" />
     <uses-permission android:name="android.permission.READ_FRAME_BUFFER" />
@@ -17,6 +21,7 @@
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.STATUS_BAR" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.SYSTEM_APPLICATION_OVERLAY" />
     <uses-permission android:name="android.permission.WRITE_MEDIA_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
 
@@ -51,7 +56,7 @@
                 android:value="top_level_lenovo_parts" />
             <meta-data
                 android:name="com.android.settings.order"
-                android:value="1000" />
+                android:value="-1000" />
             <meta-data
                 android:name="com.android.settings.icon"
                 android:resource="@drawable/ic_lenovo_parts" />
@@ -62,6 +67,22 @@
                 android:name="com.android.settings.summary"
                 android:resource="@string/app_summary" />
         </activity>
+        <activity
+            android:name=".PenLockedNoteActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true" />
+        <activity
+            android:name=".PenPalmActivity"
+            android:exported="false" />
+        <activity
+            android:name=".PenFirmwareActivity"
+            android:exported="false" />
+        <activity
+            android:name=".PenSettingsActivity"
+            android:exported="false"
+            android:label="@string/pen_settings_title" />
         <activity
             android:name=".AppPickerActivity"
             android:excludeFromRecents="true"
@@ -83,6 +104,20 @@
             android:exported="false"
             android:noHistory="true"
             android:theme="@android:style/Theme.NoDisplay" />
+        <service
+            android:name=".PenToolService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="User-controlled pen pointer, magnifier and screenshot selection" />
+        </service>
+        <service
+            android:name=".PenEditorService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="User-controlled pen ink and screenshot annotation" />
+        </service>
         <service
             android:name=".QuickNoteService"
             android:exported="false"

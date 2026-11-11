@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <androidx.preference.Preference android:key="palm_status" android:selectable="false"
+        android:title="@string/pen_palm_provider" />
+    <androidx.preference.SwitchPreferenceCompat android:key="palm_enabled" android:persistent="false"
+        android:title="@string/pen_palm_enabled" android:summary="@string/pen_palm_enabled_summary" />
+    <androidx.preference.SwitchPreferenceCompat android:key="palm_dynamic" android:persistent="false"
+        android:dependency="palm_enabled" android:title="@string/pen_palm_dynamic"
+        android:summary="@string/pen_palm_dynamic_summary" />
+    <androidx.preference.MultiSelectListPreference android:key="palm_apps" android:persistent="false"
+        android:dependency="palm_enabled" android:title="@string/pen_palm_apps"
+        android:summary="@string/pen_palm_apps_summary" />
+</PreferenceScreen>

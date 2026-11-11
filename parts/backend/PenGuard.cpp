@@ -1,5 +1,7 @@
 #include "PenGuard.h"
 #include "PenGuardFilter.h"
+#include "PenCornerFilter.h"
+#include "PenHal.h"
 
 #include <android-base/logging.h>
 #include <android-base/properties.h>
@@ -10,6 +12,7 @@
 #include <poll.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
+#include <time.h>
 
 #include <cerrno>
 #include <cstring>
@@ -21,6 +24,13 @@ using android::base::unique_fd;
 constexpr char kActive[] = "sys.malbec.pen.guard_active";
 constexpr char kReady[] = "sys.malbec.pen.guard_ready";
 constexpr char kConfig[] = "sys.malbec.pen.guard_config";
+constexpr char kCorners[] = "sys.malbec.pen.corner_config";
+
+int64_t NowMs() {
+    timespec value{};
+    clock_gettime(CLOCK_MONOTONIC, &value);
+    return static_cast<int64_t>(value.tv_sec) * 1000 + value.tv_nsec / 1000000;
+}
 
 unique_fd OpenPen(const char* device_name) {
     DIR* directory = opendir("/dev/input");
@@ -100,7 +110,7 @@ bool EmitState(int fd, const PenState& state) {
 }
 }
 
-void RunPenGuard(const char* device_name, const std::function<void(int)>& button_action) {
+void RunPenGuard(const char* device_name) {
     unsigned int generation = 0;
     for (;;) {
         android::base::SetProperty(kActive, "0");
@@ -116,8 +126,11 @@ void RunPenGuard(const char* device_name, const std::function<void(int)>& button
             continue;
         }
         unique_fd output;
+        PenProximity(state.InRange());
         std::string output_name;
         PenGuardFilter filter;
+        PenCornerFilter corners;
+        bool was_touching = state.keys[BTN_TOUCH] != 0;
         bool grabbed = false;
         bool dropped = false;
         bool failed = false;
@@ -125,9 +138,14 @@ void RunPenGuard(const char* device_name, const std::function<void(int)>& button
         while (!failed) {
             PenGuardConfig config;
             const bool valid = config.Parse(android::base::GetProperty(kConfig, ""));
-            const bool enabled = valid && config.HasEdges()
+            PenCornerConfig corner_config;
+            if (valid) corner_config.Parse(android::base::GetProperty(kCorners, ""), config);
+            const bool pen_enabled = android::base::GetBoolProperty("persist.sys.pen.enabled", true);
+            if (!pen_enabled) corner_config = {};
+            const bool edges_enabled = valid && config.HasEdges()
                     && android::base::GetBoolProperty("persist.sys.pen.gestures_disabled", true)
-                    && android::base::GetBoolProperty("persist.sys.pen.enabled", true);
+                    && pen_enabled;
+            const bool enabled = valid && (edges_enabled || corner_config.mask != 0);
             if (enabled && !output.ok()) {
                 output_name = "Lenovo Pen Guard " + std::to_string(getpid()) + "-"
                         + std::to_string(++generation);
@@ -151,6 +169,7 @@ void RunPenGuard(const char* device_name, const std::function<void(int)>& button
                         grabbed = false;
                     } else {
                         filter = PenGuardFilter{};
+                        corners = PenCornerFilter{};
                         if (!EmitState(output.get(), state)) break;
                         android::base::SetProperty(kActive, "1");
                     }
@@ -174,28 +193,47 @@ void RunPenGuard(const char* device_name, const std::function<void(int)>& button
                     const auto& event = events[i];
                     if (event.type == EV_SYN && event.code == SYN_DROPPED) {
                         dropped = true;
+                        PenStreamReset();
                         continue;
                     }
                     if (event.type == EV_SYN && event.code == SYN_REPORT) {
                         if (dropped) {
                             if (!ReadState(source.get(), state)) { failed = true; break; }
                             filter.CancelUntilLift(state);
+                            corners.CancelUntilLift(state);
+                            was_touching = state.keys[BTN_TOUCH] != 0;
                             dropped = false;
                         }
                         pending_frame = false;
-                        if (grabbed && !EmitState(output.get(), filter.Process(
-                                state, enabled, config, x_axis, y_axis))) {
-                            failed = true;
-                            break;
+                        PenProximity(state.InRange());
+                        PenCornerResult corner;
+                        if (grabbed) {
+                            corner = corners.Process(state, config, corner_config,
+                                                     x_axis, y_axis, NowMs());
+                            if (corner.action) PenCorner(corner.action);
+                        }
+                        const bool touching = state.keys[BTN_TOUCH] != 0;
+                        if (pen_enabled && touching && !was_touching && !corner.reserved) {
+                            if (state.keys[BTN_STYLUS]) PenDigitizerTap(1);
+                            else if (state.keys[BTN_STYLUS2]) PenDigitizerTap(2);
+                        }
+                        was_touching = touching;
+                        if (grabbed) {
+                            PenState forwarded = filter.Process(state, edges_enabled, config,
+                                                                x_axis, y_axis);
+                            if (corner.reserved) {
+                                forwarded.keys[BTN_TOUCH] = 0;
+                                forwarded.axes[ABS_PRESSURE] = 0;
+                                forwarded.axes[ABS_DISTANCE] = 1;
+                            }
+                            if (!EmitState(output.get(), forwarded)) {
+                                failed = true;
+                                break;
+                            }
                         }
                     } else if (!dropped) {
                         pending_frame = true;
                         state.Update(event);
-                        if (event.type == EV_KEY && event.value == 1 && button_action
-                                && android::base::GetBoolProperty("persist.sys.pen.enabled", true)) {
-                            if (event.code == BTN_STYLUS) button_action(1);
-                            if (event.code == BTN_STYLUS2) button_action(2);
-                        }
                     }
                 }
             }
@@ -204,6 +242,7 @@ void RunPenGuard(const char* device_name, const std::function<void(int)>& button
         if (grabbed) ioctl(source.get(), EVIOCGRAB, 0);
         output.reset();
         source.reset();
+        PenProximity(false);
         android::base::SetProperty(kActive, "0");
         poll(nullptr, 0, 1000);
     }

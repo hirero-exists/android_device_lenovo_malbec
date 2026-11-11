@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="pen_draft_title">Saved drawing</string>
+    <string name="pen_draft_resume_ink">Resume your drawing? Undo history resets when you resume.</string>
+    <string name="pen_draft_resume_jot">Resume your drawing? Its screen image is kept privately on this device. Undo history resets when you resume.</string>
+    <string name="pen_draft_resume">Resume</string>
+    <string name="pen_draft_start_new">Start new</string>
+    <string name="pen_draft_discard">Discard draft</string>
+    <string name="pen_draft_discard_message">Discard this unsaved drawing and its private screen image? This cannot be undone.</string>
+    <string name="pen_draft_failed">The drawing could not be saved or has reached its limit. You can still export your work.</string>
+    <string name="pen_draft_corrupt">The saved drawing could not be read. Start a new drawing and discard the saved copy?</string>
+    <string name="pen_draft_incomplete">Your last session may have unsaved changes that could not be recovered.</string>
+    <string name="pen_draft_failure_title">Drawing could not be saved</string>
+    <string name="pen_draft_failure_notification">Recent changes may be missing. Open the drawing to review the saved copy.</string>
+</resources>

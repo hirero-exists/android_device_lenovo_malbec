@@ -1,4 +1,21 @@
 <resources>
+    <string name="pen_firmware_page_title">Pen firmware</string>
+    <string name="pen_transport_title">Pen button service</string>
+    <string name="pen_transport_available">Available; Bluetooth pen connection is separate</string>
+    <string name="pen_transport_unavailable">Unavailable; pen writing can still work</string>
+    <string name="pen_settings_title">Pen settings</string>
+    <string name="pen_connection_title">Bluetooth pen</string>
+    <string name="pen_identity_title">Pen information</string>
+    <string name="pen_bluetooth_disabled">Pen disabled</string>
+    <string name="pen_bluetooth_off">Bluetooth is off</string>
+    <string name="pen_disconnected">Disconnected</string>
+    <string name="pen_connecting">Connecting</string>
+    <string name="pen_verifying">Connected; verifying identity</string>
+    <string name="pen_unsupported">Connected; identity unavailable or unsupported</string>
+    <string name="pen_connected">Connected</string>
+    <string name="pen_identity_unavailable">Unavailable</string>
+    <string name="pen_identity_summary">Model: %1$s\nSerial: %2$s\nFirmware: %3$s\nBattery: %4$s</string>
+    <string name="pen_battery_percent">%1$d%%</string>
     <string name="app_name">Lenovo Parts</string>
     <string name="app_summary">Device-specific Lenovo settings</string>
     <string name="category_folio_title">Smart cover</string>

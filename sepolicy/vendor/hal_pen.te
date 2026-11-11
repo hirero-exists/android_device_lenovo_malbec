@@ -1,0 +1,5 @@
+type hal_pen_service, hal_service_type, service_manager_type;
+hal_client_domain(system_app, hal_pen)
+hal_attribute_service(hal_pen, hal_pen_service)
+binder_call(hal_pen_client, hal_pen_server)
+binder_call(hal_pen_server, hal_pen_client)

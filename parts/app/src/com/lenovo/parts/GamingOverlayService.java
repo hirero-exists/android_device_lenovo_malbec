@@ -172,10 +172,8 @@ public final class GamingOverlayService extends Service {
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                        | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
-                        | WindowManager.LayoutParams.FLAG_BLUR_BEHIND,
+                        | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
                 PixelFormat.TRANSLUCENT);
-        mParams.setBlurBehindRadius(dpToPx(20));
 
         mParams.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
         mParams.x = 0;
@@ -273,7 +271,7 @@ public final class GamingOverlayService extends Service {
                             isMoving = true;
                             mParams.x = initialX + dx;
                             mParams.y = initialY + dy;
-                            mWindowManager.updateViewLayout(mRootView, mParams);
+                            mWindowManager.updateViewLayout(mRootView, PartsOverlayWindows.prepare(mParams));
                             return true;
                         }
                         return false;
@@ -284,7 +282,7 @@ public final class GamingOverlayService extends Service {
             }
         });
 
-        mWindowManager.addView(mRootView, mParams);
+        mWindowManager.addView(mRootView, PartsOverlayWindows.prepare(mParams));
     }
 
     private TextView createMetricRow() {
@@ -460,7 +458,7 @@ public final class GamingOverlayService extends Service {
             int screenHeight = bounds.height();
             mParams.x = 0;
             mParams.y = dpToPx(12);
-            mWindowManager.updateViewLayout(mRootView, mParams);
+            mWindowManager.updateViewLayout(mRootView, PartsOverlayWindows.prepare(mParams));
         }
     }
 

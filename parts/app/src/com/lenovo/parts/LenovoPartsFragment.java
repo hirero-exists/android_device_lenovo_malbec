@@ -29,12 +29,6 @@ import com.android.settingslib.widget.SettingsBasePreferenceFragment;
 public final class LenovoPartsFragment extends SettingsBasePreferenceFragment
         implements Preference.OnPreferenceChangeListener {
     private static final String KEY_FOLIO_COVER = "folio_cover";
-    private static final String KEY_PEN_ENABLED = "pen_enabled";
-    private static final String KEY_PEN_TOOLBAR = "pen_toolbar";
-    private static final String KEY_PEN_GESTURES = "pen_gestures";
-    private static final String KEY_PEN_SINGLE_ACTION = "pen_single_action";
-    private static final String KEY_PEN_DOUBLE_ACTION = "pen_double_action";
-    private static final String KEY_PEN_LONG_ACTION = "pen_long_action";
     private static final String KEY_REFRESH_RATE = "refresh_rate";
     private static final String KEY_HIGH_REPORT_RATE = "high_report_rate";
     private static final String KEY_GAMING_BYPASS = "gaming_bypass";
@@ -51,12 +45,6 @@ public final class LenovoPartsFragment extends SettingsBasePreferenceFragment
         setPreferencesFromResource(R.xml.lenovo_parts, rootKey);
 
         setupPreference(KEY_FOLIO_COVER);
-        setupPreference(KEY_PEN_ENABLED);
-        setupPreference(KEY_PEN_TOOLBAR);
-        setupPreference(KEY_PEN_GESTURES);
-        setupPreference(KEY_PEN_SINGLE_ACTION);
-        setupPreference(KEY_PEN_DOUBLE_ACTION);
-        setupPreference(KEY_PEN_LONG_ACTION);
         setupPreference(KEY_REFRESH_RATE);
         setupPreference(KEY_HIGH_REPORT_RATE);
         setupPreference(KEY_GAMING_BYPASS);
@@ -94,28 +82,6 @@ public final class LenovoPartsFragment extends SettingsBasePreferenceFragment
         if (folio != null) {
             folio.setChecked(FolioMode.isEnabled());
         }
-
-        boolean penEnabled = PenMode.isEnabled();
-        TwoStatePreference pen = findPreference(KEY_PEN_ENABLED);
-        if (pen != null) {
-            pen.setChecked(penEnabled);
-        }
-
-        TwoStatePreference penToolbar = findPreference(KEY_PEN_TOOLBAR);
-        if (penToolbar != null) {
-            penToolbar.setEnabled(penEnabled);
-            penToolbar.setChecked(PenMode.isToolbarEnabled());
-        }
-
-        TwoStatePreference penGestures = findPreference(KEY_PEN_GESTURES);
-        if (penGestures != null) {
-            penGestures.setEnabled(penEnabled);
-            penGestures.setChecked(PenMode.isGesturesDisabled());
-        }
-
-        refreshPenAction(KEY_PEN_SINGLE_ACTION, PenShortcuts.SINGLE_SETTING, PenShortcuts.ACTION_HOME);
-        refreshPenAction(KEY_PEN_DOUBLE_ACTION, PenShortcuts.DOUBLE_SETTING, PenShortcuts.ACTION_SCREENSHOT);
-        refreshPenAction(KEY_PEN_LONG_ACTION, PenShortcuts.LONG_SETTING, PenShortcuts.ACTION_NONE);
 
         ListPreference refreshRate = findPreference(KEY_REFRESH_RATE);
         if (refreshRate != null) {
@@ -161,23 +127,15 @@ public final class LenovoPartsFragment extends SettingsBasePreferenceFragment
 
     @Override
     public boolean onPreferenceTreeClick(Preference preference) {
+        if ("pen_settings".equals(preference.getKey())) {
+            startActivity(new Intent(getContext(), PenSettingsActivity.class));
+            return true;
+        }
         if (KEY_GAMING_OVERLAY_SETTINGS.equals(preference.getKey())) {
             startActivity(new Intent(getContext(), GamingOverlaySettingsActivity.class));
             return true;
         }
         return super.onPreferenceTreeClick(preference);
-    }
-
-    private void refreshPenAction(String preferenceKey, String setting, int defaultAction) {
-        Context context = getContext();
-        if (context == null) {
-            return;
-        }
-        ListPreference preference = findPreference(preferenceKey);
-        if (preference != null) {
-            preference.setValue(Integer.toString(
-                    PenShortcuts.getAction(context, setting, defaultAction)));
-        }
     }
 
     @Override
@@ -191,61 +149,6 @@ public final class LenovoPartsFragment extends SettingsBasePreferenceFragment
         String key = preference.getKey();
         if (KEY_FOLIO_COVER.equals(key)) {
             return FolioMode.setEnabled((Boolean) newValue);
-        } else if (KEY_PEN_ENABLED.equals(key)) {
-            boolean enabled = (Boolean) newValue;
-            if (PenMode.setEnabled(enabled)) {
-                PenGattService.onPenEnabledChanged();
-                Preference penToolbar = findPreference(KEY_PEN_TOOLBAR);
-                if (penToolbar != null) {
-                    penToolbar.setEnabled(enabled);
-                }
-                Preference single = findPreference(KEY_PEN_SINGLE_ACTION);
-                if (single != null) {
-                    single.setEnabled(enabled);
-                }
-                Preference dbl = findPreference(KEY_PEN_DOUBLE_ACTION);
-                if (dbl != null) {
-                    dbl.setEnabled(enabled);
-                }
-                Preference lng = findPreference(KEY_PEN_LONG_ACTION);
-                if (lng != null) {
-                    lng.setEnabled(enabled);
-                }
-                Preference gestures = findPreference(KEY_PEN_GESTURES);
-                if (gestures != null) {
-                    gestures.setEnabled(enabled);
-                }
-                if (!enabled) {
-                    context.stopService(new Intent(context, FloatingToolbarService.class));
-                } else if (PenMode.isToolbarEnabled()) {
-                    context.startForegroundService(new Intent(context, FloatingToolbarService.class));
-                }
-                return true;
-            }
-            return false;
-        } else if (KEY_PEN_TOOLBAR.equals(key)) {
-            boolean enabled = (Boolean) newValue;
-            if (PenMode.setToolbarEnabled(enabled)) {
-                if (enabled) {
-                    context.startForegroundService(new Intent(context, FloatingToolbarService.class));
-                } else {
-                    context.stopService(new Intent(context, FloatingToolbarService.class));
-                }
-                return true;
-            }
-            return false;
-        } else if (KEY_PEN_GESTURES.equals(key)) {
-            boolean disabled = (Boolean) newValue;
-            return PenMode.setGesturesDisabled(disabled);
-        } else if (KEY_PEN_SINGLE_ACTION.equals(key)) {
-            return PenShortcuts.setAction(context, PenShortcuts.SINGLE_SETTING,
-                    Integer.parseInt((String) newValue));
-        } else if (KEY_PEN_DOUBLE_ACTION.equals(key)) {
-            return PenShortcuts.setAction(context, PenShortcuts.DOUBLE_SETTING,
-                    Integer.parseInt((String) newValue));
-        } else if (KEY_PEN_LONG_ACTION.equals(key)) {
-            return PenShortcuts.setAction(context, PenShortcuts.LONG_SETTING,
-                    Integer.parseInt((String) newValue));
         } else if (KEY_REFRESH_RATE.equals(key)) {
             int rate = Integer.parseInt((String) newValue);
             boolean success = DisplayTouchMode.setRefreshRate(context.getContentResolver(), rate);

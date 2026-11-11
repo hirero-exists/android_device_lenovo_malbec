@@ -163,7 +163,7 @@ public final class QuickNoteService extends Service {
         params.gravity = Gravity.TOP | Gravity.START;
         params.setFitInsetsTypes(0);
         params.setTitle("Quick Note live annotation");
-        mWindowManager.addView(root, params);
+        mWindowManager.addView(root, PartsOverlayWindows.prepare(params));
     }
 
     @Override
@@ -323,7 +323,7 @@ public final class QuickNoteService extends Service {
                 TypedValue.COMPLEX_UNIT_DIP, value, getResources().getDisplayMetrics());
     }
 
-    private static class NoteCanvas extends View {
+    static final class NoteCanvas extends View {
         private static final PorterDuffXfermode CLEAR_MODE =
                 new PorterDuffXfermode(PorterDuff.Mode.CLEAR);
         private static final PorterDuffXfermode SRC_OVER_MODE =

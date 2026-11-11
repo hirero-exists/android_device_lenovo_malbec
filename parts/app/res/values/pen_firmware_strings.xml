@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     Copyright (C) 2026 hirero-exists <hirerokazuoa@gmail.com>
+
+     This Source Code Form is subject to the terms of the Mozilla Public
+     License, v. 2.0. If a copy of the MPL was not distributed with this
+     file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+     Compatible with GNU General Public License, Version 2.0 (GPLv2) or later
+     pursuant to Section 3.3 of the Mozilla Public License, v. 2.0.
+-->
+<resources>
+    <string name="pen_firmware_current">Current firmware: %1$s</string>
+    <string name="pen_firmware_current_unknown">Current firmware unavailable</string>
+    <string name="pen_firmware_connect">Connect a supported pen to check for updates.</string>
+    <string name="pen_firmware_check">Check for updates</string>
+    <string name="pen_firmware_checking">Checking for updates…</string>
+    <string name="pen_firmware_latest">Your pen firmware is up to date.</string>
+    <string name="pen_firmware_available">Firmware %1$s is available. Installation is not available here.</string>
+    <string name="pen_firmware_error">Could not check for updates. Try again later.</string>
+</resources>

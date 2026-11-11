@@ -70,9 +70,9 @@ public final class FloatingToolbarService extends Service {
     private static final String TAG = "FloatingToolbarService";
     private static final String CHANNEL_ID = "pen_toolbar_channel";
     private static final int NOTIFICATION_ID = 1003;
-    private static final int BUBBLE_SIZE_DP = 52;
+    private static final int BUBBLE_SIZE_DP = 72;
     private static final int MENU_WIDTH_DP = 264;
-    private static final int IDLE_TIMEOUT_MS = 3000;
+    private static final int IDLE_TIMEOUT_MS = 5000;
     private static final String ACTION_SHOW_TOOLBAR =
             "com.lenovo.parts.action.SHOW_TOOLBAR";
     private static final String POSITION_ANCHOR_SETTING = "malbec_toolbar_anchor";
@@ -101,6 +101,11 @@ public final class FloatingToolbarService extends Service {
         @Override
         public void run() {
             if (mBubbleView != null && !mMenuOpen) {
+                int width = getDisplayBounds().width();
+                int size = dpToPx(BUBBLE_SIZE_DP);
+                if (mBubbleView.isAttachedToWindow()) animateBubbleTo(
+                        mBubbleParams.x + size / 2 < width / 2 ? -size / 2 : width - size / 2,
+                        mBubbleParams.y);
                 mBubbleView.animate()
                         .alpha(0.35f)
                         .setDuration(300)
@@ -136,6 +141,14 @@ public final class FloatingToolbarService extends Service {
         }
     }
 
+    static void hideForTool() {
+        if (sInstance != null) { sInstance.closeMenu(); sInstance.hideViews(); }
+    }
+
+    static void restoreAfterTool() {
+        if (sInstance != null && PenMode.isEnabled()) sInstance.showViews();
+    }
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -160,25 +173,8 @@ public final class FloatingToolbarService extends Service {
         filter.addAction(Intent.ACTION_USER_PRESENT);
         registerReceiver(mScreenReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
 
-        IntentFilter penFilter = new IntentFilter("com.lenovo.parts.PEN_BUTTON_ACTION");
-        registerReceiver(mPenActionReceiver, penFilter, Context.RECEIVER_EXPORTED);
-
         resetIdleTimer();
     }
-
-    private final BroadcastReceiver mPenActionReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if ("com.lenovo.parts.PEN_BUTTON_ACTION".equals(intent.getAction())) {
-                int action = intent.getIntExtra("action", 0);
-                if (action == 1) {
-                    toggleMenu();
-                } else if (action == 2) {
-                    dispatchPlayPause();
-                }
-            }
-        }
-    };
 
     private void createNotificationChannel() {
         NotificationChannel channel = new NotificationChannel(
@@ -199,7 +195,10 @@ public final class FloatingToolbarService extends Service {
             mColorAccent = 0xFF7C4DFF;
         }
         try {
-            mColorSurface = getColor(android.R.color.system_neutral1_900);
+            boolean dark = (getResources().getConfiguration().uiMode
+                    & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+            mColorSurface = getColor(dark ? android.R.color.system_neutral1_900 : android.R.color.system_neutral1_50);
+            mColorText = dark ? Color.WHITE : Color.BLACK;
         } catch (Exception e) {
             mColorSurface = 0xFF1C1B1F;
         }
@@ -290,7 +289,7 @@ public final class FloatingToolbarService extends Service {
             }
         });
 
-        mWindowManager.addView(mBubbleView, mBubbleParams);
+        mWindowManager.addView(mBubbleView, PartsOverlayWindows.prepare(mBubbleParams));
     }
 
     private void updateBubblePosition(int x, int y) {
@@ -303,7 +302,7 @@ public final class FloatingToolbarService extends Service {
         mBubbleParams.y = Math.max(0, Math.min(y, screenHeight - size));
 
         if (mBubbleView.isAttachedToWindow()) {
-            mWindowManager.updateViewLayout(mBubbleView, mBubbleParams);
+            mWindowManager.updateViewLayout(mBubbleView, PartsOverlayWindows.prepare(mBubbleParams));
         }
     }
 
@@ -339,7 +338,7 @@ public final class FloatingToolbarService extends Service {
             mBubbleParams.x = Math.round(startX + (targetX - startX) * f);
             mBubbleParams.y = Math.round(startY + (targetY - startY) * f);
             if (mBubbleView.isAttachedToWindow()) {
-                mWindowManager.updateViewLayout(mBubbleView, mBubbleParams);
+                mWindowManager.updateViewLayout(mBubbleView, PartsOverlayWindows.prepare(mBubbleParams));
             }
         });
         anim.start();
@@ -351,10 +350,8 @@ public final class FloatingToolbarService extends Service {
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                        | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
-                        | WindowManager.LayoutParams.FLAG_BLUR_BEHIND,
+                        | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
                 PixelFormat.TRANSLUCENT);
-        mMenuParams.setBlurBehindRadius(dpToPx(24));
         mMenuParams.gravity = Gravity.TOP | Gravity.START;
 
         mMenuView = new LinearLayout(this);
@@ -369,31 +366,45 @@ public final class FloatingToolbarService extends Service {
         mMenuView.setBackground(bg);
         mMenuView.setElevation(dpToPx(12));
 
+        addMenuItem(getString(R.string.pen_ink), () -> {
+            closeMenu();
+            PenEditorService.launch(this, PenEditorService.INK);
+        });
+        addMenuItem(getString(R.string.pen_easy_jot), () -> {
+            closeMenu();
+            mHandler.postDelayed(() -> PenEditorService.launch(this, PenEditorService.EASY_JOT), 180);
+        });
+        addMenuItem(getString(R.string.pen_circle_search), () -> {
+            closeMenu();
+            mHandler.postDelayed(() -> PenPlatformActions.circleSearch(this), 180);
+        });
+        addMenuItem(getString(R.string.pen_partial_screenshot), () -> {
+            closeMenu();
+            mHandler.postDelayed(() -> PenToolService.launch(this, PenToolService.CROP), 180);
+        });
         addMenuItem(getString(R.string.quick_note_title), () -> {
             closeMenu();
             startForegroundService(new Intent(this, QuickNoteService.class));
         });
-        addMenuItem(getString(R.string.toolbar_screenshot), () -> {
-            takeScreenshot();
+        addStylusMenuItem(getString(R.string.pen_pointer), () -> {
             closeMenu();
+            PenToolService.launch(this, PenToolService.POINTER);
         });
-        addMenuItem(getString(R.string.toolbar_desktop_mode), () -> {
-            toggleDesktopMode();
+        addStylusMenuItem(getString(R.string.pen_magnifier), () -> {
             closeMenu();
+            PenToolService.launch(this, PenToolService.MAGNIFIER);
         });
-        addMenuItem(getString(R.string.toolbar_play_pause), () -> {
-            dispatchPlayPause();
-            closeMenu();
-        });
-        addMenuItem(getString(R.string.app_name), () -> {
-            Intent intent = new Intent(this, LenovoPartsActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        addMenuItem(getString(R.string.pen_remote), () -> {
+            Intent intent = new Intent(this, PenSettingsActivity.class).putExtra("remote", true)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
             closeMenu();
         });
-        addMenuItem(getString(R.string.toolbar_close), () -> {
-            PenMode.setToolbarEnabled(false);
-            stopSelf();
+        addMenuItem(getString(R.string.pen_settings_title), () -> {
+            Intent intent = new Intent(this, PenSettingsActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+            closeMenu();
         });
 
         mMenuView.setOnTouchListener((v, event) -> {
@@ -433,6 +444,23 @@ public final class FloatingToolbarService extends Service {
         lp.setMargins(0, dpToPx(2), 0, dpToPx(2));
         item.setLayoutParams(lp);
         mMenuView.addView(item);
+    }
+
+    private void addStylusMenuItem(String title, Runnable action) {
+        final boolean[] pen = {false};
+        addMenuItem(title, () -> {
+            if (pen[0]) action.run();
+            else Toast.makeText(this, R.string.pen_use_stylus, Toast.LENGTH_SHORT).show();
+            pen[0] = false;
+        });
+        View item = mMenuView.getChildAt(mMenuView.getChildCount() - 1);
+        item.setOnTouchListener((view, event) -> {
+            if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
+                int tool = event.getToolType(0);
+                pen[0] = tool == MotionEvent.TOOL_TYPE_STYLUS || tool == MotionEvent.TOOL_TYPE_ERASER;
+            }
+            return false;
+        });
     }
 
     private void takeScreenshot() {
@@ -498,7 +526,7 @@ public final class FloatingToolbarService extends Service {
             mMenuView.setTranslationX(direction * dpToPx(18));
             mMenuView.setTranslationY(dpToPx(8));
             mMenuView.setAlpha(0f);
-            mWindowManager.addView(mMenuView, mMenuParams);
+            mWindowManager.addView(mMenuView, PartsOverlayWindows.prepare(mMenuParams));
             mMenuView.animate()
                     .scaleX(1.0f)
                     .scaleY(1.0f)
@@ -629,7 +657,7 @@ public final class FloatingToolbarService extends Service {
         resolveThemeColors();
         restoreBubblePosition();
         if (mBubbleView != null && mBubbleView.isAttachedToWindow()) {
-            mWindowManager.updateViewLayout(mBubbleView, mBubbleParams);
+            mWindowManager.updateViewLayout(mBubbleView, PartsOverlayWindows.prepare(mBubbleParams));
         }
         closeMenu();
     }

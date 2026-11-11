@@ -36,10 +36,42 @@ final class PenShortcuts {
     static final int ACTION_RECENTS = 3;
     static final int ACTION_HOME = 4;
     static final int ACTION_TOOLBAR = 6;
+    static final int ACTION_BRUSH = 7;
+    static final int ACTION_CIRCLE_SEARCH = 8;
 
     private static final String TAG = "PenShortcuts";
+    private static final String MIGRATION_SETTING = "malbec_pen_actions_version";
+    private static final String CLEANUP_SETTING = "malbec_pen_gesture_cleanup_version";
 
     private PenShortcuts() {
+    }
+
+    static void migrateActions(Context context) {
+        if (Settings.Secure.getInt(context.getContentResolver(), MIGRATION_SETTING, 0) >= 1) {
+            return;
+        }
+        if (migrateAction(context, SINGLE_SETTING, ACTION_TOOLBAR)
+                && migrateAction(context, DOUBLE_SETTING, ACTION_NONE)
+                && migrateAction(context, LONG_SETTING, ACTION_NONE)) {
+            Settings.Secure.putInt(context.getContentResolver(), MIGRATION_SETTING, 1);
+        }
+    }
+
+    private static boolean migrateAction(Context context, String setting, int fallback) {
+        String value = Settings.Secure.getString(context.getContentResolver(), setting);
+        if (value != null) {
+            try {
+                int action = Integer.parseInt(value);
+                if (action == ACTION_NONE || action == ACTION_SCREENSHOT
+                        || action == ACTION_RECENTS || action == ACTION_HOME
+                        || action == ACTION_PLAY_PAUSE || action == ACTION_TOOLBAR
+                        || action == ACTION_BRUSH || action == ACTION_CIRCLE_SEARCH) {
+                    return true;
+                }
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        return Settings.Secure.putInt(context.getContentResolver(), setting, fallback);
     }
 
     static int getAction(Context context, String setting, int defaultAction) {
@@ -47,15 +79,22 @@ final class PenShortcuts {
     }
 
     static boolean setAction(Context context, String setting, int action) {
-        boolean success = Settings.Secure.putInt(context.getContentResolver(), setting, action);
-        if (success) {
-            apply(context);
+        if (action != ACTION_NONE && action != ACTION_PLAY_PAUSE && action != ACTION_SCREENSHOT
+                && action != ACTION_RECENTS && action != ACTION_HOME && action != ACTION_TOOLBAR
+                && action != ACTION_BRUSH && action != ACTION_CIRCLE_SEARCH) {
+            return false;
         }
-        return success;
+        return Settings.Secure.putInt(context.getContentResolver(), setting, action);
     }
 
     static void executeAction(Context context, int action) {
         switch (action) {
+            case ACTION_BRUSH:
+                PenEditorService.cycleBrush();
+                break;
+            case ACTION_CIRCLE_SEARCH:
+                PenPlatformActions.circleSearch(context);
+                break;
             case ACTION_PLAY_PAUSE:
                 dispatchMediaPlayPause(context);
                 break;
@@ -129,33 +168,37 @@ final class PenShortcuts {
                 InputManager.INJECT_INPUT_EVENT_MODE_ASYNC);
     }
 
-    static void apply(Context context) {
+    static void removeLegacyGestures(Context context) {
+        if (Settings.Secure.getInt(context.getContentResolver(), CLEANUP_SETTING, 0) >= 1) return;
         InputManager inputManager = context.getSystemService(InputManager.class);
         if (inputManager == null) {
             return;
         }
 
-        applyKeyTrigger(context, inputManager, KeyEvent.KEYCODE_BUTTON_1,
-                getAction(context, SINGLE_SETTING, ACTION_PLAY_PAUSE));
-        applyKeyTrigger(context, inputManager, KeyEvent.KEYCODE_BUTTON_2,
-                getAction(context, DOUBLE_SETTING, ACTION_SCREENSHOT));
-        applyKeyTrigger(context, inputManager, KeyEvent.KEYCODE_BUTTON_3,
-                getAction(context, LONG_SETTING, ACTION_NONE));
-        applyKeyTrigger(context, inputManager, KeyEvent.KEYCODE_STYLUS_BUTTON_PRIMARY,
-                getAction(context, SINGLE_SETTING, ACTION_PLAY_PAUSE));
-        applyKeyTrigger(context, inputManager, KeyEvent.KEYCODE_STYLUS_BUTTON_SECONDARY,
-                getAction(context, DOUBLE_SETTING, ACTION_SCREENSHOT));
-        applyKeyTrigger(context, inputManager, KeyEvent.KEYCODE_STYLUS_BUTTON_TAIL,
-                getAction(context, LONG_SETTING, ACTION_NONE));
+        try {
+            boolean success = removeLegacyTrigger(context, inputManager, KeyEvent.KEYCODE_BUTTON_1,
+                    getAction(context, SINGLE_SETTING, ACTION_PLAY_PAUSE));
+            success &= removeLegacyTrigger(context, inputManager, KeyEvent.KEYCODE_BUTTON_2,
+                    getAction(context, DOUBLE_SETTING, ACTION_SCREENSHOT));
+            success &= removeLegacyTrigger(context, inputManager, KeyEvent.KEYCODE_BUTTON_3,
+                    getAction(context, LONG_SETTING, ACTION_NONE));
+            success &= removeLegacyTrigger(context, inputManager, KeyEvent.KEYCODE_STYLUS_BUTTON_PRIMARY,
+                    getAction(context, SINGLE_SETTING, ACTION_PLAY_PAUSE));
+            success &= removeLegacyTrigger(context, inputManager, KeyEvent.KEYCODE_STYLUS_BUTTON_SECONDARY,
+                    getAction(context, DOUBLE_SETTING, ACTION_SCREENSHOT));
+            success &= removeLegacyTrigger(context, inputManager, KeyEvent.KEYCODE_STYLUS_BUTTON_TAIL,
+                    getAction(context, LONG_SETTING, ACTION_NONE));
+            if (success) Settings.Secure.putInt(context.getContentResolver(), CLEANUP_SETTING, 1);
+        } catch (RuntimeException e) {
+            Log.w(TAG, "Unable to remove old pen mappings", e);
+        }
     }
 
-    private static void applyKeyTrigger(Context context, InputManager inputManager,
+    private static boolean removeLegacyTrigger(Context context, InputManager inputManager,
             int keyCode, int action) {
         InputGestureData.Trigger trigger = InputGestureData.createKeyTrigger(keyCode, 0);
         InputGestureData existing = inputManager.getInputGesture(trigger);
-        if (existing != null) {
-            inputManager.removeCustomInputGesture(existing);
-        }
+        if (existing == null) return true;
 
         InputGestureData.Builder builder = new InputGestureData.Builder()
                 .setTrigger(trigger)
@@ -183,13 +226,17 @@ final class PenShortcuts {
                                 ToolbarTrampolineActivity.class.getName()));
                 break;
             default:
-                return;
+                return true;
         }
 
         InputGestureData gesture = builder.build();
-        int result = inputManager.addCustomInputGesture(gesture);
-        if (result != InputManager.CUSTOM_INPUT_GESTURE_RESULT_SUCCESS) {
-            Log.e(TAG, "Unable to map stylus key " + keyCode + ", result " + result);
+        if (existing.getAction().equals(gesture.getAction())) {
+            int result = inputManager.removeCustomInputGesture(existing);
+            if (result != InputManager.CUSTOM_INPUT_GESTURE_RESULT_SUCCESS) {
+                Log.e(TAG, "Unable to remove old pen mapping " + keyCode + ", result " + result);
+                return false;
+            }
         }
+        return true;
     }
 }

@@ -1,3 +1,19 @@
+aidl_interface {
+    name: "vendor.lenovo.hardware.pen",
+    owner: "lenovo",
+    vendor_available: true,
+    srcs: ["aidl/vendor/lenovo/hardware/pen/*.aidl"],
+    local_include_dir: "aidl",
+    stability: "vintf",
+    frozen: true,
+    versions_with_info: [{ version: "1", imports: [] }],
+    backend: {
+        cpp: { enabled: false },
+        java: { platform_apis: true },
+        ndk: { enabled: true },
+    },
+}
+
 android_app {
     name: "LenovoParts",
     manifest: "app/AndroidManifest.xml",
@@ -12,6 +28,7 @@ android_app {
         "SettingsLibMainSwitchPreference",
         "SettingsLibSettingsTheme",
         "androidx.preference_preference",
+        "vendor.lenovo.hardware.pen-V1-java",
     ],
     optimize: {
         enabled: true,
@@ -39,11 +56,15 @@ cc_binary {
     srcs: [
         "backend/malbec_partsd.cpp",
         "backend/PenGuard.cpp",
+        "backend/PenHal.cpp",
     ],
     init_rc: ["init.malbec.rc"],
+    vintf_fragments: ["pen.xml"],
     shared_libs: [
         "libbase",
         "liblog",
+        "libbinder_ndk",
+        "vendor.lenovo.hardware.pen-V1-ndk",
     ],
     cflags: [
         "-Wall",

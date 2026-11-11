@@ -20,6 +20,8 @@
         <item>Recent apps</item>
         <item>Home</item>
         <item>Toggle pen toolbar</item>
+        <item>Toggle brush tools in Ink or Easy Jot</item>
+        <item>Circle to Search</item>
     </string-array>
     <string-array name="pen_action_values">
         <item>0</item>
@@ -28,6 +30,8 @@
         <item>3</item>
         <item>4</item>
         <item>6</item>
+        <item>7</item>
+        <item>8</item>
     </string-array>
     <string-array name="refresh_rate_entries">
         <item>Highest refresh rate (144 Hz) (Pen disabled)</item>

@@ -14,53 +14,9 @@
     <PreferenceCategory
         android:key="category_pen"
         android:title="@string/category_pen_title">
-        <androidx.preference.SwitchPreferenceCompat
-            android:defaultValue="true"
-            android:key="pen_enabled"
-            android:persistent="false"
-            android:summary="@string/pen_enabled_summary"
-            android:title="@string/pen_enabled_title" />
-        <androidx.preference.SwitchPreferenceCompat
-            android:defaultValue="false"
-            android:dependency="pen_enabled"
-            android:key="pen_toolbar"
-            android:persistent="false"
-            android:summary="@string/pen_toolbar_summary"
-            android:title="@string/pen_toolbar_title" />
-        <androidx.preference.SwitchPreferenceCompat
-            android:defaultValue="true"
-            android:dependency="pen_enabled"
-            android:key="pen_gestures"
-            android:persistent="false"
-            android:summary="@string/pen_gestures_summary"
-            android:title="@string/pen_gestures_title" />
-        <androidx.preference.ListPreference
-            android:defaultValue="5"
-            android:dependency="pen_enabled"
-            android:entries="@array/pen_action_entries"
-            android:entryValues="@array/pen_action_values"
-            android:key="pen_single_action"
-            android:persistent="false"
-            android:summary="%s"
-            android:title="@string/pen_single_action_title" />
-        <androidx.preference.ListPreference
-            android:defaultValue="2"
-            android:dependency="pen_enabled"
-            android:entries="@array/pen_action_entries"
-            android:entryValues="@array/pen_action_values"
-            android:key="pen_double_action"
-            android:persistent="false"
-            android:summary="%s"
-            android:title="@string/pen_double_action_title" />
-        <androidx.preference.ListPreference
-            android:defaultValue="0"
-            android:dependency="pen_enabled"
-            android:entries="@array/pen_action_entries"
-            android:entryValues="@array/pen_action_values"
-            android:key="pen_long_action"
-            android:persistent="false"
-            android:summary="%s"
-            android:title="@string/pen_long_action_title" />
+        <androidx.preference.Preference
+            android:key="pen_settings"
+            android:title="@string/pen_settings_title" />
     </PreferenceCategory>
 
     <PreferenceCategory

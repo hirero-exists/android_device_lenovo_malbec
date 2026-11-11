@@ -47,8 +47,8 @@ struct PenGuardConfig {
 
     bool HasEdges() const { return left || right || bottom; }
 
-    bool Contains(int raw_x, int raw_y, const input_absinfo& x_axis,
-                  const input_absinfo& y_axis) const {
+    std::array<double, 2> Position(int raw_x, int raw_y, const input_absinfo& x_axis,
+                                   const input_absinfo& y_axis) const {
         double x = std::clamp((raw_x - static_cast<double>(x_axis.minimum)) /
                 (1.0 + x_axis.maximum - x_axis.minimum), 0.0, 1.0);
         double y = std::clamp((raw_y - static_cast<double>(y_axis.minimum)) /
@@ -57,9 +57,15 @@ struct PenGuardConfig {
         if (rotation == 1) { x = y; y = 1.0 - original_x; }
         if (rotation == 2) { x = 1.0 - x; y = 1.0 - y; }
         if (rotation == 3) { x = 1.0 - y; y = original_x; }
-        return (left > 0 && x * width <= left)
-                || (right > 0 && x * width >= width - right)
-                || (bottom > 0 && y * height >= height - bottom);
+        return {x * width, y * height};
+    }
+
+    bool Contains(int raw_x, int raw_y, const input_absinfo& x_axis,
+                  const input_absinfo& y_axis) const {
+        const auto position = Position(raw_x, raw_y, x_axis, y_axis);
+        return (left > 0 && position[0] <= left)
+                || (right > 0 && position[0] >= width - right)
+                || (bottom > 0 && position[1] >= height - bottom);
     }
 };
 

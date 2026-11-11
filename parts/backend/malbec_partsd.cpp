@@ -15,6 +15,8 @@
 #include <android-base/strings.h>
 
 #include "PenGuard.h"
+#include "PenConsumerParser.h"
+#include "PenHal.h"
 
 #include <dirent.h>
 #include <fcntl.h>
@@ -127,8 +129,6 @@ bool ConfigureUinput(int fd) {
     ioctl(fd, UI_SET_EVBIT, EV_KEY);
     ioctl(fd, UI_SET_KEYBIT, KEY_PLAYPAUSE);
     ioctl(fd, UI_SET_KEYBIT, KEY_SYSRQ);
-    ioctl(fd, UI_SET_KEYBIT, BTN_0);
-    ioctl(fd, UI_SET_KEYBIT, BTN_1);
 
     uinput_setup setup = {};
     setup.id.bustype = BUS_HOST;
@@ -147,30 +147,6 @@ bool EmitLidState(int fd, bool closed) {
     events[1].type = EV_SYN;
     events[1].code = SYN_REPORT;
     return write(fd, events, sizeof(events)) == sizeof(events);
-}
-
-bool EmitKey(int fd, int key_code) {
-    input_event events[4] = {};
-    events[0].type = EV_KEY;
-    events[0].code = key_code;
-    events[0].value = 1;
-    events[1].type = EV_SYN;
-    events[1].code = SYN_REPORT;
-    events[2].type = EV_KEY;
-    events[2].code = key_code;
-    events[2].value = 0;
-    events[3].type = EV_SYN;
-    events[3].code = SYN_REPORT;
-    return write(fd, events, sizeof(events)) == sizeof(events);
-}
-
-void DispatchPenAction(int uinput_fd, int action) {
-    android::base::SetProperty("sys.malbec.pen.button_action", std::to_string(action));
-    if (action == 1) {
-        EmitKey(uinput_fd, BTN_0);
-    } else if (action == 2) {
-        EmitKey(uinput_fd, BTN_1);
-    }
 }
 
 bool WriteMode(const char* path, bool enabled) {
@@ -448,6 +424,26 @@ int OpenNamedInput(const char* target_name) {
     return result;
 }
 
+int OpenPenConsumer() {
+    int fd = OpenNamedInput("moto pen pro Consumer Control");
+    if (fd < 0) return -1;
+    char name[256] = {};
+    input_id id{};
+    if (ioctl(fd, EVIOCGNAME(sizeof(name)), name) < 0
+            || std::strcmp(name, "moto pen pro Consumer Control") != 0
+            || ioctl(fd, EVIOCGID, &id) < 0
+            || id.bustype != BUS_BLUETOOTH || id.vendor != 0x17ef || id.product != 0x617f) {
+        close(fd);
+        return -1;
+    }
+    if (ioctl(fd, EVIOCGRAB, 1) < 0) {
+        PLOG(WARNING) << "Unable to own pen consumer gestures";
+        close(fd);
+        return -1;
+    }
+    return fd;
+}
+
 int OpenHallInput() {
     return OpenNamedInput(kHallInputName);
 }
@@ -460,9 +456,13 @@ int main() {
         LOG(INFO) << "Opened hall input device";
     }
 
-    int pen_bt_input = OpenNamedInput("moto pen pro");
+    bool pen_hal_ready = malbec::StartPenHal();
+    if (!pen_hal_ready) LOG(ERROR) << "Pen HAL unavailable; will retry";
+    malbec::PenConsumerParser pen_parser;
+    int pen_bt_input = OpenPenConsumer();
     if (pen_bt_input >= 0) {
-        LOG(INFO) << "Opened bluetooth pen input device";
+        malbec::PenConnection(true);
+        LOG(INFO) << "Opened bluetooth pen consumer input";
     }
 
     int uinput = open("/dev/uinput", O_WRONLY | O_NONBLOCK | O_CLOEXEC);
@@ -471,10 +471,8 @@ int main() {
         return 1;
     }
 
-    std::thread([uinput] {
-        malbec::RunPenGuard("NVTCapacitivePen", [uinput](int action) {
-            DispatchPenAction(uinput, action);
-        });
+    std::thread([] {
+        malbec::RunPenGuard("NVTCapacitivePen");
     }).detach();
 
     bool folio_enabled = android::base::GetBoolProperty(kFolioEnabledProperty, true);
@@ -494,11 +492,19 @@ int main() {
     while (true) {
         if (hall_retry-- <= 0) {
             hall_retry = 4;
+            if (!pen_hal_ready) {
+                pen_hal_ready = malbec::StartPenHal();
+                if (pen_hal_ready) malbec::PenConnection(pen_bt_input >= 0);
+            }
             if (hall_input < 0) {
                 hall_input = OpenHallInput();
             }
             if (pen_bt_input < 0) {
-                pen_bt_input = OpenNamedInput("moto pen pro");
+                pen_bt_input = OpenPenConsumer();
+                if (pen_bt_input >= 0) {
+                    pen_parser = malbec::PenConsumerParser();
+                    malbec::PenConnection(true);
+                }
             }
         }
 
@@ -539,24 +545,33 @@ int main() {
             }
         }
 
-        for (int p = 1; p < 2; ++p) {
-            if (fds[p].fd >= 0 && (fds[p].revents & POLLIN) != 0) {
-                input_event events[16];
-                ssize_t length;
-                while ((length = read(fds[p].fd, events, sizeof(events))) > 0) {
-                    size_t count = static_cast<size_t>(length) / sizeof(input_event);
-                    for (size_t index = 0; index < count; ++index) {
-                        if (events[index].type == EV_KEY && events[index].value == 1
-                                && android::base::GetBoolProperty(kPenEnabledProperty, true)) {
-                            if (events[index].code == BTN_STYLUS) {
-                                DispatchPenAction(uinput, 1);
-                            } else if (events[index].code == BTN_STYLUS2) {
-                                DispatchPenAction(uinput, 2);
-                            }
-                        }
+        if (pen_bt_input >= 0 && (fds[1].revents & POLLIN) != 0) {
+            input_event events[16];
+            ssize_t length;
+            while ((length = read(pen_bt_input, events, sizeof(events))) > 0) {
+                if (length % sizeof(input_event) != 0) {
+                    malbec::PenStreamReset();
+                    break;
+                }
+                for (size_t index = 0; index < static_cast<size_t>(length) / sizeof(input_event); ++index) {
+                    malbec::ConsumerEvent event;
+                    if (pen_parser.Consume(events[index], &event)) {
+                        if (event.reset) malbec::PenStreamReset();
+                        else malbec::PenGesture(event.usage, event.pressed);
                     }
                 }
             }
+            if (length == 0 || (length > 0 && length % sizeof(input_event) != 0)
+                    || (length < 0 && errno != EAGAIN && errno != EINTR)) {
+                close(pen_bt_input);
+                pen_bt_input = -1;
+                malbec::PenConnection(false);
+            }
+        }
+        if (pen_bt_input >= 0 && (fds[1].revents & (POLLERR | POLLHUP | POLLNVAL)) != 0) {
+            close(pen_bt_input);
+            pen_bt_input = -1;
+            malbec::PenConnection(false);
         }
 
         bool new_folio_enabled =

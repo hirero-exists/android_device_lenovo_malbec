@@ -1,269 +1,79 @@
 /*
  * Copyright (C) 2026 hirero-exists <hirerokazuoa@gmail.com>
- *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- *
  * Compatible with GNU General Public License, Version 2.0 (GPLv2) or later
  * pursuant to Section 3.3 of the Mozilla Public License, v. 2.0.
  */
-
 package com.lenovo.parts;
 
-import android.app.Notification;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
-import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
-import android.bluetooth.BluetoothStatusCodes;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
-import android.util.Log;
-
-import java.util.LinkedList;
-import java.util.Objects;
-import java.util.Queue;
-import java.util.Set;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Locale;
 import java.util.UUID;
+import java.util.function.Consumer;
 
+/** Connection and identity only. Hardware gestures are owned by the native input path. */
 final class PenGattService {
-    private static final String TAG = "LenovoPartsPenGatt";
-    private static final String CHANNEL_ID = "pen_alert_channel";
-    private static final int NOTIFICATION_ID = 1004;
-    private static final int GATT_CONNECTION_TIMEOUT = 8;
-
+    private static final long TIMEOUT_MS = 10000;
+    private static final long RETRY_MS = 3000;
+    private static final long BATTERY_POLL_MS = 60000;
+    private static final String HINT = "validated_pen_address";
     private static PenGattService sInstance;
-
-    private static final UUID HID_SERVICE_UUID =
-            UUID.fromString("00001812-0000-1000-8000-00805f9b34fb");
-    private static final UUID REPORT_CHAR_UUID =
-            UUID.fromString("00002a4d-0000-1000-8000-00805f9b34fb");
-    private static final UUID CCCD_UUID =
-            UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
-    private static final UUID REPORT_REFERENCE_UUID =
-            UUID.fromString("00002908-0000-1000-8000-00805f9b34fb");
-
     private final Context mContext;
+    private final SharedPreferences mPrefs;
     private final Handler mHandler = new Handler(Looper.getMainLooper());
-    private final NotificationManager mNotificationManager;
-    private final Queue<DescriptorSubscription> mDescriptorWriteQueue = new LinkedList<>();
-    private final Queue<BluetoothGattDescriptor> mReportReferences = new LinkedList<>();
-    private final Set<Integer> mGestureReports = new java.util.HashSet<>();
-    private final Set<Integer> mUnprefixedGestureReports = new java.util.HashSet<>();
-
+    private final ArrayDeque<BluetoothGattCharacteristic> mQueue = new ArrayDeque<>();
+    private final ArrayList<Consumer<PenIdentity>> mListeners = new ArrayList<>();
     private BluetoothGatt mGatt;
-    private BluetoothDevice mTargetDevice;
-    private boolean mWritingDescriptor = false;
-    private long mConnectedTimestamp = 0;
+    private BluetoothDevice mDevice;
+    private BluetoothGattCharacteristic mPending;
+    private Runnable mTimeout;
+    private Runnable mBatteryPoll;
+    private long mGeneration;
+    private PenIdentity.Connection mConnection = PenIdentity.Connection.DISCONNECTED;
+    private String mSerial;
+    private String mFirmware;
+    private String mModel;
+    private int mBattery = -1;
+    private boolean mPnpValid;
+    private int mPnpSource = -1, mPnpVendor = -1, mPnpProduct = -1, mPnpVersion = -1;
+    private long mConnectedAt;
+    private final NotificationManager mNotifications;
 
-    private static final class DescriptorSubscription {
-        final BluetoothGattDescriptor descriptor;
-        final byte[] value;
-
-        DescriptorSubscription(BluetoothGattDescriptor descriptor, byte[] value) {
-            this.descriptor = descriptor;
-            this.value = value;
-        }
+    private static UUID uuid(int value) {
+        return UUID.fromString(String.format(Locale.ROOT, "0000%04x-0000-1000-8000-00805f9b34fb", value));
     }
-
-    private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
-        @Override
-        public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
-            if (gatt != mGatt) return;
-            if (newState == BluetoothProfile.STATE_CONNECTED) {
-                Log.i(TAG, "GATT connected to pen, discovering services");
-                mConnectedTimestamp = SystemClock.uptimeMillis();
-                dismissOutOfRangeNotification();
-                gatt.discoverServices();
-            } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                Log.i(TAG, "GATT disconnected from pen status=" + status);
-                boolean established = mConnectedTimestamp > 0
-                        && SystemClock.uptimeMillis() - mConnectedTimestamp > 15000;
-                boolean unexpected = status == GATT_CONNECTION_TIMEOUT;
-                if (established && unexpected && PenMode.isEnabled() && isBluetoothEnabled()) {
-                    showOutOfRangeNotification();
-                }
-                mConnectedTimestamp = 0;
-                closeGatt();
-                if (PenMode.isEnabled()) {
-                    mHandler.postDelayed(PenGattService.this::checkAndConnect, 3000);
-                }
-            }
-        }
-
-        @Override
-        public void onServicesDiscovered(BluetoothGatt gatt, int status) {
-            if (gatt != mGatt) return;
-            Log.i(TAG, "onServicesDiscovered status=" + status);
-            if (status != BluetoothGatt.GATT_SUCCESS) {
-                Log.e(TAG, "Service discovery failed: " + status);
-                return;
-            }
-            BluetoothGattService hidService = gatt.getService(HID_SERVICE_UUID);
-            if (hidService == null) {
-                Log.w(TAG, "HID service not found on pen");
-                return;
-            }
-
-            synchronized (PenGattService.this) {
-                mDescriptorWriteQueue.clear();
-                mReportReferences.clear();
-                mGestureReports.clear();
-                mUnprefixedGestureReports.clear();
-                mWritingDescriptor = false;
-
-                for (BluetoothGattCharacteristic characteristic : hidService.getCharacteristics()) {
-                    int properties = characteristic.getProperties();
-                    if (REPORT_CHAR_UUID.equals(characteristic.getUuid())
-                            && (properties & (BluetoothGattCharacteristic.PROPERTY_NOTIFY
-                                    | BluetoothGattCharacteristic.PROPERTY_INDICATE)) != 0) {
-                        BluetoothGattDescriptor cccd = characteristic.getDescriptor(CCCD_UUID);
-                        if (cccd == null || !gatt.setCharacteristicNotification(characteristic, true)) {
-                            Log.w(TAG, "Unable to register HID report notifications");
-                            continue;
-                        }
-                        mGestureReports.add(characteristic.getInstanceId());
-                        byte[] subscriptionValue = (properties & BluetoothGattCharacteristic.PROPERTY_NOTIFY) != 0
-                                ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-                                : BluetoothGattDescriptor.ENABLE_INDICATION_VALUE;
-                        mDescriptorWriteQueue.add(new DescriptorSubscription(cccd, subscriptionValue));
-                        BluetoothGattDescriptor reference = characteristic.getDescriptor(REPORT_REFERENCE_UUID);
-                        if (reference != null) {
-                            mReportReferences.add(reference);
-                        } else {
-                            Log.w(TAG, "HID report has no report-reference descriptor");
-                        }
-                    }
-                }
-                processNextDescriptorWrite(gatt);
-            }
-        }
-
-        @Override
-        public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor,
-                int status, byte[] value) {
-            acceptReportReference(gatt, descriptor, status, value);
-        }
-
-        @Override
-        public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor,
-                int status) {
-            acceptReportReference(gatt, descriptor, status, descriptor.getValue());
-        }
-
-        @Override
-        public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor,
-                int status) {
-            if (gatt != mGatt) return;
-            synchronized (PenGattService.this) {
-                mWritingDescriptor = false;
-                if (status == BluetoothGatt.GATT_SUCCESS) {
-                    Log.i(TAG, "Subscribed to pen notification: "
-                            + (descriptor != null && descriptor.getCharacteristic() != null
-                                    ? descriptor.getCharacteristic().getUuid() : "unknown"));
-                } else {
-                    Log.e(TAG, "Pen CCCD write failed: " + status);
-                }
-                processNextDescriptorWrite(gatt);
-            }
-        }
-
-        @Override
-        public void onCharacteristicChanged(BluetoothGatt gatt,
-                BluetoothGattCharacteristic characteristic) {
-            acceptReport(gatt, characteristic, characteristic != null ? characteristic.getValue() : null);
-        }
-
-        @Override
-        public void onCharacteristicChanged(BluetoothGatt gatt,
-                BluetoothGattCharacteristic characteristic, byte[] value) {
-            acceptReport(gatt, characteristic, value);
-        }
-    };
-
-    private synchronized void readNextReportReference(BluetoothGatt gatt) {
-        while (!mReportReferences.isEmpty()) {
-            if (gatt.readDescriptor(mReportReferences.peek())) {
-                return;
-            }
-            Log.w(TAG, "Unable to initiate HID report-reference read");
-            mReportReferences.remove();
-        }
-    }
-
-    private synchronized void acceptReportReference(BluetoothGatt gatt,
-            BluetoothGattDescriptor descriptor, int status, byte[] value) {
-        BluetoothGattDescriptor pending = mReportReferences.peek();
-        if (gatt != mGatt || pending == null || descriptor == null
-                || descriptor.getCharacteristic() == null || pending.getCharacteristic() == null
-                || descriptor.getCharacteristic().getInstanceId()
-                        != pending.getCharacteristic().getInstanceId()) {
-            return;
-        }
-        mReportReferences.remove();
-        Log.i(TAG, "HID report reference status=" + status + " value=" + bytesToHex(value));
-        if (status == BluetoothGatt.GATT_SUCCESS && value != null && value.length == 2
-                && value[0] == 2 && value[1] == 1) {
-            mUnprefixedGestureReports.add(descriptor.getCharacteristic().getInstanceId());
-        }
-        readNextReportReference(gatt);
-    }
-
-    private synchronized void acceptReport(BluetoothGatt gatt,
-            BluetoothGattCharacteristic characteristic, byte[] value) {
-        if (gatt == mGatt && characteristic != null
-                && REPORT_CHAR_UUID.equals(characteristic.getUuid())
-                && mGestureReports.contains(characteristic.getInstanceId())) {
-            if (value != null && (value.length == 2 && value[0] == 2
-                    || value.length == 1
-                    && mUnprefixedGestureReports.contains(characteristic.getInstanceId()))) {
-                handleReportData(value);
-            }
-        }
-    }
-
-    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            if (BluetoothAdapter.ACTION_STATE_CHANGED.equals(action)) {
-                int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR);
-                if (state == BluetoothAdapter.STATE_ON) {
-                    checkAndConnect();
-                } else if (state == BluetoothAdapter.STATE_TURNING_OFF || state == BluetoothAdapter.STATE_OFF) {
-                    dismissOutOfRangeNotification();
-                    closeGatt();
-                }
-            } else if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)
-                    || BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) {
-                checkAndConnect();
-            }
-        }
-    };
 
     PenGattService(Context context) {
-        sInstance = this;
         mContext = context.getApplicationContext();
-        mNotificationManager = mContext.getSystemService(NotificationManager.class);
-
-        NotificationChannel channel = new NotificationChannel(
-                CHANNEL_ID,
-                mContext.getString(R.string.pen_enabled_title),
-                NotificationManager.IMPORTANCE_DEFAULT);
-        mNotificationManager.createNotificationChannel(channel);
+        mPrefs = mContext.createDeviceProtectedStorageContext()
+                .getSharedPreferences("pen_identity", Context.MODE_PRIVATE);
+        mNotifications = mContext.getSystemService(NotificationManager.class);
+        mNotifications.createNotificationChannel(new NotificationChannel("pen_alert_channel",
+                mContext.getString(R.string.pen_enabled_title), NotificationManager.IMPORTANCE_DEFAULT));
+        sInstance = this;
     }
 
     void start() {
@@ -271,163 +81,268 @@ final class PenGattService {
         filter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
         filter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
         filter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
-        mContext.registerReceiver(mReceiver, filter, Context.RECEIVER_EXPORTED);
+        mContext.registerReceiver(new BroadcastReceiver() {
+            @Override public void onReceive(Context context, Intent intent) {
+                mHandler.post(PenGattService.this::checkAndConnect);
+            }
+        }, filter, Context.RECEIVER_EXPORTED);
         checkAndConnect();
     }
 
-    static synchronized void onPenEnabledChanged() {
-        if (sInstance == null) {
-            return;
-        }
-        if (PenMode.isEnabled()) {
-            sInstance.checkAndConnect();
-        } else {
-            sInstance.dismissOutOfRangeNotification();
-            sInstance.closeGatt();
-        }
+    static void onPenEnabledChanged() {
+        if (sInstance != null) sInstance.mHandler.post(sInstance::checkAndConnect);
     }
 
-    private boolean isBluetoothEnabled() {
+    static String getAlias() {
+        return sInstance != null && sInstance.mDevice != null
+                && sInstance.mConnection == PenIdentity.Connection.VERIFIED ? sInstance.mDevice.getAlias() : null;
+    }
+
+    static long lastDisconnected() {
+        return sInstance == null ? 0 : sInstance.mPrefs.getLong("last_disconnected", 0);
+    }
+
+    static boolean rename(String name) {
+        if (sInstance == null || sInstance.mDevice == null
+                || sInstance.mConnection != PenIdentity.Connection.VERIFIED
+                || name == null || name.trim().isEmpty() || name.length() > 64) return false;
+        boolean success = sInstance.mDevice.setAlias(name.trim()) == android.bluetooth.BluetoothStatusCodes.SUCCESS;
+        if (success) sInstance.publish();
+        return success;
+    }
+
+    static void observe(Consumer<PenIdentity> listener) {
+        if (sInstance == null) return;
+        sInstance.mListeners.add(listener);
+        listener.accept(sInstance.snapshot());
+    }
+
+    static void unobserve(Consumer<PenIdentity> listener) {
+        if (sInstance != null) sInstance.mListeners.remove(listener);
+    }
+
+    private PenIdentity snapshot() {
+        boolean verified = mConnection == PenIdentity.Connection.VERIFIED;
+        return new PenIdentity(mGeneration, mConnection, verified ? mSerial : null,
+                verified ? mFirmware : null, verified ? mModel : null, verified ? mBattery : -1,
+                verified ? mPnpSource : -1, verified ? mPnpVendor : -1,
+                verified ? mPnpProduct : -1, verified ? mPnpVersion : -1,
+                verified && mDevice != null ? mDevice.getName() : null);
+    }
+
+    private void publish() {
+        PenIdentity value = snapshot();
+        for (Consumer<PenIdentity> listener : new ArrayList<>(mListeners)) listener.accept(value);
+    }
+
+    private void clear(PenIdentity.Connection next) {
+        if (mTimeout != null) mHandler.removeCallbacks(mTimeout);
+        if (mBatteryPoll != null) mHandler.removeCallbacks(mBatteryPoll);
+        mBatteryPoll = null;
+        mTimeout = null;
+        BluetoothGatt old = mGatt;
+        mGatt = null;
+        if (old != null) old.close();
+        mDevice = null;
+        mPending = null;
+        mQueue.clear();
+        mSerial = null;
+        mFirmware = null;
+        mModel = null;
+        mBattery = -1;
+        mPnpValid = false;
+        mPnpSource = mPnpVendor = mPnpProduct = mPnpVersion = -1;
+        mConnectedAt = 0;
+        mGeneration++;
+        mConnection = next;
+        publish();
+    }
+
+    private void checkAndConnect() {
         BluetoothManager manager = mContext.getSystemService(BluetoothManager.class);
-        if (manager == null) return false;
-        BluetoothAdapter adapter = manager.getAdapter();
-        return adapter != null && adapter.isEnabled();
-    }
-
-    synchronized void checkAndConnect() {
+        BluetoothAdapter adapter = manager == null ? null : manager.getAdapter();
         if (!PenMode.isEnabled()) {
-            dismissOutOfRangeNotification();
-            closeGatt();
+            mNotifications.cancel(1004);
+            if (mConnection != PenIdentity.Connection.DISABLED) clear(PenIdentity.Connection.DISABLED);
             return;
         }
-
-        BluetoothManager manager = mContext.getSystemService(BluetoothManager.class);
-        if (manager == null) {
-            return;
-        }
-        BluetoothAdapter adapter = manager.getAdapter();
         if (adapter == null || !adapter.isEnabled()) {
+            mNotifications.cancel(1004);
+            if (mConnection != PenIdentity.Connection.BLUETOOTH_OFF) clear(PenIdentity.Connection.BLUETOOTH_OFF);
             return;
         }
-        Set<BluetoothDevice> bondedDevices = adapter.getBondedDevices();
-        if (bondedDevices == null) {
-            return;
-        }
-        BluetoothDevice penDevice = null;
-        for (BluetoothDevice device : bondedDevices) {
+        String hint = mPrefs.getString(HINT, null);
+        BluetoothDevice selected = null;
+        boolean hintBonded = false;
+        for (BluetoothDevice device : adapter.getBondedDevices()) {
+            if (device.getAddress().equals(hint)) {
+                selected = device;
+                hintBonded = true;
+                break;
+            }
             String name = device.getName();
-            if (name != null) {
-                String lower = name.toLowerCase();
-                if (lower.contains("pen") || lower.contains("stylus") || lower.contains("ap50")) {
-                    penDevice = device;
-                    break;
-                }
-            }
+            if (name != null && name.equalsIgnoreCase("moto pen pro")) selected = device;
         }
-        if (penDevice == null) {
+        if (hint != null && !hintBonded) mPrefs.edit().remove(HINT).apply();
+        if (selected == null) {
+            if (mConnection != PenIdentity.Connection.DISCONNECTED) clear(PenIdentity.Connection.DISCONNECTED);
             return;
         }
-        if (mGatt != null && Objects.equals(mTargetDevice, penDevice)) {
-            return;
-        }
-        closeGatt();
-        mTargetDevice = penDevice;
-        Log.i(TAG, "Connecting GATT to pen " + penDevice.getAddress());
-        mGatt = penDevice.connectGatt(mContext, false, mGattCallback,
-                BluetoothDevice.TRANSPORT_LE, BluetoothDevice.PHY_LE_1M_MASK, mHandler);
-    }
-
-    private synchronized void processNextDescriptorWrite(BluetoothGatt gatt) {
-        if (mWritingDescriptor || gatt == null) {
-            return;
-        }
-        if (mDescriptorWriteQueue.isEmpty()) {
-            readNextReportReference(gatt);
-            return;
-        }
-        DescriptorSubscription subscription = mDescriptorWriteQueue.poll();
-        if (subscription != null) {
-            mWritingDescriptor = true;
-            int result = gatt.writeDescriptor(subscription.descriptor, subscription.value);
-            if (result != BluetoothStatusCodes.SUCCESS) {
-                Log.e(TAG, "CCCD write initiation failed: " + result);
-                mWritingDescriptor = false;
-                processNextDescriptorWrite(gatt);
-            }
-        }
-    }
-
-    private void handleReportData(byte[] data) {
-        if (data == null || data.length == 0 || !PenMode.isEnabled()) {
-            return;
-        }
-        int mask = 0;
-        if (data.length == 2 && data[0] == 0x02) {
-            mask = data[1] & 0xff;
-        } else if (data.length == 1) {
-            mask = data[0] & 0xff;
+        if (mGatt != null && selected.equals(mDevice)) return;
+        clear(PenIdentity.Connection.CONNECTING);
+        mDevice = selected;
+        mGatt = selected.connectGatt(mContext, false, mCallback, BluetoothDevice.TRANSPORT_LE,
+                BluetoothDevice.PHY_LE_1M_MASK, mHandler);
+        if (mGatt == null) {
+            clear(PenIdentity.Connection.DISCONNECTED);
+            mHandler.postDelayed(this::checkAndConnect, RETRY_MS);
         } else {
-            return;
+            armTimeout(mGatt, mGeneration);
         }
-        if (mask != 0 && mask != 1 && mask != 2 && mask != 4 && mask != 8 && mask != 16) {
-            return;
-        }
-        Log.i(TAG, "Received pen report raw data: " + bytesToHex(data) + " mask=" + mask);
-        if (mask != 0) {
-            int action = PenShortcuts.ACTION_NONE;
-            if ((mask & 0x01) != 0) {
-                action = PenShortcuts.getAction(mContext, PenShortcuts.SINGLE_SETTING,
-                        PenShortcuts.ACTION_PLAY_PAUSE);
-            } else if ((mask & 0x02) != 0 || (mask & 0x04) != 0) {
-                action = PenShortcuts.getAction(mContext, PenShortcuts.DOUBLE_SETTING,
-                        PenShortcuts.ACTION_SCREENSHOT);
-            } else if ((mask & 0x08) != 0 || (mask & 0x10) != 0) {
-                action = PenShortcuts.getAction(mContext, PenShortcuts.LONG_SETTING,
-                        PenShortcuts.ACTION_NONE);
+    }
+
+    private void armTimeout(BluetoothGatt gatt, long generation) {
+        if (mTimeout != null) mHandler.removeCallbacks(mTimeout);
+        mTimeout = () -> {
+            if (mGatt != gatt || mGeneration != generation) return;
+            clear(PenIdentity.Connection.DISCONNECTED);
+            mHandler.postDelayed(this::checkAndConnect, RETRY_MS);
+        };
+        mHandler.postDelayed(mTimeout, TIMEOUT_MS);
+    }
+
+    private void cancelTimeout() {
+        if (mTimeout != null) mHandler.removeCallbacks(mTimeout);
+        mTimeout = null;
+    }
+
+    private void enqueue(BluetoothGatt gatt, int serviceId, int characteristicId) {
+        BluetoothGattService service = gatt.getService(uuid(serviceId));
+        BluetoothGattCharacteristic characteristic = service == null ? null
+                : service.getCharacteristic(uuid(characteristicId));
+        if (characteristic != null) mQueue.add(characteristic);
+    }
+
+    private void next(BluetoothGatt gatt) {
+        if (gatt != mGatt || mPending != null) return;
+        while ((mPending = mQueue.poll()) != null) {
+            if (gatt.readCharacteristic(mPending)) {
+                armTimeout(gatt, mGeneration);
+                return;
             }
-            if (action != PenShortcuts.ACTION_NONE) {
-                int targetAction = action;
-                mHandler.post(() -> PenShortcuts.executeAction(mContext, targetAction));
+            mPending = null;
+        }
+        if (mPnpValid && "PICASSO-CD1".equalsIgnoreCase(mModel)) {
+            mConnection = PenIdentity.Connection.VERIFIED;
+            mPrefs.edit().putString(HINT, mDevice.getAddress()).apply();
+        } else if (mConnection != PenIdentity.Connection.VERIFIED) {
+            mConnection = PenIdentity.Connection.UNSUPPORTED;
+        }
+        publish();
+        if (mConnection == PenIdentity.Connection.VERIFIED) {
+            long generation = mGeneration;
+            mBatteryPoll = () -> {
+                if (gatt != mGatt || generation != mGeneration) return;
+                mBattery = -1;
+                publish();
+                enqueue(gatt, 0x180f, 0x2a19);
+                next(gatt);
+            };
+            mHandler.postDelayed(mBatteryPoll, BATTERY_POLL_MS);
+        }
+    }
+
+    private static String text(byte[] value) {
+        if (value == null || value.length == 0 || value.length > 128) return null;
+        String decoded = new String(value, StandardCharsets.UTF_8).trim();
+        for (int i = 0; i < decoded.length(); i++) {
+            if (Character.isISOControl(decoded.charAt(i)) || decoded.charAt(i) == '\ufffd') return null;
+        }
+        return decoded.isEmpty() ? null : decoded;
+    }
+
+    private void readResult(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic,
+            byte[] value, int status) {
+        if (gatt != mGatt || characteristic != mPending) return;
+        cancelTimeout();
+        mPending = null;
+        if (status == BluetoothGatt.GATT_SUCCESS && value != null) {
+            UUID id = characteristic.getUuid();
+            if (id.equals(uuid(0x2a25))) mSerial = text(value);
+            else if (id.equals(uuid(0x2a26))) mFirmware = text(value);
+            else if (id.equals(uuid(0x2a27))) mModel = text(value);
+            else if (id.equals(uuid(0x2a50)) && value.length == 7) {
+                mPnpSource = value[0] & 255;
+                mPnpVendor = (value[1] & 255) | ((value[2] & 255) << 8);
+                mPnpProduct = (value[3] & 255) | ((value[4] & 255) << 8);
+                mPnpVersion = (value[5] & 255) | ((value[6] & 255) << 8);
+                // 2 identifies the USB-IF vendor namespace containing 0x17ef.
+                mPnpValid = mPnpSource == 2 && mPnpVendor == 0x17ef && mPnpProduct == 0x617f;
+            } else if (id.equals(uuid(0x2a19)) && value.length == 1 && (value[0] & 255) <= 100) {
+                mBattery = value[0] & 255;
             }
         }
+        next(gatt);
     }
 
-    private static String bytesToHex(byte[] bytes) {
-        if (bytes == null) return "null";
-        StringBuilder sb = new StringBuilder();
-        for (byte b : bytes) {
-            sb.append(String.format("%02x ", b));
-        }
-        return sb.toString().trim();
-    }
-
-    private void showOutOfRangeNotification() {
-        Notification notification = new Notification.Builder(mContext, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_lenovo_parts)
-                .setContentTitle(mContext.getString(R.string.pen_out_of_range_title))
-                .setContentText(mContext.getString(R.string.pen_out_of_range_message))
-                .setAutoCancel(true)
-                .build();
-        mNotificationManager.notify(NOTIFICATION_ID, notification);
-    }
-
-    private void dismissOutOfRangeNotification() {
-        mNotificationManager.cancel(NOTIFICATION_ID);
-    }
-
-    synchronized void closeGatt() {
-        if (mGatt != null) {
-            try {
-                mGatt.close();
-            } catch (Exception ignored) {
+    private final BluetoothGattCallback mCallback = new BluetoothGattCallback() {
+        @Override public void onConnectionStateChange(BluetoothGatt gatt, int status, int state) {
+            if (gatt != mGatt) return;
+            cancelTimeout();
+            if (status == BluetoothGatt.GATT_SUCCESS && state == BluetoothProfile.STATE_CONNECTED) {
+                mConnectedAt = SystemClock.uptimeMillis();
+                mNotifications.cancel(1004);
+                mConnection = PenIdentity.Connection.UNVERIFIED;
+                publish();
+                if (gatt.discoverServices()) armTimeout(gatt, mGeneration);
+                else {
+                    clear(PenIdentity.Connection.DISCONNECTED);
+                    mHandler.postDelayed(PenGattService.this::checkAndConnect, RETRY_MS);
+                }
+            } else if (state == BluetoothProfile.STATE_DISCONNECTED || status != BluetoothGatt.GATT_SUCCESS) {
+                if (mConnection == PenIdentity.Connection.VERIFIED) {
+                    mPrefs.edit().putLong("last_disconnected", System.currentTimeMillis()).apply();
+                }
+                BluetoothManager manager = mContext.getSystemService(BluetoothManager.class);
+                BluetoothAdapter adapter = manager == null ? null : manager.getAdapter();
+                if (status == 8 && PenPreferences.get(mContext, PenPreferences.LOST_ALERT, 1) != 0
+                        && mConnectedAt > 0 && adapter != null && adapter.isEnabled()
+                        && SystemClock.uptimeMillis() - mConnectedAt > 15000 && PenMode.isEnabled()) {
+                    mNotifications.notify(1004, new Notification.Builder(mContext, "pen_alert_channel")
+                            .setSmallIcon(R.drawable.ic_lenovo_parts)
+                            .setContentTitle(mContext.getString(R.string.pen_out_of_range_title))
+                            .setContentText(mContext.getString(R.string.pen_out_of_range_message))
+                            .setAutoCancel(true).build());
+                }
+                clear(PenIdentity.Connection.DISCONNECTED);
+                mHandler.postDelayed(PenGattService.this::checkAndConnect, RETRY_MS);
             }
-            mGatt = null;
         }
-        mTargetDevice = null;
-        mDescriptorWriteQueue.clear();
-        mReportReferences.clear();
-        mGestureReports.clear();
-        mUnprefixedGestureReports.clear();
-        mWritingDescriptor = false;
-    }
+
+        @Override public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+            if (gatt != mGatt) return;
+            cancelTimeout();
+            if (status != BluetoothGatt.GATT_SUCCESS) {
+                clear(PenIdentity.Connection.DISCONNECTED);
+                mHandler.postDelayed(PenGattService.this::checkAndConnect, RETRY_MS);
+                return;
+            }
+            enqueue(gatt, 0x180a, 0x2a25);
+            enqueue(gatt, 0x180a, 0x2a26);
+            enqueue(gatt, 0x180a, 0x2a27);
+            enqueue(gatt, 0x180a, 0x2a50);
+            enqueue(gatt, 0x180f, 0x2a19);
+            next(gatt);
+        }
+
+        @Override public void onCharacteristicRead(BluetoothGatt gatt,
+                BluetoothGattCharacteristic characteristic, byte[] value, int status) {
+            readResult(gatt, characteristic, value, status);
+        }
+
+        @Override public void onCharacteristicRead(BluetoothGatt gatt,
+                BluetoothGattCharacteristic characteristic, int status) {
+            readResult(gatt, characteristic, characteristic.getValue(), status);
+        }
+    };
 }

@@ -62,6 +62,14 @@
         </interface>
     </hal>
     <hal format="aidl" optional="true">
+        <name>vendor.lenovo.hardware.pen</name>
+        <version>1</version>
+        <interface>
+            <name>IPen</name>
+            <instance>default</instance>
+        </interface>
+    </hal>
+    <hal format="aidl" optional="true">
         <name>vendor.lenovo.hardware.misc</name>
         <version>1</version>
         <interface>
