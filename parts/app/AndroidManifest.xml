@@ -47,14 +47,11 @@
                 android:name="com.android.settings.category"
                 android:value="com.android.settings.category.ia.homepage" />
             <meta-data
-                android:name="com.android.settings.group_key"
-                android:value="top_level_connectivity_category" />
-            <meta-data
                 android:name="com.android.settings.keyhint"
                 android:value="top_level_lenovo_parts" />
             <meta-data
                 android:name="com.android.settings.order"
-                android:value="-150" />
+                android:value="1000" />
             <meta-data
                 android:name="com.android.settings.icon"
                 android:resource="@drawable/ic_lenovo_parts" />
