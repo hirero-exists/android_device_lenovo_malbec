@@ -12,6 +12,8 @@ $(call inherit-product, $(SRC_TARGET_DIR)/product/emulated_storage.mk)
 # Virtual A/B (with compression -- pulled in by the group defaults)
 $(call inherit-product, $(SRC_TARGET_DIR)/product/virtual_ab_ota/compression_with_xor.mk)
 
+PRODUCT_VIRTUAL_AB_COMPRESSION_METHOD := lz4
+
 # Dalvik vm configs
 # 6144 is the largest profile AOSP ships and is the right one for this 8 GB device.
 # The "phone" in the name is historical; the profiles are keyed on RAM and density.

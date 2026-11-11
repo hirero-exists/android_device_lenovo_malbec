@@ -31,10 +31,12 @@ Hardware configurations vary by region. Specifications: [Lenovo PSREF](https://p
 
 ## Regional vendor_boot exports
 
-After `m otapackage`, export matching ROW and PRC boot images:
+After a successful `m otapackage`, run this from the Android source root:
 
 ```sh
-python3 device/lenovo/malbec/tools/export-regional-vendor-boot.py --product-out "$ANDROID_PRODUCT_OUT"
+cd /home/hirero/pengu
+python3 device/lenovo/malbec/tools/export-regional-vendor-boot.py \
+    --product-out out/target/product/malbec
 ```
 
 The output contains `vendor_boot_TB390FU.img` (ROW), `vendor_boot_TB376FC.img`
